@@ -153,6 +153,7 @@
     }
     .media-thumb:hover { border-color: #43a047; }
     .media-thumb img { height: 170px; display: block; }
+    .media-thumb video { height: 280px; display: block; background: #000; }
     .media-thumb .media-num {
         position: absolute; top: 6px; left: 6px;
         background: rgba(27,94,32,.85); color: #fff;
@@ -167,7 +168,8 @@
         content: "URL non raggiungibile"; font-size: .7rem; color: #bbb;
         text-align: center; padding: 8px;
     }
-    .media-thumb.broken img { display: none; }
+    .media-thumb.broken img,
+    .media-thumb.broken video { display: none; }
 
     .draft-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
     .draft-error {
@@ -270,8 +272,14 @@
         <div class="media-gallery">
             {% for u in d.media_urls.splitlines() %}{% if u.strip() %}
             <a href="{{ u.strip() }}" target="_blank" rel="noopener" class="media-thumb">
+                {% if u.strip().lower().split('?')[0].endswith(('.mp4', '.mov', '.webm')) %}
+                <video src="{{ u.strip() }}" preload="metadata" muted playsinline
+                       onmouseover="this.play()" onmouseout="this.pause()"
+                       onerror="this.parentElement.classList.add('broken')"></video>
+                {% else %}
                 <img src="{{ u.strip() }}" alt="slide {{ loop.index }}" loading="lazy"
                      onerror="this.parentElement.classList.add('broken')">
+                {% endif %}
                 <span class="media-num">{{ loop.index }}</span>
             </a>
             {% endif %}{% endfor %}
@@ -292,7 +300,9 @@
             <button class="btn btn-light" onclick="saveDraft({{ d.id }})"><i class="fas fa-floppy-disk"></i> Salva</button>
             {% endif %}
             {% if d.platform in ('instagram', 'facebook', 'linkedin') and d.status in ('draft', 'approved', 'failed') %}
-            <button class="btn btn-light" id="genmedia-{{ d.id }}" onclick="generateMedia({{ d.id }})"><i class="fas fa-image"></i> Genera grafica</button>
+            <button class="btn btn-light" id="genmedia-{{ d.id }}" data-icona="fa-image" data-etichetta="Genera grafica" data-attesa="Genero grafica..." onclick="generateMedia({{ d.id }})"><i class="fas fa-image"></i> Genera grafica</button>
+            {% elif d.platform == 'tiktok' and d.status in ('draft', 'approved', 'failed') %}
+            <button class="btn btn-light" id="genmedia-{{ d.id }}" data-icona="fa-film" data-etichetta="Genera video" data-attesa="Genero il video (1-2 minuti)..." onclick="generateMedia({{ d.id }})"><i class="fas fa-film"></i> Genera video</button>
             {% endif %}
             {% if d.status == 'draft' %}
             <button class="btn btn-primary" onclick="draftAction({{ d.id }}, 'approve')"><i class="fas fa-check"></i> Approva</button>
@@ -381,12 +391,15 @@ async function generateMedia(id) {
     // salva prima eventuali modifiche al testo
     await saveDraft(id);
     const btn = document.getElementById(`genmedia-${id}`);
+    // Stesso bottone per grafica e video: testi e icona li porta con se'
+    const icona = btn.dataset.icona || 'fa-image';
+    const etichetta = btn.dataset.etichetta || 'Genera grafica';
     btn.disabled = true;
-    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Genero grafica...';
+    btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> ${btn.dataset.attesa || 'Genero grafica...'}`;
     const r = await post(`/admin/social/drafts/${id}/generate-media`);
     toast(r.message, !r.ok);
     if (r.ok) setTimeout(() => location.reload(), 1200);
-    else { btn.disabled = false; btn.innerHTML = '<i class="fas fa-image"></i> Genera grafica'; }
+    else { btn.disabled = false; btn.innerHTML = `<i class="fas ${icona}"></i> ${etichetta}`; }
 }
 
 async function publishNow(id) {

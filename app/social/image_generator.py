@@ -237,13 +237,8 @@ def _slide(text: str, index: int, total: int, is_last: bool) -> Image.Image:
     return img
 
 
-def _upload_immagine(img: Image.Image, key: str) -> str:
-    """Carica l'immagine su S3 in JPEG e ritorna l'URL pubblico.
-
-    JPEG e non PNG: l'API di pubblicazione di Instagram accetta solo immagini
-    JPEG, e con i PNG il container viene rifiutato con un 400 secco ("Request
-    failed with status code 400"), senza dire perche'.
-    """
+def _carica_su_s3(dati: bytes, key: str, content_type: str) -> str:
+    """Carica un file sul bucket pubblico e ritorna l'URL da mettere nel post."""
     bucket = os.getenv("S3_BUCKET_NAME", "ispiramy-images")
     region = os.getenv("AWS_REGION", "eu-north-1")
     client = boto3.client(
@@ -252,12 +247,9 @@ def _upload_immagine(img: Image.Image, key: str) -> str:
         aws_secret_access_key=os.getenv("AWS_SECRET_ACCESS_KEY"),
         region_name=region,
     )
-    buf = io.BytesIO()
-    img.convert("RGB").save(buf, format="JPEG", quality=92, optimize=True, progressive=False)
-    buf.seek(0)
     client.put_object(
-        Bucket=bucket, Key=key, Body=buf.getvalue(),
-        ContentType="image/jpeg", CacheControl="public, max-age=604800",
+        Bucket=bucket, Key=key, Body=dati,
+        ContentType=content_type, CacheControl="public, max-age=604800",
     )
     # In locale (MinIO) l'URL AWS non risolve: S3_PUBLIC_BASE_URL permette di
     # puntare all'endpoint raggiungibile dal browser (es. http://localhost:9000/ispiramy-images)
@@ -265,6 +257,18 @@ def _upload_immagine(img: Image.Image, key: str) -> str:
     if public_base:
         return f"{public_base.rstrip('/')}/{key}"
     return f"https://{bucket}.s3.{region}.amazonaws.com/{key}"
+
+
+def _upload_immagine(img: Image.Image, key: str) -> str:
+    """Carica l'immagine su S3 in JPEG e ritorna l'URL pubblico.
+
+    JPEG e non PNG: l'API di pubblicazione di Instagram accetta solo immagini
+    JPEG, e con i PNG il container viene rifiutato con un 400 secco ("Request
+    failed with status code 400"), senza dire perche'.
+    """
+    buf = io.BytesIO()
+    img.convert("RGB").save(buf, format="JPEG", quality=92, optimize=True, progressive=False)
+    return _carica_su_s3(buf.getvalue(), key, "image/jpeg")
 
 
 def _hook_del_draft(session: Session, draft: SocialDraft) -> str:
@@ -351,8 +355,8 @@ def generate_image_for_draft(draft_id: int, use_ai_cover: bool = True) -> dict:
 def generate_media_for_draft(draft_id: int, use_ai_cover: bool = True) -> dict:
     """Genera la grafica giusta per la piattaforma del draft.
 
-    Instagram vuole il carosello (e' nato per quello), le altre piattaforme
-    una sola immagine.
+    Instagram vuole il carosello (e' nato per quello), TikTok un video
+    verticale, le altre piattaforme una sola immagine.
     """
     with Session(engine) as session:
         draft = session.get(SocialDraft, draft_id)
@@ -360,6 +364,9 @@ def generate_media_for_draft(draft_id: int, use_ai_cover: bool = True) -> dict:
             return {"ok": False, "message": "Draft non trovato"}
         piattaforma = draft.platform
 
+    if piattaforma == "tiktok":
+        from app.social.video_generator import generate_video_for_draft
+        return generate_video_for_draft(draft_id)
     if piattaforma == "instagram":
         return generate_carousel_for_draft(draft_id, use_ai_cover=use_ai_cover)
     return generate_image_for_draft(draft_id, use_ai_cover=use_ai_cover)

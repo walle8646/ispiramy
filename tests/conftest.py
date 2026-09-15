@@ -15,6 +15,15 @@ os.environ.setdefault("JWT_SECRET", "test-jwt-secret")
 # STAGING_PASSWORD attiverebbe la Basic Auth su ogni richiesta
 os.environ.pop("STAGING_PASSWORD", None)
 
+# Il .env locale contiene le chiavi vere (Stripe, OpenAI, AWS, database...).
+# Alcuni moduli chiamano load_dotenv() all'import, stripe_config perfino con
+# override=True: nei test quei valori sovrascrivevano le impostazioni qui
+# sopra, compreso DATABASE_URL, e facevano chiamare i servizi veri. In CI il
+# .env non esiste; in locale si', quindi qui non si carica mai.
+import dotenv  # noqa: E402
+
+dotenv.load_dotenv = lambda *args, **kwargs: False
+
 import pytest  # noqa: E402
 
 

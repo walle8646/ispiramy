@@ -84,6 +84,32 @@ def _formati_non_accettati(platform: str, media: list[str]) -> list[str]:
     return cattivi
 
 
+def _video_generato_da_noi(url: str) -> bool:
+    """I video prodotti da video_generator: voce sintetica, quindi contenuto AI."""
+    percorso = urllib.parse.urlparse(url).path
+    return "/social/draft-" in percorso and percorso.endswith("-video.mp4")
+
+
+def _configurazione_piattaforma(platform: str, media: list[str]) -> Optional[dict]:
+    """Le impostazioni specifiche della piattaforma da mandare a Post for Me.
+
+    TikTok chiede due dichiarazioni:
+    - contenuto generato con l'AI: i nostri video hanno la voce di ElevenLabs,
+      quindi si dichiarano; un video caricato a mano (girato da una persona) no;
+    - promozione del proprio marchio: ogni post chiude con l'invito a cercare
+      un esperto su Ispiramy, e un contenuto promozionale non dichiarato
+      TikTok puo' rimuoverlo.
+    """
+    if platform != "tiktok":
+        return None
+    return {
+        "privacy_status": "public",
+        "allow_comment": True,
+        "is_ai_generated": any(_video_generato_da_noi(u) for u in media),
+        "disclose_your_brand": True,
+    }
+
+
 def _external_id(draft: SocialDraft) -> str:
     """ID stabile per un tentativo di pubblicazione.
 
@@ -158,6 +184,9 @@ def publish_draft(draft_id: int) -> dict:
         }
         if media:
             payload["media"] = [{"url": u} for u in media]
+        configurazione = _configurazione_piattaforma(draft.platform, media)
+        if configurazione:
+            payload["platform_configurations"] = {draft.platform: configurazione}
 
         try:
             result = _api("POST", "/social-posts", payload)

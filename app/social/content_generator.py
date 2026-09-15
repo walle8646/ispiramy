@@ -64,6 +64,7 @@ Rispondi ESCLUSIVAMENTE con un oggetto JSON valido con questa struttura ESATTA:
   "tiktok": {
     "hook": "prima frase parlata, fortissima, max 8 secondi di parlato",
     "script": "script completo di un video di 20-30 secondi, parlato naturale, con la struttura: problema -> 2-3 consigli rapidi -> CTA finale",
+    "script_segments": ["lo stesso script diviso in 4-7 frasi brevi, dalla prima (l'hook) alla CTA: una frase per scena del video, max ~110 caratteri ciascuna"],
     "caption": "caption breve per TikTok",
     "hashtags": ["#hashtag1", "... 5-8 hashtag"]
   },
@@ -78,7 +79,9 @@ Rispondi ESCLUSIVAMENTE con un oggetto JSON valido con questa struttura ESATTA:
   "cta": "call to action finale coerente, es: 'Trova l'esperto giusto su ispiramy.com'"
 }
 
-I caroselli devono avere 5 slide. Le slide devono essere brevi (max ~120 caratteri ciascuna)."""
+I caroselli devono avere 5 slide. Le slide devono essere brevi (max ~120 caratteri ciascuna).
+Lo script TikTok viene letto da una voce sintetica: scrivi numeri, sigle e simboli come si pronunciano \
+("tre consigli", non "3 consigli"; "per cento", non "%"), niente emoji e niente hashtag nello script."""
 
 
 def fetch_top_questions(limit: int = 5) -> list[dict]:
@@ -236,7 +239,8 @@ def save_packages_as_drafts(packages: list[dict]) -> int:
             if tk.get("caption") or tk.get("script"):
                 rows.append(("tiktok",
                              _join_caption(tk.get("caption") or "", " ".join(tk.get("hashtags") or [])),
-                             json.dumps({"hook": tk.get("hook"), "script": tk.get("script")}, ensure_ascii=False)))
+                             json.dumps({"hook": tk.get("hook"), "script": tk.get("script"),
+                                         "script_segments": tk.get("script_segments")}, ensure_ascii=False)))
 
             for platform, caption, extra in rows:
                 session.add(SocialDraft(

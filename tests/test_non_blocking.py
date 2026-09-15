@@ -27,6 +27,7 @@ CHIAMATE_BLOCCANTI = {
     "generate_carousel_for_draft",
     "generate_image_for_draft",
     "generate_media_for_draft",
+    "generate_video_for_draft",
     "generate_batch",
     "publish_draft",
     "check_publishing_results",
