@@ -153,6 +153,10 @@ def _esegui(argomenti: list[str], cosa: str) -> None:
         encoding="utf-8", errors="replace", timeout=600,
     )
     if esito.returncode != 0:
+        if esito.returncode < 0 or esito.returncode == 137:
+            # Ucciso dal sistema, non fallito da se': sui server piccoli succede
+            # quando finisce la memoria, e ffmpeg non fa in tempo a scrivere nulla
+            raise VideoNonGenerato(f"{cosa} interrotto dal sistema (probabilmente memoria esaurita sul server)")
         coda = (esito.stderr or "").strip().splitlines()[-3:]
         raise VideoNonGenerato(f"{cosa} non riuscito: {' | '.join(coda)[:300]}")
 
@@ -318,33 +322,69 @@ def _slide(testo: str, indice: int, totale: int) -> Image.Image:
 
 # --------------------------------------------------------------------------- montaggio
 
-def _monta(ffmpeg: str, slide: list[Path], durate: list[float], audio: Path, uscita: Path) -> None:
-    argomenti = [ffmpeg, "-v", "error", "-y"]
-    for percorso, durata in zip(slide, durate):
-        argomenti += ["-framerate", str(FPS), "-loop", "1", "-t", f"{durata:.3f}", "-i", str(percorso)]
-    argomenti += ["-i", str(audio)]
+# Stessi parametri per ogni scena: e' cio' che permette di unirle senza ricodificare.
+# Un thread e lookahead corto tengono bassa la memoria del codificatore: Render
+# Starter ha 512 MB in tutto e l'app ne occupa gia' circa 130.
+CODIFICA_VIDEO = [
+    "-c:v", "libx264", "-preset", "veryfast", "-crf", "22",
+    "-profile:v", "high", "-pix_fmt", "yuv420p", "-r", str(FPS),
+    "-threads", "1", "-x264-params", "rc-lookahead=5:sync-lookahead=0",
+]
 
-    filtri = []
-    for i, durata in enumerate(durate):
+
+def _monta(ffmpeg: str, slide: list[Path], durate: list[float], audio: Path, uscita: Path) -> None:
+    """Una scena alla volta, poi le scene in fila e la voce sopra.
+
+    Prima tutte le scene entravano in un unico comando ffmpeg: restavano aperte
+    e decodificate insieme e il montaggio arrivava a 3 GB di memoria. Su Render
+    (512 MB) il processo veniva ucciso e il video non usciva mai.
+
+    Ogni scena poi decodifica la sua immagine una volta sola e la ripete dentro
+    il filtro `loop`. Con `-loop 1` sull'ingresso ffmpeg ridecodificava il PNG a
+    ogni fotogramma, piu' in fretta di quanto il codificatore li consumasse, e i
+    fotogrammi grezzi (7 MB l'uno) si accumulavano in coda. Misurato su Linux
+    con lo stesso ffmpeg di Render: da 391 a 164 MB per scena.
+    """
+    cartella = uscita.parent
+    clip = []
+    fine = 0.0
+    fotogrammi_fatti = 0
+    for i, (percorso, durata) in enumerate(zip(slide, durate)):
+        # Fotogrammi contati sul totale progressivo: gli arrotondamenti delle
+        # singole scene non si sommano, e il video resta allineato alla voce
+        fine += durata
+        fotogrammi = max(1, round(fine * FPS) - fotogrammi_fatti)
+        fotogrammi_fatti += fotogrammi
+        secondi = fotogrammi / FPS
+
         # L'inquadratura scorre di 2*PAN pixel attorno al centro della tela,
         # alternando il verso a ogni scena
-        avanzamento = f"min(1,t/{durata:.3f})" if i % 2 == 0 else f"(1-min(1,t/{durata:.3f}))"
-        filtri.append(
-            f"[{i}:v]crop={W}:{H}:x='{BORDO_X - PAN}+{2 * PAN}*{avanzamento}':y=0,"
-            f"setsar=1,format=yuv420p[v{i}]"
+        avanzamento = f"min(1,t/{secondi:.3f})" if i % 2 == 0 else f"(1-min(1,t/{secondi:.3f}))"
+        pezzo = cartella / f"scena-{i + 1}.mp4"
+        _esegui(
+            [ffmpeg, "-v", "error", "-y",
+             "-framerate", str(FPS), "-i", str(percorso),
+             "-vf", (f"loop=loop=-1:size=1:start=0,"
+                     f"crop={W}:{H}:x='{BORDO_X - PAN}+{2 * PAN}*{avanzamento}':y=0,"
+                     f"setsar=1,format=yuv420p"),
+             "-frames:v", str(fotogrammi),
+             *CODIFICA_VIDEO, str(pezzo)],
+            f"Montaggio della scena {i + 1}",
         )
-    etichette = "".join(f"[v{i}]" for i in range(len(durate)))
-    filtri.append(f"{etichette}concat=n={len(durate)}:v=1:a=0[video]")
+        clip.append(pezzo)
 
-    argomenti += [
-        "-filter_complex", ";".join(filtri),
-        "-map", "[video]", "-map", f"{len(durate)}:a",
-        "-c:v", "libx264", "-preset", "veryfast", "-crf", "22",
-        "-profile:v", "high", "-pix_fmt", "yuv420p", "-r", str(FPS),
-        "-c:a", "aac", "-b:a", "128k", "-ar", str(FREQUENZA_AUDIO),
-        "-shortest", "-movflags", "+faststart", str(uscita),
-    ]
-    _esegui(argomenti, "Montaggio del video")
+    elenco = cartella / "scene.txt"
+    elenco.write_text("".join(f"file '{p.as_posix()}'\n" for p in clip), encoding="utf-8")
+    _esegui(
+        [ffmpeg, "-v", "error", "-y",
+         "-f", "concat", "-safe", "0", "-i", str(elenco), "-i", str(audio),
+         "-map", "0:v", "-map", "1:a", "-c:v", "copy",
+         "-c:a", "aac", "-b:a", "128k", "-ar", str(FREQUENZA_AUDIO),
+         # Niente -shortest: voce e scene sono gia' lunghe uguali per
+         # costruzione, e -shortest con l'AAC tagliava gli ultimi fotogrammi
+         "-movflags", "+faststart", str(uscita)],
+        "Unione delle scene",
+    )
 
 
 def _produci(draft_id: int, segmenti: list[str], ffmpeg: str) -> tuple[str, float]:

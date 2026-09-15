@@ -339,13 +339,22 @@ function toast(msg, isError) {
 }
 
 async function post(url, body, method) {
-    const resp = await fetch(url, {
-        method: method || 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: body ? JSON.stringify(body) : undefined,
-    });
+    let resp;
+    try {
+        resp = await fetch(url, {
+            method: method || 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: body ? JSON.stringify(body) : undefined,
+        });
+    } catch (e) {
+        // Il server ha chiuso la connessione senza rispondere (per esempio un
+        // riavvio a meta' lavoro): prima il bottone restava bloccato in silenzio
+        return { ok: false, message: 'Connessione interrotta: il server non ha risposto. Riprova tra poco.' };
+    }
     const data = await resp.json().catch(() => ({}));
-    return { ok: resp.ok && data.ok !== false, message: data.message || (resp.ok ? 'OK' : 'Errore') };
+    // Una risposta non JSON (502, 504...) diceva solo "Errore": il codice aiuta a capire cosa e' successo
+    const ripiego = resp.ok ? 'OK' : `Errore del server (HTTP ${resp.status})`;
+    return { ok: resp.ok && data.ok !== false, message: data.message || ripiego };
 }
 
 async function generateDrafts() {

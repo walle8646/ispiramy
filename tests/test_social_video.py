@@ -294,3 +294,41 @@ def test_la_pagina_mostra_i_video_come_video():
     html = _pagina()
     assert "<video" in html
     assert ".mp4" in html
+
+
+# --------------------------------------------------------------------------- memoria
+
+def test_il_montaggio_codifica_una_scena_alla_volta(monkeypatch, tmp_path):
+    """Tutte le scene in un solo comando ffmpeg arrivavano a 3 GB di memoria:
+    su Render (512 MB) il processo veniva ucciso e il video non usciva."""
+    comandi = []
+    monkeypatch.setattr(vg, "_esegui", lambda argomenti, cosa: comandi.append(argomenti))
+    slide = [tmp_path / f"s{i}.png" for i in range(4)]
+    durate = [1.4, 2.25, 1.9, 3.1]
+    vg._monta("ffmpeg", slide, durate, tmp_path / "voce.wav", tmp_path / "video.mp4")
+
+    scene, unione = comandi[:-1], comandi[-1]
+    assert len(scene) == 4
+    for comando in scene:
+        assert comando.count("-i") == 1, "ogni scena deve avere un solo ingresso"
+        # -loop 1 sull'ingresso ridecodifica il PNG a ogni fotogramma e riempie
+        # la memoria: l'immagine si decodifica una volta e si ripete nel filtro
+        assert "-loop" not in comando
+        assert comando[comando.index("-vf") + 1].startswith("loop=")
+        assert comando[comando.index("-threads") + 1] == "1"
+    assert "concat" in unione
+    assert unione[unione.index("-c:v") + 1] == "copy", "le scene si uniscono senza ricodificare"
+    assert "-shortest" not in unione, "-shortest con l'AAC tagliava gli ultimi fotogrammi del video"
+    # Il totale dei fotogrammi segue la durata della voce, senza sommare arrotondamenti
+    fotogrammi = [int(c[c.index("-frames:v") + 1]) for c in scene]
+    assert sum(fotogrammi) == round(sum(durate) * vg.FPS)
+
+
+def test_un_ffmpeg_ucciso_dal_sistema_lo_dice(monkeypatch):
+    class _Esito:
+        returncode = -9
+        stderr = ""
+
+    monkeypatch.setattr(vg.subprocess, "run", lambda *a, **k: _Esito())
+    with pytest.raises(vg.VideoNonGenerato, match="memoria"):
+        vg._esegui(["ffmpeg"], "Montaggio della scena 1")
