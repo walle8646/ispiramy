@@ -905,6 +905,13 @@
             <a href="/community" class="navbar-link">
                 <span class="navbar-link-text">Community</span>
             </a>
+
+            <!-- Sul telefono il menu del profilo e' un cassetto dentro un altro
+                 cassetto: qui la voce sta in chiaro, appena aperto il menu -->
+            <a href="#" class="navbar-link voce-installa-telefono" id="voceInstallaTelefono" style="display: none;">
+                <i class="fas fa-mobile-alt"></i>
+                <span class="navbar-link-text">Installa l&#39;app</span>
+            </a>
             
             {% if current_user %}
                 <!-- Icona Notifiche con testo Chat sotto -->
@@ -1732,6 +1739,10 @@
         }
 
         @media (min-width: 769px) {
+            .voce-installa-telefono {
+                display: none !important;
+            }
+
             .invito-app {
                 left: auto;
                 width: 380px;
@@ -1764,7 +1775,13 @@
         const GIORNI_DI_PAUSA = 3;
 
         const invito = document.getElementById('invitoApp');
-        const voceMenu = document.getElementById('voceInstalla');
+        /* Due punti d'accesso: il menu del profilo (computer) e una riga in
+           chiaro nel menu del telefono, dove il cassetto dell'avatar e' un
+           bersaglio da 32px dentro un altro menu. */
+        const vociMenu = [
+            document.getElementById('voceInstalla'),
+            document.getElementById('voceInstallaTelefono'),
+        ].filter(Boolean);
         const testo = document.getElementById('invitoTesto');
         const bottone = document.getElementById('invitoInstalla');
         let richiesta = null;
@@ -1851,27 +1868,29 @@
         window.addEventListener('beforeinstallprompt', function (evento) {
             evento.preventDefault();
             richiesta = evento;
-            if (voceMenu) { voceMenu.style.display = ''; }
+            if (!installata) { vociMenu.forEach(function (v) { v.style.display = ''; }); }
             if (daSolo()) { mostra(false); }
         });
 
         window.addEventListener('appinstalled', function () {
             chiudi();
-            if (voceMenu) { voceMenu.style.display = 'none'; }
+            vociMenu.forEach(function (v) { v.style.display = 'none'; });
         });
 
         /* La voce nel menu e' l'unica strada sempre aperta: per chi ha chiuso
            il banner, per chi e' al computer, per chi non lo ha mai visto. */
-        if (voceMenu && !installata) {
-            voceMenu.style.display = '';
-            voceMenu.addEventListener('click', function (evento) {
-                evento.preventDefault();
-                if (richiesta) {
-                    richiesta.prompt();
-                    richiesta.userChoice.finally(function () { richiesta = null; });
-                    return;
-                }
-                mostra(true);
+        if (!installata) {
+            vociMenu.forEach(function (voce) {
+                voce.style.display = '';
+                voce.addEventListener('click', function (evento) {
+                    evento.preventDefault();
+                    if (richiesta) {
+                        richiesta.prompt();
+                        richiesta.userChoice.finally(function () { richiesta = null; });
+                        return;
+                    }
+                    mostra(true);
+                });
             });
         }
 

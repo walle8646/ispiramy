@@ -146,6 +146,18 @@ def test_c_e_sempre_una_voce_per_installare_nel_menu():
     assert "mostra(true)" in invito, "dal menu il banner si apre anche se era stato chiuso"
 
 
+def test_sul_telefono_la_voce_sta_in_chiaro_nel_menu():
+    """Nel menu del profilo, sul telefono, si arriva solo aprendo il menu e poi
+    toccando un'immagine da 32px: lì dentro la voce non la trovava nessuno."""
+    base = _file("app", "templates", "base.html")
+    assert 'id="voceInstallaTelefono"' in base
+    links = base[base.index('<div class="navbar-links">'):base.index("{% if current_user %}")]
+    assert "voceInstallaTelefono" in links, "la riga deve stare nel menu principale"
+    assert "voceInstallaTelefono" in _blocco_invito(), "e deve essere collegata"
+    # sul computer resta solo quella nel menu del profilo
+    assert ".voce-installa-telefono" in base
+
+
 def test_dal_computer_il_banner_non_compare_da_solo():
     """Sul desktop l'installazione la offre già il browser: il banner si vede
     solo se lo chiede la persona dal menu."""
