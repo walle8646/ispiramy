@@ -159,6 +159,44 @@ class TestStorico:
         assert voce["cancellation_reason"] == "Imprevisto del consulente"
         assert voce["can_review"] is False and voce["can_dispute"] is False
 
+    def test_il_cliente_ritrova_quanto_ha_pagato(self, persone, csrf_client):
+        """Nello storico serve il totale davvero pagato, spese di servizio comprese:
+        è la cifra che il cliente ritrova sull'estratto conto."""
+        from decimal import Decimal
+
+        svolta = _prenotazione(persone, giorni=-2, stato="completed", pagamento="paid",
+                               service_fee=Decimal("1.99"))
+        _login(csrf_client, persone.email_cliente, persone.password)
+        voce = next(b for b in csrf_client.get("/api/booking/history").json()["bookings"]
+                    if b["id"] == svolta)
+
+        assert voce["price"] == 60.0
+        assert voce["service_fee"] == 1.99
+        assert voce["total_paid"] == 61.99
+
+    def test_le_consulenze_di_prima_non_mostrano_spese(self, persone, csrf_client):
+        """Senza spese salvate il totale è il solo prezzo, non 60 + 0 arrotondato male."""
+        vecchia = _prenotazione(persone, giorni=-5, ora="09:00", fine="10:00",
+                                stato="completed", pagamento="paid")
+        _login(csrf_client, persone.email_cliente, persone.password)
+        voce = next(b for b in csrf_client.get("/api/booking/history").json()["bookings"]
+                    if b["id"] == vecchia)
+
+        assert voce["service_fee"] == 0
+        assert voce["total_paid"] == 60.0
+
+    def test_un_rimborso_si_vede_nello_storico(self, persone, csrf_client):
+        from decimal import Decimal
+
+        annullata = _prenotazione(persone, giorni=-6, ora="11:00", fine="12:00",
+                                  stato="cancelled", pagamento="refunded",
+                                  service_fee=Decimal("1.99"), refund_amount=Decimal("61.99"))
+        _login(csrf_client, persone.email_cliente, persone.password)
+        voce = next(b for b in csrf_client.get("/api/booking/history").json()["bookings"]
+                    if b["id"] == annullata)
+
+        assert voce["refund_amount"] == 61.99, "il rimborso comprende le spese di servizio"
+
     def test_una_richiesta_scaduta_si_vede_come_annullata(self, persone, csrf_client):
         scaduta = _prenotazione(persone, giorni=1, stato="cancelled", pagamento="voided",
                                 cancellation_reason="Il consulente non ha risposto in tempo")

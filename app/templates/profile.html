@@ -2117,8 +2117,32 @@
                 <div style="text-align:right;flex-shrink:0;font-size:0.82rem;">
                     <div style="font-weight:500;">${dateStr}</div>
                     <div style="color:#6b7280;">${b.start_time} · ${b.duration} min</div>
+                    ${importiHTML(b)}
                 </div>
             </div>
+        `;
+    }
+
+    // Quanto è costata (o valeva) la consulenza. Al cliente serve il totale che
+    // ha pagato davvero, spese di servizio comprese: è la cifra che ritrova
+    // sull'estratto conto.
+    function importiHTML(b) {
+        const euro = v => `€ ${Number(v || 0).toFixed(2)}`;
+        if (b.role !== 'client') {
+            return b.price ? `<div style="color:#1a202c;font-weight:600;">${euro(b.price)}</div>` : '';
+        }
+        if (!b.total_paid) return '';
+
+        const dettaglio = b.service_fee
+            ? `<div style="color:#6b7280;font-size:0.74rem;">consulenza ${euro(b.price)} + servizio ${euro(b.service_fee)}</div>`
+            : '';
+        const rimborso = b.refund_amount
+            ? `<div style="color:#2e7d32;font-size:0.74rem;">rimborsati ${euro(b.refund_amount)}</div>`
+            : '';
+        return `
+            <div style="color:#1a202c;font-weight:600;">${euro(b.total_paid)}</div>
+            ${dettaglio}
+            ${rimborso}
         `;
     }
 

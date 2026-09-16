@@ -13,7 +13,7 @@ from app.routes.auth import get_current_user
 from app.utils.agora_recording import start_recording, stop_recording, get_recording_url
 from app.logger_config import logger
 from app.utils.stripe_config import create_checkout_session
-from app.utils.prezzi import centesimi, spese_servizio, totale_cliente
+from app.utils.prezzi import centesimi, spese_servizio, totale_cliente, totale_pagato
 from app.utils_user import has_payment_method
 from app.utils.orari import (
     ORE_LIMITE_ANNULLAMENTO, ORE_PREAVVISO_PRENOTAZIONE, data_consulenza,
@@ -930,6 +930,13 @@ async def get_booking_history(request: Request):
                 "cancelled_by": annullata_da,
                 "cancellation_reason": booking.cancellation_reason if annullata else None,
                 "role": role,
+                # Importi: il cliente deve ritrovare quanto ha pagato davvero,
+                # spese di servizio comprese. Le prenotazioni fatte prima delle
+                # spese hanno service_fee a zero, quindi totale uguale a prezzo.
+                "price": float(booking.price or 0),
+                "service_fee": float(booking.service_fee or 0),
+                "total_paid": float(totale_pagato(booking)),
+                "refund_amount": float(booking.refund_amount or 0),
                 "can_dispute": can_dispute,
                 "has_dispute": existing_dispute is not None,
                 "dispute_status": existing_dispute.status if existing_dispute else None,

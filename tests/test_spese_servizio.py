@@ -162,6 +162,17 @@ def test_le_offerte_rispettano_il_minimo_orario():
     assert "if price < 15" not in codice
 
 
+def test_lo_storico_del_cliente_mostra_il_totale():
+    """Il dettaglio compare solo al cliente: al consulente le spese non interessano."""
+    from pathlib import Path
+
+    html = (Path(__file__).resolve().parent.parent / "app" / "templates" / "profile.html").read_text(encoding="utf-8")
+    assert "function importiHTML(b)" in html
+    assert "b.total_paid" in html
+    assert "consulenza ${euro(b.price)} + servizio ${euro(b.service_fee)}" in html
+    assert "b.role !== 'client'" in html
+
+
 def test_i_flussi_di_pagamento_usano_il_totale():
     """Stripe e PayPal, prenotazione diretta e offerta: tutti addebitano il totale."""
     from pathlib import Path
