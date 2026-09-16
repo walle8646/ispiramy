@@ -1,0 +1,44 @@
+{
+  "name": "Ispiramy",
+  "short_name": "Ispiramy",
+  "description": "Parla con chi ne sa davvero: consulenze su misura, quando ti servono.",
+  "lang": "it",
+  "dir": "ltr",
+  "start_url": "/?fonte=app",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#ffffff",
+  "theme_color": "#43a047",
+  "categories": ["business", "education", "productivity"],
+  "icons": [
+    {
+      "src": "/static/icone/icona-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/static/icone/icona-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/static/icone/icona-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Trova un consulente",
+      "url": "/consultants?fonte=app"
+    },
+    {
+      "name": "Messaggi",
+      "url": "/messaggi?fonte=app"
+    }
+  ]
+}

@@ -9,7 +9,7 @@ from starlette.middleware.sessions import SessionMiddleware
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import JSONResponse, Response, PlainTextResponse
 from app.database import create_db_and_tables
-from app.routes import home, auth, consultants, user_profile, messages, community, public_profile, availability, booking, consultation, stripe_webhook, stripe_connect, notifications, review, dispute, admin, admin_social, paypal_payment, google_auth, pages
+from app.routes import home, auth, consultants, user_profile, messages, community, public_profile, availability, booking, consultation, stripe_webhook, stripe_connect, notifications, review, dispute, admin, admin_social, paypal_payment, google_auth, pages, pwa
 from app.logger_config import logger
 from app.scheduler import start_scheduler, shutdown_scheduler
 from app.utils.template_helpers import get_all_categories
@@ -225,6 +225,7 @@ app.include_router(admin_social.router, tags=["admin-social"])
 app.include_router(paypal_payment.router, tags=["paypal"])
 app.include_router(google_auth.router, tags=["google_auth"])
 app.include_router(pages.router, tags=["pages"])
+app.include_router(pwa.router, tags=["webapp"])
 
 
 # Test S3 credentials

@@ -1,0 +1,93 @@
+"""Il sito installabile sul telefono (webapp).
+
+Sono poche regole ma si rompono in silenzio: se salta il manifest sparisce il
+tasto "installa" e nessuno se ne accorge finché non prova a installarla; se il
+service worker finisce sotto /static/ smette di occuparsi delle pagine.
+"""
+import io
+import json
+import os
+
+RADICE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+
+def _file(*percorso):
+    return io.open(os.path.join(RADICE, *percorso), encoding="utf-8").read()
+
+
+def _manifest():
+    return json.loads(_file("app", "static", "manifest.webmanifest"))
+
+
+def test_il_manifest_ha_quello_che_serve_per_installare():
+    """Senza uno di questi campi il telefono non propone l'installazione."""
+    m = _manifest()
+    assert m["name"] and m["short_name"]
+    assert m["start_url"].startswith("/")
+    assert m["scope"] == "/"
+    assert m["display"] == "standalone"
+    assert m["theme_color"] and m["background_color"]
+
+
+def test_ci_sono_le_icone_dichiarate():
+    """Android chiede 192 e 512; la 'maskable' evita che il logo venga
+    ritagliato dentro la sagoma tonda del sistema."""
+    m = _manifest()
+    misure = {i["sizes"] for i in m["icons"]}
+    assert {"192x192", "512x512"} <= misure
+    assert any(i.get("purpose") == "maskable" for i in m["icons"])
+    for icona in m["icons"]:
+        percorso = os.path.join(RADICE, "app", icona["src"].lstrip("/"))
+        assert os.path.exists(percorso), f"manca il file {icona['src']}"
+        assert os.path.getsize(percorso) > 1000
+
+
+def test_il_service_worker_sta_in_cima_al_sito(client):
+    """Da /static/sw.js si occuperebbe solo di /static/: la navigazione fra le
+    pagine non la vedrebbe mai."""
+    r = client.get("/sw.js")
+    assert r.status_code == 200
+    assert r.headers["service-worker-allowed"] == "/"
+    assert "javascript" in r.headers["content-type"]
+    assert "no-cache" in r.headers.get("cache-control", "")
+
+
+def test_il_manifest_si_scarica(client):
+    r = client.get("/manifest.webmanifest")
+    assert r.status_code == 200
+    assert "manifest" in r.headers["content-type"]
+
+
+def test_la_pagina_senza_rete_sta_in_piedi_da_sola(client):
+    """Viene mostrata quando la rete non c'è: se si portasse dietro CSS, font o
+    immagini da fuori, resterebbe una pagina bianca."""
+    r = client.get("/senza-rete")
+    assert r.status_code == 200
+    assert "http://" not in r.text and "https://" not in r.text.replace(
+        'xmlns="http://www.w3.org/2000/svg"', "")
+
+
+def test_le_pagine_non_finiscono_in_cache():
+    """La cache è condivisa fra tutti gli account di quel telefono: una pagina
+    di profilo salvata lì la vedrebbe anche chi entra dopo."""
+    sw = _file("app", "static", "sw.js")
+    dopo_statici = sw[sw.index("if (eStatico(url))"):]
+    navigazione = dopo_statici[dopo_statici.index("eNavigazione(richiesta)"):]
+    assert "cache.put" not in navigazione, "il ramo della navigazione non deve salvare in cache"
+    assert "richiesta.method !== 'GET'" in sw, "le scritture non passano dal worker"
+    assert "'/api/'" in sw, "le chiamate dell'app devono andare sempre in rete"
+
+
+def test_ogni_pagina_registra_il_worker_e_dichiara_il_manifest():
+    base = _file("app", "templates", "base.html")
+    assert 'rel="manifest"' in base and "/manifest.webmanifest" in base
+    assert "navigator.serviceWorker.register('/sw.js')" in base
+    assert 'name="theme-color"' in base
+    # iOS ignora l'SVG come icona dell'app
+    assert "apple-touch-icon.png" in base
+
+
+def test_l_invito_a_installare_non_disturba_durante_una_chiamata():
+    base = _file("app", "templates", "base.html")
+    assert "/booking/call/" in base
+    assert "display-mode: standalone" in base, "a chi l'ha già installata non si chiede più niente"

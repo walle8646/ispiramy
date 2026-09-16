@@ -8,7 +8,15 @@
 
     <!-- Favicon -->
     <link rel="icon" href="/static/logo-final.svg" type="image/svg+xml">
-    <link rel="apple-touch-icon" href="/static/logo-final.svg">
+
+    <!-- Da installare in schermata Home: iOS vuole un PNG, l'SVG lo ignora -->
+    <link rel="apple-touch-icon" href="{{ statico('icone/apple-touch-icon.png') }}">
+    <link rel="manifest" href="/manifest.webmanifest">
+    <meta name="theme-color" content="#43a047">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="Ispiramy">
 
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -1654,6 +1662,149 @@
 
     <!-- JavaScript Specifici per Pagina -->
     {% block extra_js %}{% endblock %}
+
+    <!-- 📱 Ispiramy come app: guscio in cache e invito all'installazione -->
+    <style>
+        .invito-app {
+            position: fixed;
+            left: 16px;
+            right: 16px;
+            bottom: 16px;
+            z-index: 2000;
+            display: none;
+            gap: 8px;
+            align-items: center;
+            padding: 12px;
+            border-radius: 16px;
+            background: white;
+            box-shadow: 0 8px 28px rgba(0, 0, 0, 0.18);
+            font-size: 0.92rem;
+            color: #1b5e20;
+        }
+
+        .invito-app.visibile {
+            display: flex;
+        }
+
+        .invito-app img {
+            width: 36px;
+            height: 36px;
+            flex: 0 0 36px;
+        }
+
+        .invito-app .invito-testo {
+            flex: 1;
+            min-width: 0;
+            font-size: 0.88rem;
+            line-height: 1.3;
+        }
+
+        .invito-app .invito-testo strong {
+            display: block;
+        }
+
+        .invito-app button {
+            min-height: 44px;
+            padding: 0 14px;
+            white-space: nowrap;
+            border: none;
+            border-radius: 22px;
+            background: #43a047;
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .invito-app .invito-chiudi {
+            min-width: 40px;
+            padding: 0;
+            background: none;
+            color: #78909c;
+            font-size: 1.3rem;
+        }
+
+        @media (min-width: 769px) {
+            .invito-app { display: none !important; }
+        }
+    </style>
+
+    <div class="invito-app" id="invitoApp" role="dialog" aria-label="Installa Ispiramy">
+        <img src="{{ statico('icone/icona-192.png') }}" alt="">
+        <div class="invito-testo" id="invitoTesto"><strong>Installa Ispiramy</strong>Si apre come un'app.</div>
+        <button type="button" id="invitoInstalla">Installa</button>
+        <button type="button" class="invito-chiudi" id="invitoChiudi" aria-label="Non ora">&times;</button>
+    </div>
+
+    <script>
+    (function () {
+        // Il service worker sta in cima al sito (rotta /sw.js): da /static/
+        // potrebbe occuparsi solo di /static/ e non vedrebbe la navigazione
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', function () {
+                navigator.serviceWorker.register('/sw.js').catch(function (errore) {
+                    console.warn('Service worker non registrato:', errore);
+                });
+            });
+        }
+
+        const RICORDA = 'ispiramy-invito-app';
+        const GIORNI_DI_PAUSA = 30;
+        const invito = document.getElementById('invitoApp');
+        if (!invito) { return; }
+
+        const installata = window.matchMedia('(display-mode: standalone)').matches
+            || window.navigator.standalone === true;
+        // Durante una videochiamata non si interrompe nessuno
+        const inChiamata = location.pathname.indexOf('/booking/call/') === 0;
+
+        function rimandato() {
+            try {
+                const quando = parseInt(localStorage.getItem(RICORDA) || '0', 10);
+                return quando && (Date.now() - quando) < GIORNI_DI_PAUSA * 86400000;
+            } catch (e) {
+                return false;
+            }
+        }
+
+        function chiudi() {
+            invito.classList.remove('visibile');
+            try { localStorage.setItem(RICORDA, String(Date.now())); } catch (e) { /* navigazione privata */ }
+        }
+
+        document.getElementById('invitoChiudi').addEventListener('click', chiudi);
+
+        if (installata || inChiamata || rimandato()) { return; }
+
+        // Android: il browser ci passa lui l'installazione, basta chiedergliela
+        let richiesta = null;
+        window.addEventListener('beforeinstallprompt', function (evento) {
+            evento.preventDefault();
+            richiesta = evento;
+            invito.classList.add('visibile');
+        });
+
+        document.getElementById('invitoInstalla').addEventListener('click', function () {
+            if (!richiesta) { chiudi(); return; }
+            richiesta.prompt();
+            richiesta.userChoice.finally(function () { richiesta = null; chiudi(); });
+        });
+
+        window.addEventListener('appinstalled', chiudi);
+
+        // iPhone e iPad non hanno quell'evento: l'unica strada e' il menu
+        // Condividi, quindi al posto del pulsante spieghiamo il percorso
+        const suApple = /iPad|iPhone|iPod/.test(navigator.userAgent)
+            && !window.MSStream
+            && /Safari/.test(navigator.userAgent)
+            && !/CriOS|FxiOS|EdgiOS/.test(navigator.userAgent);
+        if (suApple) {
+            document.getElementById('invitoTesto').innerHTML =
+                '<strong>Installa Ispiramy</strong>Tocca Condividi, poi "Aggiungi alla schermata Home".';
+            document.getElementById('invitoInstalla').style.display = 'none';
+            setTimeout(function () { invito.classList.add('visibile'); }, 2500);
+        }
+    })();
+    </script>
 
 </body>
 </html>

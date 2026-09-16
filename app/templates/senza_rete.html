@@ -1,0 +1,92 @@
+{# Pagina mostrata dall'app installata quando il telefono non ha rete.
+
+   Sta in piedi da sola: niente CSS, niente font e niente immagini prese da
+   fuori, perche' quando serve non c'e' modo di scaricarli. #}
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#43a047">
+    <title>Senza rete - Ispiramy</title>
+    <style>
+        body {
+            margin: 0;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+            padding: 24px;
+            box-sizing: border-box;
+            text-align: center;
+            background: linear-gradient(135deg, #e8f5e9 0%, #ffffff 60%);
+            color: #1b5e20;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        }
+
+        h1 {
+            font-size: 1.5rem;
+            margin: 0;
+        }
+
+        p {
+            margin: 0;
+            max-width: 26rem;
+            line-height: 1.5;
+            color: #33691e;
+        }
+
+        button {
+            min-height: 48px;
+            padding: 0 28px;
+            border: none;
+            border-radius: 24px;
+            background: #43a047;
+            color: white;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        button:active {
+            background: #2e7d32;
+        }
+    </style>
+</head>
+<body>
+    <svg width="96" height="96" viewBox="0 0 200 200" role="img" aria-label="Ispiramy">
+        <defs>
+            <linearGradient id="ispiramy" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0" stop-color="#66bb6a"/>
+                <stop offset="1" stop-color="#2e7d32"/>
+            </linearGradient>
+        </defs>
+        <g transform="translate(0,8)">
+            <path d="M 129.58 46.56 A 70 70 0 1 1 70.42 46.56"
+                  fill="none" stroke="url(#ispiramy)" stroke-width="15" stroke-linecap="round"/>
+            <g fill="#1b5e20">
+                <circle cx="113" cy="116" r="11"/>
+                <path d="M 92 156 Q 92 130 113 130 Q 134 130 134 156 Z"/>
+            </g>
+            <g fill="#66bb6a">
+                <circle cx="87" cy="116" r="11"/>
+                <path d="M 66 156 Q 66 130 87 130 Q 108 130 108 156 Z"/>
+            </g>
+            <circle cx="100" cy="26" r="17" fill="url(#ispiramy)"/>
+            <rect x="89" y="50" width="22" height="46" rx="11" fill="url(#ispiramy)"/>
+        </g>
+    </svg>
+
+    <h1>Sei senza rete</h1>
+    <p>Ispiramy ha bisogno della connessione per mostrarti consulenti, messaggi
+       e prenotazioni. Appena torna il campo riprendi da dove eri.</p>
+    <button type="button" onclick="location.reload()">Riprova</button>
+
+    <script>
+        // Appena il telefono ritrova la rete, si riparte senza toccare niente
+        window.addEventListener('online', function () { location.reload(); });
+    </script>
+</body>
+</html>
