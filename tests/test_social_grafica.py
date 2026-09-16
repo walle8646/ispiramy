@@ -1,147 +1,160 @@
-"""Generazione della grafica dei draft social.
+"""Generazione della grafica di un contenuto social.
 
-Il carosello era previsto solo per Instagram: su Facebook il bottone
-"Genera grafica" non c'era proprio, e un post Facebook senza immagine passa
-molto meno. Fuori da Instagram serve una sola immagine, non un carosello, e
-il testo da metterci sopra va recuperato: il generatore di contenuti salva
-hook e slide solo sulla riga Instagram.
+Il media appartiene al contenuto, non alla singola uscita: si genera una volta
+e vale per TikTok, per i Reels di Instagram e per quelli di Facebook. Le uscite
+gia' pubblicate pero' tengono il media con cui sono uscite.
 """
 import json
-import secrets
 
 import pytest
 from sqlmodel import Session, select
 
 from app.database import engine
-from app.models import SocialDraft
+from app.models import SocialContent, SocialDraft
 from app.social import image_generator
 
 
 @pytest.fixture
 def pulizia():
-    creati = []
+    creati = {"contenuti": [], "uscite": []}
     yield creati
     with Session(engine) as s:
-        for draft_id in creati:
-            d = s.get(SocialDraft, draft_id)
-            if d:
-                s.delete(d)
+        for uscita_id in creati["uscite"]:
+            u = s.get(SocialDraft, uscita_id)
+            if u:
+                s.delete(u)
+        for content_id in creati["contenuti"]:
+            c = s.get(SocialContent, content_id)
+            if c:
+                s.delete(c)
         s.commit()
 
 
-def _draft(pulizia, platform, caption="Testo del post.", extra=None, titolo=None, domanda=None, stato="draft"):
+def _contenuto(pulizia, extra=None, caption="Testo di prova.", titolo=None, tipo="immagini", media=None):
     with Session(engine) as s:
-        d = SocialDraft(
-            platform=platform,
-            caption=caption,
-            extra_content=json.dumps(extra, ensure_ascii=False) if extra else None,
+        c = SocialContent(
+            content_kind=tipo,
+            caption_base=caption,
             source_title=titolo,
-            source_question_id=domanda,
-            status=stato,
+            media_urls=media,
+            extra_content=json.dumps(extra, ensure_ascii=False) if extra else None,
         )
-        s.add(d)
+        s.add(c)
         s.commit()
-        s.refresh(d)
-        pulizia.append(d.id)
-        return d.id
+        s.refresh(c)
+        pulizia["contenuti"].append(c.id)
+        return c.id
 
 
-def _hook(draft_id):
+def _uscita(pulizia, content_id, platform="instagram", stato="draft", media=None):
     with Session(engine) as s:
-        return image_generator._hook_del_draft(s, s.get(SocialDraft, draft_id))
+        u = SocialDraft(content_id=content_id, platform=platform, status=stato,
+                        caption="Caption", media_urls=media)
+        s.add(u)
+        s.commit()
+        s.refresh(u)
+        pulizia["uscite"].append(u.id)
+        return u.id
 
 
-def test_il_facebook_riusa_l_hook_del_fratello_instagram(pulizia):
-    domanda = secrets.randbelow(10**6) + 10**6
-    _draft(pulizia, "instagram", extra={"hook": "Tre errori nel colloquio", "carousel_slides": ["a", "b"]},
-           domanda=domanda)
-    fb = _draft(pulizia, "facebook", caption="Post lungo per la pagina.", domanda=domanda)
-    assert _hook(fb) == "Tre errori nel colloquio"
+# --------------------------------------------------------------- testo in evidenza
+
+def test_il_testo_grande_e_l_hook_se_c_e():
+    contenuto = SocialContent(extra_content=json.dumps({"hook": "Tre errori nel colloquio"}),
+                              source_title="Titolo diverso", caption_base="Caption")
+    assert image_generator._testo_in_evidenza(contenuto) == "Tre errori nel colloquio"
 
 
-def test_senza_fratello_usa_il_titolo_della_domanda(pulizia):
-    fb = _draft(pulizia, "facebook", titolo="Come trovare lavoro a Milano")
-    assert _hook(fb) == "Come trovare lavoro a Milano"
+def test_senza_hook_si_usa_la_prima_slide():
+    contenuto = SocialContent(extra_content=json.dumps({"carousel_slides": ["Il problema", "Il consiglio"]}))
+    assert image_generator._testo_in_evidenza(contenuto) == "Il problema"
 
 
-def test_ultima_spiaggia_la_prima_frase_della_caption(pulizia):
-    fb = _draft(pulizia, "facebook", caption="Cambiare lavoro spaventa. Ma si può fare. #lavoro #carriera")
-    assert _hook(fb) == "Cambiare lavoro spaventa."
+def test_senza_slide_si_usa_il_titolo_della_domanda():
+    contenuto = SocialContent(source_title="Come trovare lavoro a Milano", caption_base="Caption")
+    assert image_generator._testo_in_evidenza(contenuto) == "Come trovare lavoro a Milano"
 
 
-def test_instagram_preferisce_il_proprio_hook(pulizia):
-    domanda = secrets.randbelow(10**6) + 10**6
-    _draft(pulizia, "facebook", caption="Altro.", domanda=domanda)
-    ig = _draft(pulizia, "instagram", extra={"hook": "Il suo hook", "carousel_slides": ["x"]},
-                titolo="Titolo diverso", domanda=domanda)
-    assert _hook(ig) == "Il suo hook"
+def test_ultima_spiaggia_la_prima_frase_senza_hashtag_ne_link():
+    contenuto = SocialContent(
+        caption_base="Cambiare lavoro spaventa. Ma si può fare.\n\n👉 https://ispiramy.com/consultants #lavoro")
+    assert image_generator._testo_in_evidenza(contenuto) == "Cambiare lavoro spaventa."
 
 
-def test_un_draft_pubblicato_non_si_rigenera(pulizia):
-    fb = _draft(pulizia, "facebook", titolo="Un titolo", stato="published")
-    esito = image_generator.generate_image_for_draft(fb, use_ai_cover=False)
-    assert esito["ok"] is False
-    assert "pubblicato" in esito["message"]
+# --------------------------------------------------------------- generazione
 
-
-def test_facebook_genera_una_sola_immagine(monkeypatch, pulizia):
-    """Una immagine sola, senza "Scorri": non c'è nessuna seconda slide."""
+def test_le_immagini_vengono_caricate_in_jpeg(monkeypatch, pulizia):
+    """Il PNG e' il motivo per cui Instagram rifiutava i caroselli."""
     caricate = []
     monkeypatch.setattr(image_generator, "_upload_immagine",
                         lambda img, key: caricate.append((img, key)) or f"https://esempio/{key}")
 
-    fb = _draft(pulizia, "facebook", titolo="Come chiedere un aumento")
-    esito = image_generator.generate_media_for_draft(fb, use_ai_cover=False)
+    content_id = _contenuto(pulizia, titolo="Come chiedere un aumento")
+    esito = image_generator.generate_media_for_content(content_id)
 
     assert esito["ok"] is True, esito["message"]
-    assert len(caricate) == 1
+    assert len(caricate) == 1, "senza slide si fa una sola immagine"
     immagine, chiave = caricate[0]
     assert immagine.size == (image_generator.W, image_generator.H)
-    assert chiave.endswith("-post.jpg")
+    assert chiave.startswith(f"social/content-{content_id}/") and chiave.endswith("-post.jpg")
+
+
+def test_con_le_slide_si_fa_il_carosello(monkeypatch, pulizia):
+    caricate = []
+    monkeypatch.setattr(image_generator, "_upload_immagine",
+                        lambda img, key: caricate.append(key) or f"https://esempio/{key}")
+
+    content_id = _contenuto(pulizia, extra={"hook": "Hook", "carousel_slides": ["Uno", "Due", "Tre"]})
+    esito = image_generator.generate_media_for_content(content_id)
+
+    assert esito["ok"] is True
+    assert len(caricate) == 4, "copertina più tre slide"
+    assert all("-slide-" in chiave for chiave in caricate)
+
+
+def test_un_contenuto_senza_testo_non_produce_niente(pulizia):
+    content_id = _contenuto(pulizia, caption="")
+    esito = image_generator.generate_image_for_content(content_id, use_ai_cover=False)
+    assert esito["ok"] is False
+    assert "testo" in esito["message"]
+
+
+def test_un_contenuto_inesistente():
+    assert image_generator.generate_media_for_content(999999)["ok"] is False
+
+
+# --------------------------------------------------------------- media condiviso
+
+def test_il_media_generato_arriva_a_tutte_le_uscite_non_ancora_partite(monkeypatch, pulizia):
+    monkeypatch.setattr(image_generator, "_upload_immagine", lambda img, key: f"https://esempio/{key}")
+    content_id = _contenuto(pulizia, titolo="Una domanda")
+    da_fare = _uscita(pulizia, content_id, "instagram", stato="draft")
+    approvata = _uscita(pulizia, content_id, "facebook", stato="approved")
+    gia_uscita = _uscita(pulizia, content_id, "tiktok", stato="published", media="https://vecchio/video.mp4")
+
+    assert image_generator.generate_media_for_content(content_id)["ok"] is True
+
     with Session(engine) as s:
-        assert "\n" not in (s.get(SocialDraft, fb).media_urls or "")
+        nuovo = s.get(SocialContent, content_id).media_urls
+        assert s.get(SocialDraft, da_fare).media_urls == nuovo
+        assert s.get(SocialDraft, approvata).media_urls == nuovo
+        # Cambiare il media di un post gia' uscito direbbe il falso su cosa e' stato pubblicato
+        assert s.get(SocialDraft, gia_uscita).media_urls == "https://vecchio/video.mp4"
 
 
-def test_instagram_passa_dal_carosello(monkeypatch, pulizia):
-    chiamate = []
-    monkeypatch.setattr(image_generator, "generate_carousel_for_draft",
-                        lambda draft_id, use_ai_cover=True: chiamate.append(draft_id) or {"ok": True, "message": "ok"})
-    ig = _draft(pulizia, "instagram", extra={"hook": "h", "carousel_slides": ["a", "b"]})
-    image_generator.generate_media_for_draft(ig, use_ai_cover=False)
-    assert chiamate == [ig]
+def test_il_tipo_generato_resta_scritto_sul_contenuto_e_sulle_uscite(monkeypatch, pulizia):
+    monkeypatch.setattr(image_generator, "_upload_immagine", lambda img, key: f"https://esempio/{key}")
+    content_id = _contenuto(pulizia, titolo="Una domanda", tipo="video_completo")
+    uscita_id = _uscita(pulizia, content_id, "instagram")
 
+    image_generator.generate_media_for_content(content_id, stile="immagini")
 
-def test_la_coda_ignora_i_draft_non_approvati(monkeypatch, pulizia):
-    """Una data su un draft non approvato non pubblica niente: va detto nella pagina."""
-    from datetime import datetime, timedelta
-    from app.social import publisher
-
-    pubblicati = []
-    monkeypatch.setattr(publisher, "publish_draft",
-                        lambda draft_id: pubblicati.append(draft_id) or {"ok": True})
-    monkeypatch.setattr(publisher, "check_publishing_results", lambda: None)
-
-    ieri = datetime.now() - timedelta(days=1)
-    fermo = _draft(pulizia, "facebook", titolo="Non approvato", stato="draft")
-    pronto = _draft(pulizia, "facebook", titolo="Approvato", stato="approved")
     with Session(engine) as s:
-        for draft_id in (fermo, pronto):
-            d = s.get(SocialDraft, draft_id)
-            d.scheduled_at = ieri
-            s.add(d)
-        s.commit()
+        assert s.get(SocialContent, content_id).content_kind == "immagini"
+        assert s.get(SocialDraft, uscita_id).content_kind == "immagini"
 
-    publisher.process_social_queue()
-    assert pronto in pubblicati
-    assert fermo not in pubblicati
 
-    import io
-    import os
-    percorso = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-                            "app", "templates", "admin", "social.html")
-    html = io.open(percorso, encoding="utf-8").read()
-    assert "non è approvato" in html, "manca l'avviso per i draft programmati ma non approvati"
-
+# --------------------------------------------------------------- pagina
 
 def test_la_pagina_offre_i_tre_modi_di_generare():
     """Tre bottoni distinti: immagini, video da immagini, video completo."""
@@ -150,7 +163,6 @@ def test_la_pagina_offre_i_tre_modi_di_generare():
     percorso = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
                             "app", "templates", "admin", "social.html")
     html = io.open(percorso, encoding="utf-8").read()
-    assert "generateMedia({{ d.id }}, '{{ tipo }}')" in html
-    assert "tipi_ammessi(d.platform)" in html, "i tipi ammessi dipendono dalla piattaforma"
+    assert "generateMedia({{ c.id }}, '{{ tipo }}')" in html
     for etichetta in ("Genera immagini", "Genera video da immagini", "Genera video completo"):
         assert etichetta in html

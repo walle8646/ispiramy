@@ -250,60 +250,72 @@ def _join_caption(*parts: str) -> str:
     return "\n\n".join(p.strip() for p in parts if p and p.strip())[:5000]
 
 
-def save_packages_as_drafts(packages: list[dict]) -> int:
-    """Salva i pacchetti generati come SocialDraft nel DB (una riga per piattaforma).
+def salva_contenuti(packages: list[dict]) -> int:
+    """Salva i pacchetti generati come SocialContent: uno per domanda.
 
-    Ritorna il numero di draft creati. Salta le piattaforme senza contenuto e le
-    domande che hanno già draft (per non duplicare a ogni rigenerazione).
+    Prima si creavano tre bozze separate, una per social, ognuna col proprio
+    media: tre generazioni e tre video identici per la stessa idea. Adesso la
+    domanda diventa un contenuto solo, con il testo gia' scritto in una
+    versione per piattaforma; le uscite sui singoli social si aggiungono dalla
+    dashboard, ognuna col suo orario.
+
+    Ritorna il numero di contenuti creati. Salta le domande gia' lavorate.
     """
-    from app.models import SocialDraft
+    from app.models import SocialContent
     from sqlmodel import select as sm_select
 
-    created = 0
+    from app.social.collegamenti import aggiungi_link
+
+    creati = 0
     with get_session() as session:
         for pkg in packages:
-            content = pkg.get("content") or {}
+            contenuto = pkg.get("content") or {}
             qid = pkg.get("source_question_id")
 
-            # Skip se esistono già draft per questa domanda
             if qid is not None:
-                existing = session.exec(
-                    sm_select(SocialDraft).where(SocialDraft.source_question_id == qid).limit(1)
+                gia_fatto = session.exec(
+                    sm_select(SocialContent).where(SocialContent.source_question_id == qid).limit(1)
                 ).first()
-                if existing:
-                    logger.info(f"Draft già esistenti per domanda {qid}, skip.")
+                if gia_fatto:
+                    logger.info(f"Contenuto già esistente per la domanda {qid}, skip.")
                     continue
 
-            ig = content.get("instagram") or {}
-            tk = content.get("tiktok") or {}
-            fb = content.get("facebook") or {}
-            cta = content.get("cta") or ""
+            ig = contenuto.get("instagram") or {}
+            tk = contenuto.get("tiktok") or {}
+            fb = contenuto.get("facebook") or {}
+            cta = contenuto.get("cta") or ""
 
-            rows = []
+            # Una versione del testo per social, ognuna col link al sito e con
+            # l'indicazione della provenienza per le statistiche
+            testi = {}
             if fb.get("post"):
-                rows.append(("facebook",
-                             _join_caption(fb["post"], " ".join(fb.get("hashtags") or [])),
-                             None))
+                testi["facebook"] = aggiungi_link(
+                    _join_caption(fb["post"], " ".join(fb.get("hashtags") or [])), "facebook")
             if ig.get("caption"):
-                rows.append(("instagram",
-                             _join_caption(ig["caption"], cta, " ".join(ig.get("hashtags") or [])),
-                             json.dumps({"hook": ig.get("hook"), "carousel_slides": ig.get("carousel_slides")}, ensure_ascii=False)))
+                testi["instagram"] = aggiungi_link(
+                    _join_caption(ig["caption"], cta, " ".join(ig.get("hashtags") or [])), "instagram")
             if tk.get("caption") or tk.get("script"):
-                rows.append(("tiktok",
-                             _join_caption(tk.get("caption") or "", " ".join(tk.get("hashtags") or [])),
-                             json.dumps({"hook": tk.get("hook"), "script": tk.get("script"),
-                                         "script_segments": tk.get("script_segments"),
-                                         "scene_keywords": tk.get("scene_keywords")}, ensure_ascii=False)))
+                testi["tiktok"] = aggiungi_link(
+                    _join_caption(tk.get("caption") or "", " ".join(tk.get("hashtags") or [])), "tiktok")
+            if not testi:
+                continue
 
-            for platform, caption, extra in rows:
-                session.add(SocialDraft(
-                    platform=platform,
-                    caption=caption,
-                    source_question_id=qid,
-                    source_title=(pkg.get("source_title") or "")[:500],
-                    extra_content=extra,
-                ))
-                created += 1
+            base = testi.get("instagram") or testi.get("facebook") or next(iter(testi.values()))
+            session.add(SocialContent(
+                source_question_id=qid,
+                source_title=(pkg.get("source_title") or "")[:500],
+                caption_base=base[:5000],
+                captions=json.dumps(testi, ensure_ascii=False)[:8000],
+                extra_content=json.dumps({
+                    "hook": ig.get("hook"),
+                    "carousel_slides": ig.get("carousel_slides"),
+                    "hook_video": tk.get("hook"),
+                    "script": tk.get("script"),
+                    "script_segments": tk.get("script_segments"),
+                    "scene_keywords": tk.get("scene_keywords"),
+                }, ensure_ascii=False)[:8000],
+            ))
+            creati += 1
         session.commit()
-    logger.info(f"💾 Salvati {created} social draft nel DB.")
-    return created
+    logger.info(f"💾 Salvati {creati} contenuti social nel DB.")
+    return creati

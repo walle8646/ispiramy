@@ -58,6 +58,46 @@ def create_db_and_tables():
     from app.utils.notification_types import ensure_notification_types
     ensure_notification_types()
 
+    ensure_social_contents()
+
+
+def ensure_social_contents(eng=None) -> int:
+    """Dà un contenuto alle bozze social che non ce l'hanno ancora.
+
+    È la migrazione al modello "un contenuto, più uscite": prima ogni bozza si
+    portava il proprio media, adesso il media sta sul contenuto e le bozze sono
+    le uscite sui singoli social. Una bozza vecchia diventa un contenuto con una
+    sola uscita: i media già generati restano dove sono, nessuno si perde.
+
+    Idempotente: alla seconda esecuzione non trova più bozze scoperte.
+    """
+    from sqlmodel import Session, select
+
+    from app.models import SocialContent, SocialDraft
+
+    creati = 0
+    with Session(eng or engine) as session:
+        scoperte = session.exec(select(SocialDraft).where(SocialDraft.content_id == None)).all()  # noqa: E711
+        for bozza in scoperte:
+            tipo = bozza.content_kind or ("video_completo" if bozza.platform == "tiktok" else "immagini")
+            contenuto = SocialContent(
+                source_question_id=bozza.source_question_id,
+                source_title=bozza.source_title,
+                content_kind=tipo,
+                caption_base=bozza.caption or "",
+                media_urls=bozza.media_urls,
+                extra_content=bozza.extra_content,
+            )
+            session.add(contenuto)
+            session.flush()
+            bozza.content_id = contenuto.id
+            session.add(bozza)
+            creati += 1
+        if creati:
+            session.commit()
+            logger.info(f"🛠️ Schema: create {creati} contenuti social per le bozze esistenti")
+    return creati
+
 
 # Colonne aggiunte ai modelli DOPO che le tabelle esistevano già in produzione.
 #
@@ -76,6 +116,7 @@ COLONNE_AGGIUNTE = [
     ("booking", "review_token", "VARCHAR(64)"),             # migration_add_booking_review_token
     ("social_drafts", "publish_attempt", "INTEGER NOT NULL DEFAULT 0"),  # migration_add_social_publish_attempt
     ("social_drafts", "content_kind", "VARCHAR(20)"),        # migration_add_social_content_kind
+    ("social_drafts", "content_id", "INTEGER"),              # migration_add_social_contents
     ("user", "confirmation_code_created_at", "TIMESTAMP"),     # migration_add_confirmation_code_created_at
     ("user", "auto_accept_bookings", "BOOLEAN NOT NULL DEFAULT TRUE"),  # migration_add_booking_acceptance
     ("booking", "acceptance_deadline", "TIMESTAMP"),         # migration_add_booking_acceptance

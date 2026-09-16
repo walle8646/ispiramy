@@ -123,15 +123,44 @@ class TestParserMedia:
         assert parse_media_urls(None) == []
 
 
+class TestCodaProgrammata:
+    def test_la_coda_ignora_le_uscite_non_approvate(self, monkeypatch, bozze):
+        """Una data su un'uscita non approvata non pubblica niente."""
+        pubblicati = []
+        monkeypatch.setattr(publisher, "publish_draft",
+                            lambda draft_id: pubblicati.append(draft_id) or {"ok": True})
+        monkeypatch.setattr(publisher, "check_publishing_results", lambda: None)
+
+        ieri = datetime.now() - timedelta(days=1)
+        fermo = bozze(platform="facebook", status="draft", scheduled_at=ieri)
+        pronto = bozze(platform="facebook", status="approved", scheduled_at=ieri)
+
+        publisher.process_social_queue()
+        assert pronto in pubblicati
+        assert fermo not in pubblicati
+
+
 class TestCampoMediaInDashboard:
-    def test_la_dashboard_usa_un_area_di_testo(self, admin, bozze):
-        did = bozze(media_urls="\n".join(URLS))
-        html = admin.get("/admin/social").text
-        # niente <input> a riga singola per i media: perderebbe gli a-capo
-        assert f'<input type="text" class="media-input" id="media-{did}"' not in html
-        assert f'id="media-{did}"' in html
-        blocco = html.split(f'id="media-{did}"', 1)[1].split("</textarea>", 1)[0]
-        assert all(u in blocco for u in URLS)
+    def test_la_dashboard_usa_un_area_di_testo(self, admin):
+        """Il media sta sul contenuto: niente <input> a riga singola, perderebbe gli a-capo."""
+        from app.models import SocialContent
+
+        with Session(engine) as s:
+            contenuto = SocialContent(caption_base="Testo", media_urls="\n".join(URLS))
+            s.add(contenuto)
+            s.commit()
+            s.refresh(contenuto)
+            cid = contenuto.id
+        try:
+            html = admin.get("/admin/social").text
+            assert f'<input type="text" class="media-input" id="media-{cid}"' not in html
+            assert f'id="media-{cid}"' in html
+            blocco = html.split(f'id="media-{cid}"', 1)[1].split("</textarea>", 1)[0]
+            assert all(u in blocco for u in URLS)
+        finally:
+            with Session(engine) as s:
+                s.delete(s.get(SocialContent, cid))
+                s.commit()
 
     def test_salvare_url_incollati_li_rimette_uno_per_riga(self, admin, bozze):
         did = bozze()

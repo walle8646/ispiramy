@@ -476,6 +476,34 @@ class FavoriteConsultant(SQLModel, table=True):
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
 
+class SocialContent(SQLModel, table=True):
+    """Un contenuto social: l'idea nata da una domanda della community.
+
+    Tiene il media (generato una volta sola) e i testi. Le uscite sui singoli
+    social sono le righe di SocialDraft che puntano qui: lo stesso video va su
+    TikTok, sui Reels di Instagram e su quelli di Facebook, ognuno con il suo
+    orario e il suo testo, senza rigenerare niente.
+    """
+    __tablename__ = "social_contents"
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+
+    # Provenienza (domanda community da cui è nata l'idea)
+    source_question_id: Optional[int] = Field(default=None, index=True)
+    source_title: Optional[str] = Field(default=None, max_length=500)
+
+    # 'immagini' | 'video_slide' | 'video_completo': decide come si genera il media
+    content_kind: str = Field(default="immagini", max_length=20, index=True)
+
+    caption_base: str = Field(default="", max_length=5000)  # testo di partenza
+    captions: Optional[str] = Field(default=None, max_length=8000)  # JSON: una versione per social
+    media_urls: Optional[str] = Field(default=None, max_length=3000)  # URL pubblici, uno per riga
+    extra_content: Optional[str] = Field(default=None, max_length=8000)  # hook, script, slide, scene
+
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
+
+
 class SocialDraft(SQLModel, table=True):
     """Bozze di post social generate dall'AI, in attesa di approvazione e pubblicazione.
 
@@ -486,6 +514,11 @@ class SocialDraft(SQLModel, table=True):
     __tablename__ = "social_drafts"
 
     id: Optional[int] = Field(default=None, primary_key=True)
+    # Il contenuto di cui questa è un'uscita. Le righe più vecchie di questa
+    # struttura ne ricevono uno all'avvio (una per bozza). Nessun vincolo di
+    # chiave esterna: la colonna viene aggiunta a tabelle già esistenti, e su
+    # SQLite un vincolo aggiunto a posteriori non si potrebbe più togliere.
+    content_id: Optional[int] = Field(default=None, index=True)
     platform: str = Field(index=True)  # 'facebook' | 'instagram' | 'tiktok'
     caption: str = Field(max_length=5000)  # testo pronto da pubblicare (hashtag inclusi)
     media_urls: Optional[str] = Field(default=None, max_length=3000)  # URL pubblici, uno per riga (IG richiede >=1 immagine, TikTok >=1 video)

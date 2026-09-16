@@ -11,12 +11,21 @@ from zoneinfo import ZoneInfo
 from pydantic import BaseModel
 from typing import Optional
 
+import json
+
 from app.database import engine
-from app.models import SocialDraft
+from app.models import SocialContent, SocialDraft
 from app.routes.admin import require_admin
 from app.logger_config import logger
 from app.social.publisher import PLATFORM_REQUIRES_MEDIA, parse_media_urls
-from app.social.tipi import ETICHETTE as ETICHETTE_TIPO, TIPI, tipi_ammessi, tipo_di
+from app.social.tipi import (
+    ETICHETTE as ETICHETTE_TIPO,
+    PIATTAFORME,
+    TIPI,
+    piattaforme_per_tipo,
+    tipi_ammessi,
+    tipo_di,
+)
 
 router = APIRouter(prefix="/admin")
 
@@ -37,20 +46,30 @@ async def admin_social(request: Request):
         return RedirectResponse("/login", status_code=302)
 
     with Session(engine) as session:
-        drafts = session.exec(
-            select(SocialDraft).order_by(SocialDraft.created_at.desc()).limit(200)
+        contenuti = session.exec(
+            select(SocialContent).order_by(SocialContent.created_at.desc()).limit(100)
+        ).all()
+        uscite = session.exec(
+            select(SocialDraft).order_by(SocialDraft.id.desc()).limit(500)
         ).all()
 
+    # Le uscite raggruppate sotto il loro contenuto, in ordine di programmazione
+    per_contenuto = {}
+    for uscita in uscite:
+        per_contenuto.setdefault(uscita.content_id, []).append(uscita)
+    for elenco in per_contenuto.values():
+        elenco.sort(key=lambda u: (u.scheduled_at or datetime.max, u.id))
+
+    titoli = {c.id: (c.source_title or c.caption_base or "").strip()[:70] for c in contenuti}
+    testi = {c.id: _testi_del_contenuto(c) for c in contenuti}
+
     counts = {}
-    for d in drafts:
-        counts[d.status] = counts.get(d.status, 0) + 1
-    calendario = _voci_calendario(drafts)
-    # Il tipo decide in quale scheda finisce la bozza: qui si risolve una volta
-    # sola, cosi' il template non deve conoscere le regole di partenza
-    tipi = {d.id: tipo_di(d) for d in drafts}
+    for uscita in uscite:
+        counts[uscita.status] = counts.get(uscita.status, 0) + 1
     conteggi_tipo = {}
-    for tipo in tipi.values():
-        conteggi_tipo[tipo] = conteggi_tipo.get(tipo, 0) + 1
+    for contenuto in contenuti:
+        conteggi_tipo[contenuto.content_kind] = conteggi_tipo.get(contenuto.content_kind, 0) + 1
+    calendario = _voci_calendario(uscite, titoli)
 
     # Stato account collegati (best effort, non bloccare la pagina se l'API è giù)
     accounts = {}
@@ -66,20 +85,31 @@ async def admin_social(request: Request):
         "request": request,
         "user": admin_user,
         "current_user": admin_user,
-        "drafts": drafts,
+        "contenuti": contenuti,
+        "uscite": per_contenuto,
+        "testi": testi,
+        "titoli": titoli,
         "counts": counts,
         "calendario": calendario,
-        "tipi": tipi,
         "conteggi_tipo": conteggi_tipo,
         "etichette_tipo": ETICHETTE_TIPO,
         "elenco_tipi": TIPI,
-        "tipi_ammessi": tipi_ammessi,
+        "piattaforme_per_tipo": piattaforme_per_tipo,
         "accounts": accounts,
         "platform_labels": PLATFORM_LABELS,
     })
 
 
-def _voci_calendario(drafts) -> list[dict]:
+def _testi_del_contenuto(contenuto: SocialContent) -> dict:
+    """La versione del testo per ogni social, col testo base come ripiego."""
+    try:
+        testi = json.loads(contenuto.captions or "{}")
+    except json.JSONDecodeError:
+        testi = {}
+    return {p: (testi.get(p) or contenuto.caption_base or "") for p in PIATTAFORME}
+
+
+def _voci_calendario(drafts, titoli: Optional[dict] = None) -> list[dict]:
     """Le voci del calendario: cosa e' programmato e cosa e' gia' uscito.
 
     Tutti gli orari in ora italiana. scheduled_at lo e' gia' (arriva dal campo
@@ -97,11 +127,12 @@ def _voci_calendario(drafts) -> list[dict]:
             continue
         voci.append({
             "id": d.id,
+            "contenuto": d.content_id,
             "platform": d.platform,
             "status": d.status,
             "giorno": quando.strftime("%Y-%m-%d"),
             "ora": quando.strftime("%H:%M"),
-            "titolo": (d.source_title or d.caption or "").strip()[:70],
+            "titolo": ((titoli or {}).get(d.content_id) or d.source_title or d.caption or "").strip()[:70],
         })
     return sorted(voci, key=lambda v: (v["giorno"], v["ora"]))
 
@@ -118,7 +149,7 @@ async def admin_social_generate(data: GenerateRequest, request: Request):
         return JSONResponse({"ok": False, "message": "Non autorizzato"}, status_code=403)
 
     try:
-        from app.social.content_generator import genera_bozze, save_packages_as_drafts
+        from app.social.content_generator import genera_bozze, salva_contenuti
         limit = max(1, min(data.limit, 10))
         packages, errori = await asyncio.to_thread(genera_bozze, limit)
 
@@ -132,17 +163,179 @@ async def admin_social_generate(data: GenerateRequest, request: Request):
             return {
                 "ok": True,
                 "message": "Nessuna domanda nuova da lavorare: tutte le domande "
-                           "più seguite hanno già delle bozze.",
+                           "più seguite hanno già dei contenuti.",
             }
 
-        created = await asyncio.to_thread(save_packages_as_drafts, packages)
-        messaggio = f"Creati {created} draft da {len(packages)} domande"
+        created = await asyncio.to_thread(salva_contenuti, packages)
+        messaggio = f"Creati {created} contenuti da {len(packages)} domande"
         if errori:
             messaggio += f" ({len(errori)} non riuscite: {'; '.join(errori)[:200]})"
         return {"ok": True, "message": messaggio}
     except Exception as e:
         logger.error(f"Admin social: errore generazione: {e}", exc_info=True)
         return JSONResponse({"ok": False, "message": str(e)[:300]}, status_code=500)
+
+
+class ContenutoUpdate(BaseModel):
+    caption_base: Optional[str] = None
+    captions: Optional[dict] = None
+    media_urls: Optional[str] = None
+
+
+@router.post("/social/contents/{content_id}")
+async def admin_social_update_content(content_id: int, data: ContenutoUpdate, request: Request):
+    """Aggiorna il testo (base e per social) e il media del contenuto."""
+    admin_user = require_admin(request)
+    if not admin_user:
+        return JSONResponse({"ok": False, "message": "Non autorizzato"}, status_code=403)
+
+    with Session(engine) as session:
+        contenuto = session.get(SocialContent, content_id)
+        if not contenuto:
+            return JSONResponse({"ok": False, "message": "Contenuto non trovato"}, status_code=404)
+        if data.caption_base is not None:
+            contenuto.caption_base = data.caption_base[:5000]
+        if data.captions is not None:
+            testi = {p: (t or "")[:5000] for p, t in data.captions.items() if p in PIATTAFORME}
+            contenuto.captions = json.dumps(testi, ensure_ascii=False)[:8000]
+        if data.media_urls is not None:
+            contenuto.media_urls = "\n".join(parse_media_urls(data.media_urls))[:3000] or None
+        contenuto.updated_at = datetime.utcnow()
+        session.add(contenuto)
+        session.commit()
+        media = contenuto.media_urls
+
+    if data.media_urls is not None:
+        # Il media cambiato vale per tutte le uscite non ancora partite
+        from app.social.image_generator import scrivi_media
+        scrivi_media(content_id, media or "")
+    return {"ok": True, "message": "Contenuto aggiornato"}
+
+
+@router.post("/social/contents/{content_id}/kind")
+async def admin_social_content_kind(content_id: int, request: Request):
+    """Cambia il tipo del contenuto (immagini, post video, video completo)."""
+    admin_user = require_admin(request)
+    if not admin_user:
+        return JSONResponse({"ok": False, "message": "Non autorizzato"}, status_code=403)
+
+    try:
+        corpo = await request.json()
+    except Exception:
+        corpo = {}
+    stile = (corpo or {}).get("stile")
+    if stile not in TIPI:
+        return JSONResponse({"ok": False, "message": "Tipo di contenuto non valido"}, status_code=400)
+
+    with Session(engine) as session:
+        contenuto = session.get(SocialContent, content_id)
+        if not contenuto:
+            return JSONResponse({"ok": False, "message": "Contenuto non trovato"}, status_code=404)
+
+        ammesse = piattaforme_per_tipo(stile)
+        uscite = session.exec(select(SocialDraft).where(SocialDraft.content_id == content_id)).all()
+        incompatibili = sorted({u.platform for u in uscite if u.platform not in ammesse})
+        if incompatibili:
+            # Cambiare tipo con un'uscita che non potrebbe piu' partire vorrebbe
+            # dire farla fallire piu' tardi, in silenzio
+            nomi = ", ".join(PLATFORM_LABELS.get(p, p) for p in incompatibili)
+            return JSONResponse({
+                "ok": False,
+                "message": f"«{ETICHETTE_TIPO[stile]}» non si pubblica su {nomi}: togli prima quelle uscite",
+            }, status_code=400)
+
+        contenuto.content_kind = stile
+        contenuto.updated_at = datetime.utcnow()
+        session.add(contenuto)
+        for uscita in uscite:
+            uscita.content_kind = stile
+            session.add(uscita)
+        session.commit()
+    logger.info(f"Admin social: contenuto {content_id} spostato in '{stile}'")
+    return {"ok": True, "message": f"Spostato in «{ETICHETTE_TIPO[stile]}»"}
+
+
+@router.post("/social/contents/{content_id}/generate-media")
+async def admin_social_content_generate_media(content_id: int, request: Request):
+    """Genera il media del contenuto: vale per tutte le sue uscite."""
+    admin_user = require_admin(request)
+    if not admin_user:
+        return JSONResponse({"ok": False, "message": "Non autorizzato"}, status_code=403)
+
+    try:
+        corpo = await request.json()
+    except Exception:
+        corpo = {}
+    stile = (corpo or {}).get("stile")
+    if stile is not None and stile not in TIPI:
+        return JSONResponse({"ok": False, "message": "Tipo di contenuto non valido"}, status_code=400)
+
+    try:
+        from app.social.image_generator import generate_media_for_content
+        result = await asyncio.to_thread(generate_media_for_content, content_id, True, stile)
+        return JSONResponse(result, status_code=200 if result["ok"] else 400)
+    except Exception as e:
+        logger.error(f"Admin social: errore generazione media contenuto {content_id}: {e}", exc_info=True)
+        return JSONResponse({"ok": False, "message": str(e)[:300]}, status_code=500)
+
+
+class NuovaUscita(BaseModel):
+    platform: str
+    scheduled_at: Optional[str] = None  # "YYYY-MM-DDTHH:MM" ora italiana
+
+
+@router.post("/social/contents/{content_id}/publications")
+async def admin_social_add_publication(content_id: int, data: NuovaUscita, request: Request):
+    """Aggiunge un'uscita del contenuto su un social, con il suo orario.
+
+    È il punto di tutta la struttura: lo stesso video esce su TikTok, sui Reels
+    di Instagram e su quelli di Facebook, a orari diversi, senza rigenerarlo.
+    """
+    admin_user = require_admin(request)
+    if not admin_user:
+        return JSONResponse({"ok": False, "message": "Non autorizzato"}, status_code=403)
+
+    with Session(engine) as session:
+        contenuto = session.get(SocialContent, content_id)
+        if not contenuto:
+            return JSONResponse({"ok": False, "message": "Contenuto non trovato"}, status_code=404)
+        if data.platform not in piattaforme_per_tipo(contenuto.content_kind):
+            return JSONResponse({
+                "ok": False,
+                "message": f"«{ETICHETTE_TIPO[contenuto.content_kind]}» non si pubblica su "
+                           f"{PLATFORM_LABELS.get(data.platform, data.platform)}",
+            }, status_code=400)
+
+        quando = None
+        if (data.scheduled_at or "").strip():
+            try:
+                quando = datetime.fromisoformat(data.scheduled_at.strip())
+            except ValueError:
+                return JSONResponse({"ok": False, "message": "Formato data non valido"}, status_code=400)
+
+        testi = _testi_del_contenuto(contenuto)
+        uscita = SocialDraft(
+            content_id=content_id,
+            platform=data.platform,
+            caption=(testi.get(data.platform) or contenuto.caption_base or "")[:5000],
+            media_urls=contenuto.media_urls,
+            content_kind=contenuto.content_kind,
+            source_question_id=contenuto.source_question_id,
+            source_title=contenuto.source_title,
+            extra_content=contenuto.extra_content,
+            scheduled_at=quando,
+        )
+        session.add(uscita)
+        session.commit()
+        session.refresh(uscita)
+        nuovo_id = uscita.id
+
+    quando_testo = f" per il {quando.strftime('%d/%m alle %H:%M')}" if quando else ""
+    return {
+        "ok": True,
+        "id": nuovo_id,
+        "message": f"Uscita su {PLATFORM_LABELS.get(data.platform, data.platform)} aggiunta{quando_testo}",
+    }
 
 
 class DraftUpdateRequest(BaseModel):

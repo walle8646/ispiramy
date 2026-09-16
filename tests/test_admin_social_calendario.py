@@ -119,13 +119,28 @@ def test_la_pagina_mostra_il_calendario_e_le_due_schede(admin, pulizia):
     assert any(v["titolo"] == "Un video di prova" and v["ora"] == "15:45" for v in voci)
 
 
-def test_le_card_dichiarano_la_piattaforma(admin, pulizia):
-    """Senza data-platform le schede non saprebbero cosa mostrare."""
+def test_le_card_dichiarano_il_tipo_e_gli_stati_delle_uscite(admin):
+    """Le schede filtrano per tipo, i filtri di stato guardano le uscite."""
+    from app.models import SocialContent
+
     with Session(engine) as s:
-        d = _draft(platform="tiktok", status="draft")
-        s.add(d)
+        contenuto = SocialContent(caption_base="Testo", content_kind="video_completo")
+        s.add(contenuto)
         s.commit()
-        s.refresh(d)
-        pulizia.append(d.id)
-    html = admin.get("/admin/social").text
-    assert f'data-platform="tiktok" data-tipo="video_completo" id="draft-{d.id}"' in html
+        s.refresh(contenuto)
+        cid = contenuto.id
+        uscita = SocialDraft(content_id=cid, platform="tiktok", caption="x", status="approved")
+        s.add(uscita)
+        s.commit()
+        s.refresh(uscita)
+        uid = uscita.id
+    try:
+        html = admin.get("/admin/social").text
+        assert f'data-tipo="video_completo"' in html
+        assert 'data-stati="approved"' in html
+        assert f'id="uscita-{uid}"' in html
+    finally:
+        with Session(engine) as s:
+            s.delete(s.get(SocialDraft, uid))
+            s.delete(s.get(SocialContent, cid))
+            s.commit()

@@ -85,9 +85,15 @@ def _formati_non_accettati(platform: str, media: list[str]) -> list[str]:
 
 
 def _video_generato_da_noi(url: str) -> bool:
-    """I video prodotti da video_generator: voce sintetica, quindi contenuto AI."""
+    """I video prodotti da video_generator: voce sintetica, quindi contenuto AI.
+
+    I piu' vecchi stanno sotto social/draft-N, quelli nuovi sotto
+    social/content-N, da quando il media appartiene al contenuto e non alla
+    singola uscita.
+    """
     percorso = urllib.parse.urlparse(url).path
-    return "/social/draft-" in percorso and percorso.endswith("-video.mp4")
+    nostro = "/social/draft-" in percorso or "/social/content-" in percorso
+    return nostro and percorso.endswith("-video.mp4")
 
 
 ESTENSIONI_VIDEO = (".mp4", ".mov", ".webm")

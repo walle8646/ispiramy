@@ -304,6 +304,26 @@
         white-space: nowrap;
     }
     .draft-card.evidenziata { box-shadow: 0 0 0 3px #43a047; }
+
+    /* Testi per social e uscite */
+    .testi-social { margin-top: 10px; }
+    .testi-social summary { cursor: pointer; font-size: .85rem; color: #2e7d32; font-weight: 600; }
+    .campo-etichetta { display: block; font-size: .78rem; color: #666; font-weight: 600; margin: 8px 0 4px; }
+    .uscite { margin-top: 14px; border-top: 1px solid #eee; padding-top: 12px; }
+    .uscite-testa { font-size: .85rem; font-weight: 700; color: #1a1a2e; margin-bottom: 8px; }
+    .uscite-testa i { color: #2e7d32; }
+    .uscite-vuote { font-size: .85rem; color: #888; margin-bottom: 8px; }
+    .uscita {
+        display: flex; align-items: center; flex-wrap: wrap; gap: 8px;
+        padding: 8px 10px; border-radius: 10px; background: #fafafa; margin-bottom: 8px;
+    }
+    .uscita.nuova { background: #f1f8e9; }
+    .uscita input[type="datetime-local"], .uscita select {
+        border: 1px solid #ddd; border-radius: 8px; padding: 7px 10px; font-size: .85rem; background: #fff;
+    }
+    .uscita-azioni { display: flex; gap: 6px; flex-wrap: wrap; margin-left: auto; }
+    .uscita-quando { font-size: .85rem; color: #555; }
+    .uscita .draft-hint, .uscita .draft-error { flex-basis: 100%; margin-top: 4px; }
 </style>
 {% endblock %}
 
@@ -368,51 +388,43 @@
         {% endfor %}
     </div>
 
-    {% if not drafts %}
+    {% if not contenuti %}
     <div class="empty-state">
         <i class="fas fa-wand-magic-sparkles"></i>
-        Nessun draft ancora. Clicca <strong>Genera contenuti</strong> per creare bozze dalle domande della community.
+        Nessun contenuto ancora. Clicca <strong>Genera contenuti</strong> per crearne dalle domande della community.
     </div>
     {% endif %}
 
-    {% for d in drafts %}
-    <div class="draft-card" data-status="{{ d.status }}" data-platform="{{ d.platform }}" data-tipo="{{ tipi[d.id] }}" id="draft-{{ d.id }}">
+    {% for c in contenuti %}
+    {% set mie_uscite = uscite.get(c.id, []) %}
+    <div class="draft-card" data-tipo="{{ c.content_kind }}"
+         data-stati="{{ mie_uscite | map(attribute='status') | join(' ') }}" id="content-{{ c.id }}">
         <div class="draft-head">
             <div class="draft-meta">
-                <span class="platform-chip">
-                    {% if d.platform == 'facebook' %}<i class="fab fa-facebook"></i>
-                    {% elif d.platform == 'instagram' %}<i class="fab fa-instagram"></i>
-                    {% elif d.platform == 'tiktok' %}<i class="fab fa-tiktok"></i>{% endif %}
-                    {{ platform_labels.get(d.platform, d.platform) }}
-                </span>
-                <span class="status-chip {{ d.status }}">{{ d.status }}</span>
-                <span class="tipo-chip"><i class="fas {{ icone_tipo[tipi[d.id]] }}"></i> {{ etichette_tipo[tipi[d.id]] }}</span>
-                {% if d.source_title %}<span class="draft-source">da: “{{ d.source_title[:70] }}”</span>{% endif %}
+                <span class="tipo-chip"><i class="fas {{ icone_tipo[c.content_kind] }}"></i> {{ etichette_tipo[c.content_kind] }}</span>
+                {% if c.source_title %}<span class="draft-source">da: “{{ c.source_title[:70] }}”</span>{% endif %}
             </div>
-            <span class="draft-source">#{{ d.id }} · {{ d.created_at.strftime('%d/%m %H:%M') }}</span>
+            <span class="draft-source">#{{ c.id }} · {{ c.created_at.strftime('%d/%m %H:%M') }}</span>
         </div>
 
-        {% if d.status in ('draft', 'approved', 'failed', 'rejected') %}
-        <textarea class="draft-caption" id="caption-{{ d.id }}">{{ d.caption }}</textarea>
+        <textarea class="draft-caption" id="caption-{{ c.id }}">{{ c.caption_base }}</textarea>
+
+        <details class="testi-social">
+            <summary>Testo per ogni social</summary>
+            {% for p, etichetta in platform_labels.items() %}
+            <label class="campo-etichetta">{{ etichetta }}</label>
+            <textarea class="draft-caption" id="testo-{{ c.id }}-{{ p }}" rows="4">{{ testi[c.id].get(p, '') }}</textarea>
+            {% endfor %}
+        </details>
+
         <div class="draft-fields">
-            <label>Media URL{% if d.platform in ('instagram','tiktok') %} <span class="media-required">(obbligatorio per {{ platform_labels.get(d.platform) }}{% if d.platform=='tiktok' %}: video{% endif %})</span>{% endif %}</label>
-            <textarea class="media-input" id="media-{{ d.id }}" rows="{{ [((d.media_urls or '').splitlines()|length), 2]|max }}" placeholder="https://... (uno per riga, URL pubblici)">{{ d.media_urls or '' }}</textarea>
-            <label>Programma</label>
-            <input type="datetime-local" id="sched-{{ d.id }}" value="{{ d.scheduled_at.strftime('%Y-%m-%dT%H:%M') if d.scheduled_at else '' }}">
+            <label>Media (vale per tutte le uscite)</label>
+            <textarea class="media-input" id="media-{{ c.id }}" rows="{{ [((c.media_urls or '').splitlines()|length), 2]|max }}" placeholder="https://... (uno per riga, URL pubblici)">{{ c.media_urls or '' }}</textarea>
         </div>
-        {% if d.status == 'approved' and not d.scheduled_at %}
-        <div class="draft-hint">⏸ Non programmato: il job pubblica solo i post con una data. Questo esce solo premendo "Pubblica ora".</div>
-        {% endif %}
-        {% if d.status in ('draft', 'rejected') and d.scheduled_at %}
-        <div class="draft-hint">⏸ La data c'è ma il post non è approvato: il job pubblica solo i post in stato "approved". Premi "Approva" o resterà fermo.</div>
-        {% endif %}
-        {% else %}
-        <div style="white-space: pre-wrap; font-size: .92rem; color: #444; line-height: 1.45;">{{ d.caption }}</div>
-        {% endif %}
 
-        {% if d.media_urls %}
+        {% if c.media_urls %}
         <div class="media-gallery">
-            {% for u in d.media_urls.splitlines() %}{% if u.strip() %}
+            {% for u in c.media_urls.splitlines() %}{% if u.strip() %}
             <a href="{{ u.strip() }}" target="_blank" rel="noopener" class="media-thumb">
                 {% if u.strip().lower().split('?')[0].endswith(('.mp4', '.mov', '.webm')) %}
                 <video src="{{ u.strip() }}" preload="metadata" muted playsinline
@@ -428,51 +440,86 @@
         </div>
         {% endif %}
 
-        {% if d.error %}
-        <div class="draft-error"><strong>Errore:</strong> {{ d.error }}</div>
-        {% endif %}
-        {% if d.published_url %}
-        <div class="draft-published-link">
-            <a href="{{ d.published_url }}" target="_blank" rel="noopener"><i class="fas fa-external-link-alt"></i> Vedi post pubblicato</a>
-        </div>
-        {% endif %}
-
         <div class="draft-actions">
             <label class="tipo-scelta">Tipo
-                <select onchange="cambiaTipo({{ d.id }}, this.value)">
-                    {% for tipo in tipi_ammessi(d.platform) %}
-                    <option value="{{ tipo }}" {% if tipi[d.id] == tipo %}selected{% endif %}>{{ etichette_tipo[tipo] }}</option>
+                <select onchange="cambiaTipo({{ c.id }}, this.value)">
+                    {% for tipo in elenco_tipi %}
+                    <option value="{{ tipo }}" {% if c.content_kind == tipo %}selected{% endif %}>{{ etichette_tipo[tipo] }}</option>
                     {% endfor %}
                 </select>
             </label>
-            {% if d.status in ('draft', 'approved', 'failed', 'rejected') %}
-            <button class="btn btn-light" onclick="saveDraft({{ d.id }})"><i class="fas fa-floppy-disk"></i> Salva</button>
+            <button class="btn btn-light" onclick="salvaContenuto({{ c.id }})"><i class="fas fa-floppy-disk"></i> Salva</button>
+            {% for tipo in elenco_tipi %}
+            <button class="btn btn-light" id="genmedia-{{ c.id }}-{{ tipo }}"
+                    data-icona="{{ icone_tipo[tipo] }}" data-etichetta="{{ azioni_tipo[tipo] }}" data-attesa="{{ attese_tipo[tipo] }}"
+                    onclick="generateMedia({{ c.id }}, '{{ tipo }}')"><i class="fas {{ icone_tipo[tipo] }}"></i> {{ azioni_tipo[tipo] }}</button>
+            {% endfor %}
+        </div>
+
+        <div class="uscite">
+            <div class="uscite-testa"><i class="fas fa-share-nodes"></i> Uscite sui social</div>
+            {% if not mie_uscite %}
+            <div class="uscite-vuote">Nessuna uscita: scegli un social e un orario qui sotto. Lo stesso media vale per tutti.</div>
             {% endif %}
-            {% if d.status in ('draft', 'approved', 'failed') %}
-                {% for tipo in tipi_ammessi(d.platform) %}
-                <button class="btn btn-light" id="genmedia-{{ d.id }}-{{ tipo }}"
-                        data-icona="{{ icone_tipo[tipo] }}" data-etichetta="{{ azioni_tipo[tipo] }}" data-attesa="{{ attese_tipo[tipo] }}"
-                        onclick="generateMedia({{ d.id }}, '{{ tipo }}')"><i class="fas {{ icone_tipo[tipo] }}"></i> {{ azioni_tipo[tipo] }}</button>
-                {% endfor %}
-            {% endif %}
-            {% if d.status == 'draft' %}
-            <button class="btn btn-primary" onclick="draftAction({{ d.id }}, 'approve')"><i class="fas fa-check"></i> Approva</button>
-            {% elif d.status == 'failed' %}
-            <button class="btn btn-primary" onclick="retryDraft({{ d.id }}, {{ 'true' if d.postforme_post_id else 'false' }})"><i class="fas fa-rotate-right"></i> Riprova</button>
-            {% endif %}
-            {% if d.status == 'approved' %}
-            <button class="btn btn-primary" onclick="publishNow({{ d.id }})"><i class="fas fa-paper-plane"></i> Pubblica ora</button>
-            <button class="btn btn-light" onclick="draftAction({{ d.id }}, 'back_to_draft')"><i class="fas fa-rotate-left"></i> Torna bozza</button>
-            {% endif %}
-            {% if d.status == 'draft' %}
-            <button class="btn btn-light" onclick="draftAction({{ d.id }}, 'reject')"><i class="fas fa-ban"></i> Rifiuta</button>
-            {% endif %}
-            {% if d.status == 'rejected' %}
-            <button class="btn btn-light" onclick="draftAction({{ d.id }}, 'back_to_draft')"><i class="fas fa-rotate-left"></i> Ripristina</button>
-            {% endif %}
-            {% if d.status not in ('published', 'publishing') %}
-            <button class="btn btn-danger" onclick="deleteDraft({{ d.id }})"><i class="fas fa-trash"></i> Elimina</button>
-            {% endif %}
+
+            {% for u in mie_uscite %}
+            <div class="uscita" id="uscita-{{ u.id }}">
+                <span class="platform-chip">
+                    {% if u.platform == 'facebook' %}<i class="fab fa-facebook"></i>
+                    {% elif u.platform == 'instagram' %}<i class="fab fa-instagram"></i>
+                    {% elif u.platform == 'tiktok' %}<i class="fab fa-tiktok"></i>{% endif %}
+                    {{ platform_labels.get(u.platform, u.platform) }}
+                </span>
+                <span class="status-chip {{ u.status }}">{{ u.status }}</span>
+                {% if u.status in ('draft', 'approved', 'failed', 'rejected') %}
+                <input type="datetime-local" id="sched-{{ u.id }}"
+                       value="{{ u.scheduled_at.strftime('%Y-%m-%dT%H:%M') if u.scheduled_at else '' }}"
+                       onchange="salvaUscita({{ u.id }})">
+                {% else %}
+                <span class="uscita-quando">{{ u.scheduled_at.strftime('%d/%m alle %H:%M') if u.scheduled_at else '—' }}</span>
+                {% endif %}
+
+                <div class="uscita-azioni">
+                    {% if u.status == 'draft' %}
+                    <button class="btn btn-primary" onclick="draftAction({{ u.id }}, 'approve')"><i class="fas fa-check"></i> Approva</button>
+                    <button class="btn btn-light" onclick="draftAction({{ u.id }}, 'reject')"><i class="fas fa-ban"></i> Rifiuta</button>
+                    {% elif u.status == 'failed' %}
+                    <button class="btn btn-primary" onclick="retryDraft({{ u.id }}, {{ 'true' if u.postforme_post_id else 'false' }})"><i class="fas fa-rotate-right"></i> Riprova</button>
+                    {% elif u.status == 'approved' %}
+                    <button class="btn btn-primary" onclick="publishNow({{ u.id }})"><i class="fas fa-paper-plane"></i> Pubblica ora</button>
+                    <button class="btn btn-light" onclick="draftAction({{ u.id }}, 'back_to_draft')"><i class="fas fa-rotate-left"></i> Torna bozza</button>
+                    {% elif u.status == 'rejected' %}
+                    <button class="btn btn-light" onclick="draftAction({{ u.id }}, 'back_to_draft')"><i class="fas fa-rotate-left"></i> Ripristina</button>
+                    {% endif %}
+                    {% if u.published_url %}
+                    <a class="btn btn-light" href="{{ u.published_url }}" target="_blank" rel="noopener"><i class="fas fa-external-link-alt"></i> Vedi</a>
+                    {% endif %}
+                    {% if u.status not in ('published', 'publishing') %}
+                    <button class="btn btn-danger" onclick="deleteDraft({{ u.id }})"><i class="fas fa-trash"></i> Elimina</button>
+                    {% endif %}
+                </div>
+
+                {% if u.status == 'approved' and not u.scheduled_at %}
+                <div class="draft-hint">⏸ Senza data esce solo con "Pubblica ora": il job pubblica i post programmati.</div>
+                {% endif %}
+                {% if u.status in ('draft', 'rejected') and u.scheduled_at %}
+                <div class="draft-hint">⏸ La data c'è ma l'uscita non è approvata: il job pubblica solo quelle approvate.</div>
+                {% endif %}
+                {% if u.error %}
+                <div class="draft-error"><strong>Errore:</strong> {{ u.error }}</div>
+                {% endif %}
+            </div>
+            {% endfor %}
+
+            <div class="uscita nuova">
+                <select id="nuova-piattaforma-{{ c.id }}">
+                    {% for p in piattaforme_per_tipo(c.content_kind) %}
+                    <option value="{{ p }}">{{ platform_labels.get(p, p) }}</option>
+                    {% endfor %}
+                </select>
+                <input type="datetime-local" id="nuova-data-{{ c.id }}">
+                <button class="btn btn-primary" onclick="aggiungiUscita({{ c.id }})"><i class="fas fa-plus"></i> Aggiungi uscita</button>
+            </div>
         </div>
     </div>
     {% endfor %}
@@ -518,18 +565,40 @@ async function generateDrafts() {
     else { btn.disabled = false; btn.innerHTML = '<i class="fas fa-wand-magic-sparkles"></i> Genera contenuti'; }
 }
 
-async function saveDraft(id) {
-    const r = await post(`/admin/social/drafts/${id}`, {
-        caption: document.getElementById(`caption-${id}`).value,
+async function salvaContenuto(id) {
+    // Testo base, una versione per social e il media: valgono per tutte le uscite
+    const testi = {};
+    document.querySelectorAll(`[id^="testo-${id}-"]`).forEach(campo => {
+        testi[campo.id.replace(`testo-${id}-`, '')] = campo.value;
+    });
+    const r = await post(`/admin/social/contents/${id}`, {
+        caption_base: document.getElementById(`caption-${id}`).value,
+        captions: testi,
         media_urls: document.getElementById(`media-${id}`).value,
-        scheduled_at: document.getElementById(`sched-${id}`).value,
     });
     toast(r.message, !r.ok);
+    return r.ok;
+}
+
+async function salvaUscita(id) {
+    const quando = document.getElementById(`sched-${id}`);
+    const r = await post(`/admin/social/drafts/${id}`, { scheduled_at: quando ? quando.value : '' });
+    toast(r.message, !r.ok);
+    return r.ok;
+}
+
+async function aggiungiUscita(id) {
+    const r = await post(`/admin/social/contents/${id}/publications`, {
+        platform: document.getElementById(`nuova-piattaforma-${id}`).value,
+        scheduled_at: document.getElementById(`nuova-data-${id}`).value,
+    });
+    toast(r.message, !r.ok);
+    if (r.ok) setTimeout(() => location.reload(), 900);
 }
 
 async function draftAction(id, action) {
-    // salva prima le modifiche correnti se i campi sono presenti
-    if (document.getElementById(`caption-${id}`)) await saveDraft(id);
+    // salva prima l'orario, finché l'uscita è ancora modificabile
+    if (document.getElementById(`sched-${id}`)) await salvaUscita(id);
     const r = await post(`/admin/social/drafts/${id}/status`, { action });
     toast(r.message, !r.ok);
     if (r.ok) setTimeout(() => location.reload(), 800);
@@ -548,22 +617,22 @@ async function retryDraft(id, raggiuntoLaPiattaforma) {
 }
 
 async function cambiaTipo(id, stile) {
-    // Solo classificazione: sposta la bozza di scheda senza rigenerare il media
-    const r = await post(`/admin/social/drafts/${id}/kind`, { stile });
+    // Solo classificazione: sposta il contenuto di scheda senza rigenerare il media
+    const r = await post(`/admin/social/contents/${id}/kind`, { stile });
     toast(r.message, !r.ok);
     if (r.ok) setTimeout(() => location.reload(), 800);
 }
 
 async function generateMedia(id, stile) {
     // salva prima eventuali modifiche al testo
-    await saveDraft(id);
+    await salvaContenuto(id);
     const btn = document.getElementById(`genmedia-${id}-${stile}`);
     // Stesso bottone per grafica e video: testi e icona li porta con se'
     const icona = btn.dataset.icona || 'fa-image';
     const etichetta = btn.dataset.etichetta || 'Genera grafica';
     btn.disabled = true;
     btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> ${btn.dataset.attesa || 'Genero grafica...'}`;
-    const r = await post(`/admin/social/drafts/${id}/generate-media`, { stile });
+    const r = await post(`/admin/social/contents/${id}/generate-media`, { stile });
     toast(r.message, !r.ok);
     if (r.ok) setTimeout(() => location.reload(), 1200);
     else { btn.disabled = false; btn.innerHTML = `<i class="fas ${icona}"></i> ${etichetta}`; }
@@ -597,7 +666,9 @@ let filtroStato = 'all';
 function applicaFiltri() {
     document.querySelectorAll('.draft-card').forEach(c => {
         const dellaScheda = c.dataset.tipo === schedaAttiva;
-        const delloStato = filtroStato === 'all' || c.dataset.status === filtroStato;
+        // Il contenuto passa il filtro se almeno una delle sue uscite è in quello stato
+        const stati = (c.dataset.stati || '').split(' ').filter(Boolean);
+        const delloStato = filtroStato === 'all' || stati.includes(filtroStato);
         c.style.display = (dellaScheda && delloStato) ? '' : 'none';
     });
 }
@@ -632,15 +703,16 @@ function cambiaMese(passo) {
     disegnaCalendario();
 }
 
-function vaiAlDraft(id) {
-    const card = document.getElementById(`draft-${id}`);
+function vaiAlDraft(id, contenuto) {
+    const card = document.getElementById(`content-${contenuto}`);
     if (!card) return;
     // Il calendario mostra tutto: se la voce sta in un'altra scheda, si cambia scheda
     const scheda = card.dataset.tipo;
     if (scheda && scheda !== schedaAttiva) {
         mostraScheda(scheda, document.querySelector(`.scheda[data-scheda="${scheda}"]`));
     }
-    card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    const uscita = document.getElementById(`uscita-${id}`);
+    (uscita || card).scrollIntoView({ behavior: 'smooth', block: 'center' });
     card.classList.add('evidenziata');
     setTimeout(() => card.classList.remove('evidenziata'), 2000);
 }
@@ -686,7 +758,7 @@ function disegnaCalendario() {
             voce.className = `calendario-voce ${v.status}`;
             voce.textContent = `${v.ora} ${ICONE_PIATTAFORMA[v.platform] || ''} ${v.titolo}`;
             voce.title = `${v.titolo} — ${v.platform}, ${v.status}`;
-            voce.onclick = () => vaiAlDraft(v.id);
+            voce.onclick = () => vaiAlDraft(v.id, v.contenuto);
             cella.appendChild(voce);
         });
         griglia.appendChild(cella);

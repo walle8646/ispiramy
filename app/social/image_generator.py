@@ -21,7 +21,7 @@ from PIL import Image, ImageDraw, ImageFont
 from sqlmodel import Session, select
 
 from app.database import engine
-from app.models import SocialDraft
+from app.models import SocialContent, SocialDraft
 from app.logger_config import logger
 
 # Canvas Instagram portrait 4:5
@@ -271,47 +271,29 @@ def _upload_immagine(img: Image.Image, key: str) -> str:
     return _carica_su_s3(buf.getvalue(), key, "image/jpeg")
 
 
-def _hook_del_draft(session: Session, draft: SocialDraft) -> str:
+def _testo_in_evidenza(contenuto: SocialContent) -> str:
     """Il testo da mettere in grande sull'immagine.
 
-    Facebook e LinkedIn non hanno hook e slide in extra_content: il generatore
-    di contenuti li salva solo per Instagram. Il titolo buono pero' c'e' lo
-    stesso, perche' i draft della stessa domanda nascono insieme: si riusa
-    l'hook del fratello Instagram, e se manca si ripiega sul titolo della
-    domanda o sulla prima frase della caption.
+    L'hook se c'e', altrimenti la prima slide, altrimenti il titolo della
+    domanda, altrimenti la prima frase del testo senza hashtag e senza link.
     """
-    def _da_extra(valore: Optional[str]) -> str:
-        try:
-            extra = json.loads(valore or "{}")
-        except json.JSONDecodeError:
-            return ""
-        hook = (extra.get("hook") or "").strip()
-        if hook:
-            return hook
-        slides = [s for s in (extra.get("carousel_slides") or []) if s and s.strip()]
-        return slides[0].strip() if slides else ""
+    try:
+        extra = json.loads(contenuto.extra_content or "{}")
+    except json.JSONDecodeError:
+        extra = {}
 
-    proprio = _da_extra(draft.extra_content)
-    if proprio:
-        return proprio
+    hook = (extra.get("hook") or "").strip()
+    if hook:
+        return hook
+    slide = [s for s in (extra.get("carousel_slides") or []) if isinstance(s, str) and s.strip()]
+    if slide:
+        return slide[0].strip()
+    if (contenuto.source_title or "").strip():
+        return contenuto.source_title.strip()
 
-    if draft.source_question_id:
-        fratelli = session.exec(
-            select(SocialDraft)
-            .where(SocialDraft.source_question_id == draft.source_question_id)
-            .where(SocialDraft.id != draft.id)
-        ).all()
-        for fratello in fratelli:
-            hook = _da_extra(fratello.extra_content)
-            if hook:
-                return hook
-
-    if (draft.source_title or "").strip():
-        return draft.source_title.strip()
-
-    # Ultima spiaggia: la prima frase della caption, senza hashtag
     testo = " ".join(
-        p for p in (draft.caption or "").replace("\n", " ").split() if not p.startswith("#")
+        p for p in (contenuto.caption_base or "").replace("\n", " ").split()
+        if not p.startswith("#") and not p.startswith("http") and p != "👉"
     )
     for fine in (". ", "! ", "? "):
         if fine in testo:
@@ -320,121 +302,147 @@ def _hook_del_draft(session: Session, draft: SocialDraft) -> str:
     return testo[:120].strip()
 
 
-def generate_image_for_draft(draft_id: int, use_ai_cover: bool = True) -> dict:
-    """Genera una singola immagine brand per un draft (Facebook, LinkedIn).
+def scrivi_media(content_id: int, urls) -> None:
+    """Salva il media sul contenuto e lo passa alle uscite non ancora partite.
 
-    Fuori da Instagram il post e' un testo con una sola immagine a corredo:
+    Le uscite gia' pubblicate tengono il media con cui sono uscite: e' la loro
+    storia, e sovrascriverlo direbbe il falso su cosa e' stato pubblicato.
+    """
+    testo = "\n".join(urls) if isinstance(urls, (list, tuple)) else urls
+    with Session(engine) as session:
+        contenuto = session.get(SocialContent, content_id)
+        if not contenuto:
+            return
+        contenuto.media_urls = testo
+        contenuto.updated_at = datetime.utcnow()
+        session.add(contenuto)
+        for uscita in session.exec(select(SocialDraft).where(SocialDraft.content_id == content_id)).all():
+            if uscita.status in ("published", "publishing"):
+                continue
+            uscita.media_urls = testo
+            uscita.updated_at = datetime.utcnow()
+            session.add(uscita)
+        session.commit()
+
+
+def generate_image_for_content(content_id: int, use_ai_cover: bool = True) -> dict:
+    """Genera una singola immagine brand per il contenuto.
+
+    Senza slide da scorrere il post e' un testo con un'immagine a corredo:
     niente carosello, e al posto di "Scorri" la chiamata al sito.
     """
     with Session(engine) as session:
-        draft = session.get(SocialDraft, draft_id)
-        if not draft:
-            return {"ok": False, "message": "Draft non trovato"}
-        if draft.status in ("published", "publishing"):
-            return {"ok": False, "message": "Draft già pubblicato"}
+        contenuto = session.get(SocialContent, content_id)
+        if not contenuto:
+            return {"ok": False, "message": "Contenuto non trovato"}
+        hook = _testo_in_evidenza(contenuto)
+        titolo = contenuto.source_title
 
-        hook = _hook_del_draft(session, draft)
-        if not hook:
-            return {"ok": False, "message": "Questo draft non ha un testo da mettere sull'immagine"}
+    if not hook:
+        return {"ok": False, "message": "Questo contenuto non ha un testo da mettere sull'immagine"}
 
-        topic = draft.source_title or hook
-        logger.info(f"🖼️ Genero immagine singola per draft {draft.id} ({draft.platform})...")
+    logger.info(f"🖼️ Genero immagine singola per il contenuto {content_id}...")
+    img = _cover(hook, titolo or hook, use_ai=use_ai_cover, swipe=False)
+    stamp = datetime.utcnow().strftime("%Y%m%d%H%M%S")
+    url = _upload_immagine(img, f"social/content-{content_id}/{stamp}-post.jpg")
 
-        img = _cover(hook, topic, use_ai=use_ai_cover, swipe=False)
-        stamp = datetime.utcnow().strftime("%Y%m%d%H%M%S")
-        url = _upload_immagine(img, f"social/draft-{draft.id}/{stamp}-post.jpg")
-
-        draft.media_urls = url
-        draft.updated_at = datetime.utcnow()
-        session.add(draft)
-        session.commit()
-        logger.info(f"✅ Immagine draft {draft.id} su S3")
-        return {"ok": True, "message": "Immagine generata", "urls": [url]}
+    scrivi_media(content_id, url)
+    logger.info(f"✅ Immagine contenuto {content_id} su S3")
+    return {"ok": True, "message": "Immagine generata", "urls": [url]}
 
 
-def generate_media_for_draft(draft_id: int, use_ai_cover: bool = True, stile: Optional[str] = None) -> dict:
-    """Genera il media del draft nello stile richiesto.
+def generate_media_for_content(content_id: int, use_ai_cover: bool = True, stile: Optional[str] = None) -> dict:
+    """Genera il media del contenuto nello stile richiesto.
 
-    Tre strade distinte: immagini (carosello su Instagram, immagine singola
-    altrove), video fatto con le nostre slide, video con le clip di repertorio.
-    Senza `stile` si usa quello gia' salvato sulla bozza, o quello di partenza
-    della piattaforma. Lo stile con cui si genera resta scritto sulla bozza:
-    e' anche la scheda dell'admin in cui comparira'.
+    Tre strade distinte: immagini (carosello se ci sono le slide, altrimenti
+    una sola), video fatto con le nostre slide, video con le clip di
+    repertorio. Il media e' uno solo e vale per tutte le uscite: lo stesso
+    verticale va su TikTok, sui Reels di Instagram e su quelli di Facebook.
     """
-    from app.social.tipi import IMMAGINI, TIPI, VIDEO_COMPLETO, VIDEO_SLIDE, tipo_di
+    from app.social.tipi import IMMAGINI, TIPI, VIDEO_COMPLETO, VIDEO_SLIDE
 
     with Session(engine) as session:
-        draft = session.get(SocialDraft, draft_id)
-        if not draft:
-            return {"ok": False, "message": "Draft non trovato"}
-        piattaforma = draft.platform
-        scelto = stile if stile in TIPI else tipo_di(draft)
+        contenuto = session.get(SocialContent, content_id)
+        if not contenuto:
+            return {"ok": False, "message": "Contenuto non trovato"}
+        scelto = stile if stile in TIPI else (contenuto.content_kind or IMMAGINI)
+        try:
+            extra = json.loads(contenuto.extra_content or "{}")
+        except json.JSONDecodeError:
+            extra = {}
+        ha_slide = bool([s for s in (extra.get("carousel_slides") or []) if isinstance(s, str) and s.strip()])
 
     if scelto in (VIDEO_COMPLETO, VIDEO_SLIDE):
-        from app.social.video_generator import generate_video_for_draft
-        esito = generate_video_for_draft(draft_id, usa_repertorio=(scelto == VIDEO_COMPLETO))
-    elif piattaforma == "instagram":
-        esito = generate_carousel_for_draft(draft_id, use_ai_cover=use_ai_cover)
-        scelto = IMMAGINI
+        from app.social.video_generator import generate_video_for_content
+        esito = generate_video_for_content(content_id, usa_repertorio=(scelto == VIDEO_COMPLETO))
     else:
-        esito = generate_image_for_draft(draft_id, use_ai_cover=use_ai_cover)
+        esito = (generate_carousel_for_content(content_id, use_ai_cover=use_ai_cover) if ha_slide
+                 else generate_image_for_content(content_id, use_ai_cover=use_ai_cover))
         scelto = IMMAGINI
 
     if esito.get("ok"):
-        _segna_tipo(draft_id, scelto)
+        _segna_tipo(content_id, scelto)
     return esito
 
 
-def _segna_tipo(draft_id: int, tipo: str) -> None:
-    """Ricorda con che stile e' stato generato il media di questa bozza."""
+def _segna_tipo(content_id: int, tipo: str) -> None:
+    """Ricorda con che stile e' stato generato il media, sul contenuto e sulle uscite."""
     with Session(engine) as session:
-        draft = session.get(SocialDraft, draft_id)
-        if not draft or draft.content_kind == tipo:
+        contenuto = session.get(SocialContent, content_id)
+        if not contenuto:
             return
-        draft.content_kind = tipo
-        draft.updated_at = datetime.utcnow()
-        session.add(draft)
+        contenuto.content_kind = tipo
+        contenuto.updated_at = datetime.utcnow()
+        session.add(contenuto)
+        for uscita in session.exec(select(SocialDraft).where(SocialDraft.content_id == content_id)).all():
+            uscita.content_kind = tipo
+            session.add(uscita)
         session.commit()
 
 
-def generate_carousel_for_draft(draft_id: int, use_ai_cover: bool = True) -> dict:
-    """Genera il carosello per un draft Instagram e compila media_urls. Ritorna {ok, message}."""
+def generate_media_for_draft(draft_id: int, use_ai_cover: bool = True, stile: Optional[str] = None) -> dict:
+    """Come sopra, partendo da un'uscita: genera il media del suo contenuto."""
     with Session(engine) as session:
         draft = session.get(SocialDraft, draft_id)
         if not draft:
-            return {"ok": False, "message": "Draft non trovato"}
-        if draft.status in ("published", "publishing"):
-            return {"ok": False, "message": "Draft già pubblicato"}
+            return {"ok": False, "message": "Uscita non trovata"}
+        content_id = draft.content_id
+    if not content_id:
+        return {"ok": False, "message": "Questa uscita non è collegata a nessun contenuto"}
+    return generate_media_for_content(content_id, use_ai_cover=use_ai_cover, stile=stile)
 
-        extra = {}
+
+def generate_carousel_for_content(content_id: int, use_ai_cover: bool = True) -> dict:
+    """Genera il carosello del contenuto e compila media_urls. Ritorna {ok, message}."""
+    with Session(engine) as session:
+        contenuto = session.get(SocialContent, content_id)
+        if not contenuto:
+            return {"ok": False, "message": "Contenuto non trovato"}
         try:
-            extra = json.loads(draft.extra_content or "{}")
+            extra = json.loads(contenuto.extra_content or "{}")
         except json.JSONDecodeError:
-            pass
-        hook = (extra.get("hook") or "").strip()
-        slides = [s for s in (extra.get("carousel_slides") or []) if s and s.strip()]
-        if not hook and not slides:
-            return {"ok": False, "message": "Questo draft non ha hook/slide (serve un draft Instagram generato)"}
-        if not hook:
-            hook = slides.pop(0)
+            extra = {}
+        titolo = contenuto.source_title
 
-        topic = draft.source_title or hook
-        logger.info(f"🖼️ Genero carosello per draft {draft.id} ({len(slides) + 1} slide)...")
+    hook = (extra.get("hook") or "").strip()
+    slides = [s for s in (extra.get("carousel_slides") or []) if isinstance(s, str) and s.strip()]
+    if not hook and not slides:
+        return {"ok": False, "message": "Questo contenuto non ha hook né slide da mettere nel carosello"}
+    if not hook:
+        hook = slides.pop(0)
 
-        images = [_cover(hook, topic, use_ai=use_ai_cover)]
-        total = len(slides)
-        for i, slide_text in enumerate(slides, start=1):
-            images.append(_slide(slide_text, i, total, is_last=(i == total)))
+    logger.info(f"🖼️ Genero carosello per il contenuto {content_id} ({len(slides) + 1} slide)...")
+    images = [_cover(hook, titolo or hook, use_ai=use_ai_cover)]
+    total = len(slides)
+    for i, slide_text in enumerate(slides, start=1):
+        images.append(_slide(slide_text, i, total, is_last=(i == total)))
 
-        stamp = datetime.utcnow().strftime("%Y%m%d%H%M%S")
-        urls = []
-        for n, img in enumerate(images):
-            key = f"social/draft-{draft.id}/{stamp}-slide-{n}.jpg"
-            urls.append(_upload_immagine(img, key))
+    stamp = datetime.utcnow().strftime("%Y%m%d%H%M%S")
+    urls = [
+        _upload_immagine(img, f"social/content-{content_id}/{stamp}-slide-{n}.jpg")
+        for n, img in enumerate(images)
+    ]
 
-        draft.media_urls = "\n".join(urls)
-        draft.updated_at = datetime.utcnow()
-        session.add(draft)
-        session.commit()
-        logger.info(f"✅ Carosello draft {draft.id}: {len(urls)} immagini su S3")
-        return {"ok": True, "message": f"Generate {len(urls)} immagini", "urls": urls}
+    scrivi_media(content_id, urls)
+    logger.info(f"✅ Carosello contenuto {content_id}: {len(urls)} immagini su S3")
+    return {"ok": True, "message": f"Generate {len(urls)} immagini", "urls": urls}

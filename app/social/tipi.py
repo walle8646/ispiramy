@@ -36,3 +36,17 @@ def tipo_di(draft) -> str:
 def tipi_ammessi(platform: str) -> tuple:
     """I tipi che ha senso generare per questa piattaforma."""
     return TIPI_AMMESSI_PER_PIATTAFORMA.get(platform, TIPI)
+
+
+PIATTAFORME = ("facebook", "instagram", "tiktok")
+
+
+def piattaforme_per_tipo(tipo: str) -> tuple:
+    """Dove si puo' pubblicare un contenuto di questo tipo.
+
+    Un carosello di immagini va su Facebook e Instagram; TikTok accetta solo
+    video, quindi compare solo per i due tipi video.
+    """
+    if tipo == IMMAGINI:
+        return ("facebook", "instagram")
+    return PIATTAFORME

@@ -35,9 +35,10 @@ from sqlmodel import Session
 
 from app.database import engine
 from app.logger_config import logger
-from app.models import SocialDraft
+from app.models import SocialContent, SocialDraft
 from app.social import repertorio
 from app.social.image_generator import (
+    scrivi_media,
     GREEN,
     GREEN_BG,
     GREEN_DARK,
@@ -128,7 +129,8 @@ def segmenti_dello_script(extra: dict) -> list[str]:
             else:
                 segmenti.append(accumulo)
 
-    hook = (extra.get("hook") or "").strip()
+    # hook_video e' quello scritto per il parlato; hook e' quello del carosello
+    hook = (extra.get("hook_video") or extra.get("hook") or "").strip()
     if hook:
         gia_in_apertura = segmenti and (
             _normalizza(segmenti[0]).startswith(_normalizza(hook)[:30])
@@ -497,9 +499,9 @@ def _monta(ffmpeg: str, scene: list[dict], durate: list[float], audio: Path, usc
     _esegui(argomenti, "Unione delle scene")
 
 
-def _produci(draft_id: int, segmenti: list[str], parole: list[str], ffmpeg: str,
+def _produci(content_id: int, segmenti: list[str], parole: list[str], ffmpeg: str,
              usa_repertorio: bool = True) -> tuple[str, float, list[str]]:
-    with tempfile.TemporaryDirectory(prefix=f"video-draft-{draft_id}-") as cartella:
+    with tempfile.TemporaryDirectory(prefix=f"video-contenuto-{content_id}-") as cartella:
         base = Path(cartella)
 
         wavs = []
@@ -534,7 +536,7 @@ def _produci(draft_id: int, segmenti: list[str], parole: list[str], ffmpeg: str,
         _monta(ffmpeg, scene, durate, audio, video, _musica(base))
 
         stamp = datetime.utcnow().strftime("%Y%m%d%H%M%S")
-        url = _carica_su_s3(video.read_bytes(), f"social/draft-{draft_id}/{stamp}-video.mp4", "video/mp4")
+        url = _carica_su_s3(video.read_bytes(), f"social/content-{content_id}/{stamp}-video.mp4", "video/mp4")
         return url, sum(durate), crediti
 
 
@@ -545,88 +547,92 @@ def _materiale_sufficiente(segmenti: list[str], parole: list[str], usa_repertori
     return not usa_repertorio or any(p for p in parole)
 
 
-def _completa_materiale(draft_id: int, extra: dict) -> dict:
-    """Fa scrivere al modello frasi e scene mancanti, e le salva sulla bozza.
+def _completa_materiale(content_id: int, extra: dict) -> dict:
+    """Fa scrivere al modello frasi e scene mancanti, e le salva sul contenuto.
 
-    Cosi' si paga una volta sola: la prossima generazione dello stesso draft
-    trova gia' tutto. Se il modello non e' disponibile si va avanti con quello
-    che c'e': meglio un video piu' semplice che nessun video.
+    Cosi' si paga una volta sola: la prossima generazione dello stesso
+    contenuto trova gia' tutto. Se il modello non e' disponibile si va avanti
+    con quello che c'e': meglio un video piu' semplice che nessun video.
     """
     from app.social.content_generator import completa_script_video
 
     with Session(engine) as session:
-        draft = session.get(SocialDraft, draft_id)
-        if not draft:
+        contenuto = session.get(SocialContent, content_id)
+        if not contenuto:
             return extra
-        titolo, caption = draft.source_title, draft.caption
+        titolo, caption = contenuto.source_title, contenuto.caption_base
     try:
         aggiunta = completa_script_video(titolo, caption, extra.get("carousel_slides"))
     except Exception as e:
-        logger.warning(f"Video draft {draft_id}: script non completato ({e}), si usa il materiale esistente")
+        logger.warning(f"Contenuto {content_id}: script non completato ({e}), si usa il materiale esistente")
         return extra
 
     nuovo = dict(extra)
     nuovo.update(aggiunta)
     with Session(engine) as session:
-        draft = session.get(SocialDraft, draft_id)
-        if draft:
-            draft.extra_content = json.dumps(nuovo, ensure_ascii=False)[:8000]
-            draft.updated_at = datetime.utcnow()
-            session.add(draft)
+        contenuto = session.get(SocialContent, content_id)
+        if contenuto:
+            contenuto.extra_content = json.dumps(nuovo, ensure_ascii=False)[:8000]
+            contenuto.updated_at = datetime.utcnow()
+            session.add(contenuto)
             session.commit()
-    logger.info(f"🖊️ Video draft {draft_id}: script ricavato dal post ({len(aggiunta['script_segments'])} scene)")
+    logger.info(f"🖊️ Contenuto {content_id}: script ricavato dal post ({len(aggiunta['script_segments'])} scene)")
     return nuovo
 
 
 def generate_video_for_draft(draft_id: int, usa_repertorio: bool = True) -> dict:
-    """Genera il video del draft e compila media_urls. Ritorna {ok, message}.
+    """Come generate_video_for_content, partendo da un'uscita."""
+    with Session(engine) as session:
+        draft = session.get(SocialDraft, draft_id)
+        if not draft:
+            return {"ok": False, "message": "Uscita non trovata"}
+        content_id = draft.content_id
+    if not content_id:
+        return {"ok": False, "message": "Questa uscita non è collegata a nessun contenuto"}
+    return generate_video_for_content(content_id, usa_repertorio=usa_repertorio)
+
+
+def generate_video_for_content(content_id: int, usa_repertorio: bool = True) -> dict:
+    """Genera il video del contenuto e compila media_urls. Ritorna {ok, message}.
 
     Con usa_repertorio=False ogni scena e' una nostra slide: e' il "post video",
     piu' sobrio e senza dipendere da Pexels.
     """
     with Session(engine) as session:
-        draft = session.get(SocialDraft, draft_id)
-        if not draft:
-            return {"ok": False, "message": "Draft non trovato"}
-        if draft.status in ("published", "publishing"):
-            return {"ok": False, "message": "Draft già pubblicato"}
+        contenuto = session.get(SocialContent, content_id)
+        if not contenuto:
+            return {"ok": False, "message": "Contenuto non trovato"}
         try:
-            extra = json.loads(draft.extra_content or "{}")
+            extra = json.loads(contenuto.extra_content or "{}")
         except json.JSONDecodeError:
             extra = {}
     segmenti = segmenti_dello_script(extra)
     parole = parole_per_scena(extra, segmenti)
     if not _materiale_sufficiente(segmenti, parole, usa_repertorio):
-        # Un post nato per le immagini non ha ne' script ne' scene: li si scrive
-        # adesso, partendo dal testo che c'e' gia'
-        extra = _completa_materiale(draft_id, extra)
+        # Un contenuto nato per le immagini non ha ne' script ne' scene: li si
+        # scrive adesso, partendo dal testo che c'e' gia'
+        extra = _completa_materiale(content_id, extra)
         segmenti = segmenti_dello_script(extra)
         parole = parole_per_scena(extra, segmenti)
     if not segmenti:
-        return {"ok": False, "message": "Questo draft non ha un testo da trasformare in video"}
+        return {"ok": False, "message": "Questo contenuto non ha un testo da trasformare in video"}
 
-    logger.info(f"🎬 Genero video per draft {draft_id} ({len(segmenti)} scene)...")
+    logger.info(f"🎬 Genero video per il contenuto {content_id} ({len(segmenti)} scene)...")
     try:
         # Prima i controlli che costano zero: niente scene se poi manca la voce
         _config_elevenlabs()
         ffmpeg = ffmpeg_exe()
-        url, durata, crediti = _produci(draft_id, segmenti, parole, ffmpeg, usa_repertorio)
+        url, durata, crediti = _produci(content_id, segmenti, parole, ffmpeg, usa_repertorio)
     except VideoNonGenerato as e:
-        logger.warning(f"Video draft {draft_id} non generato: {e}")
+        logger.warning(f"Video contenuto {content_id} non generato: {e}")
         return {"ok": False, "message": str(e)}
 
-    # La generazione dura minuti: il draft si rilegge adesso, non si tiene
+    # La generazione dura minuti: il contenuto si rilegge adesso, non si tiene
     # aperta una sessione sul database per tutto quel tempo
     with Session(engine) as session:
-        draft = session.get(SocialDraft, draft_id)
-        if not draft:
-            return {"ok": False, "message": "Il draft è stato eliminato durante la generazione"}
-        if draft.status in ("published", "publishing"):
-            return {"ok": False, "message": "Il draft è stato pubblicato durante la generazione"}
-        draft.media_urls = url
-        draft.updated_at = datetime.utcnow()
-        session.add(draft)
-        session.commit()
+        if not session.get(SocialContent, content_id):
+            return {"ok": False, "message": "Il contenuto è stato eliminato durante la generazione"}
+    scrivi_media(content_id, url)
 
     messaggio = f"Video generato: {len(segmenti)} scene, {durata:.0f} secondi"
     if crediti:
@@ -635,5 +641,5 @@ def generate_video_for_draft(draft_id: int, usa_repertorio: bool = True) -> dict
         messaggio += f". Riprese di {', '.join(dict.fromkeys(crediti))} (Pexels)"
     if durata > DURATA_CONSIGLIATA:
         messaggio += f". Attenzione: oltre i {DURATA_CONSIGLIATA} secondi, per Reels e Stories conviene più corto"
-    logger.info(f"✅ Video draft {draft_id}: {durata:.1f}s su S3")
+    logger.info(f"✅ Video contenuto {content_id}: {durata:.1f}s su S3")
     return {"ok": True, "message": messaggio, "urls": [url]}
