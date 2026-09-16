@@ -593,7 +593,10 @@ async function aggiungiUscita(id) {
         scheduled_at: document.getElementById(`nuova-data-${id}`).value,
     });
     toast(r.message, !r.ok);
-    if (r.ok) setTimeout(() => location.reload(), 900);
+    if (r.ok) {
+        ricordaUI(`content-${id}`);
+        setTimeout(() => location.reload(), 900);
+    }
 }
 
 async function draftAction(id, action) {
@@ -601,7 +604,10 @@ async function draftAction(id, action) {
     if (document.getElementById(`sched-${id}`)) await salvaUscita(id);
     const r = await post(`/admin/social/drafts/${id}/status`, { action });
     toast(r.message, !r.ok);
-    if (r.ok) setTimeout(() => location.reload(), 800);
+    if (r.ok) {
+        ricordaDallUscita(id);
+        setTimeout(() => location.reload(), 800);
+    }
 }
 
 async function retryDraft(id, raggiuntoLaPiattaforma) {
@@ -620,7 +626,12 @@ async function cambiaTipo(id, stile) {
     // Solo classificazione: sposta il contenuto di scheda senza rigenerare il media
     const r = await post(`/admin/social/contents/${id}/kind`, { stile });
     toast(r.message, !r.ok);
-    if (r.ok) setTimeout(() => location.reload(), 800);
+    if (r.ok) {
+        // Il contenuto cambia scheda: si va a vederlo dove è finito
+        schedaAttiva = stile;
+        ricordaUI(`content-${id}`);
+        setTimeout(() => location.reload(), 800);
+    }
 }
 
 async function generateMedia(id, stile) {
@@ -634,7 +645,11 @@ async function generateMedia(id, stile) {
     btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> ${btn.dataset.attesa || 'Genero grafica...'}`;
     const r = await post(`/admin/social/contents/${id}/generate-media`, { stile });
     toast(r.message, !r.ok);
-    if (r.ok) setTimeout(() => location.reload(), 1200);
+    if (r.ok) {
+        schedaAttiva = stile;
+        ricordaUI(`content-${id}`);
+        setTimeout(() => location.reload(), 1200);
+    }
     else { btn.disabled = false; btn.innerHTML = `<i class="fas ${icona}"></i> ${etichetta}`; }
 }
 
@@ -642,7 +657,10 @@ async function publishNow(id) {
     if (!confirm('Pubblicare subito questo post?')) return;
     const r = await post(`/admin/social/drafts/${id}/publish`);
     toast(r.message, !r.ok);
-    if (r.ok) setTimeout(() => location.reload(), 1500);
+    if (r.ok) {
+        ricordaDallUscita(id);
+        setTimeout(() => location.reload(), 1500);
+    }
 }
 
 async function refreshResults() {
@@ -652,16 +670,67 @@ async function refreshResults() {
 }
 
 async function deleteDraft(id) {
-    if (!confirm('Eliminare definitivamente questo draft?')) return;
+    if (!confirm('Eliminare definitivamente questa uscita?')) return;
     const r = await post(`/admin/social/drafts/${id}`, null, 'DELETE');
     toast(r.message, !r.ok);
-    if (r.ok) document.getElementById(`draft-${id}`).remove();
+    if (!r.ok) return;
+    // Niente ricaricamento: si toglie la riga e si riallineano gli stati della
+    // card, che sono quelli su cui lavorano i filtri
+    const riga = document.getElementById(`uscita-${id}`);
+    const card = riga ? riga.closest('.draft-card') : null;
+    if (riga) riga.remove();
+    if (card) {
+        const stati = [...card.querySelectorAll('.uscita:not(.nuova) .status-chip')].map(c => c.textContent.trim());
+        card.dataset.stati = stati.join(' ');
+        applicaFiltri();
+    }
 }
 
 // ----------------------------------------------------------- schede e filtri
 // Una scheda per tipo di contenuto: immagini, video da immagini, video completo
 let schedaAttiva = document.querySelector('.scheda.attiva').dataset.scheda;
 let filtroStato = 'all';
+
+// Molte azioni ricaricano la pagina (è il modo più sicuro di rileggere lo stato
+// dal server): senza ricordare scheda, filtro e posizione si tornava ogni volta
+// in cima alla prima scheda, perdendo il punto in cui si stava lavorando.
+const MEMORIA_UI = 'ispiramy-social-ui';
+
+function ricordaUI(ancora) {
+    try {
+        sessionStorage.setItem(MEMORIA_UI, JSON.stringify({
+            scheda: schedaAttiva, stato: filtroStato, ancora: ancora || null,
+        }));
+    } catch (e) { /* niente memoria di sessione: si riparte dalla prima scheda */ }
+}
+
+function ricordaDallUscita(id) {
+    const riga = document.getElementById(`uscita-${id}`);
+    const card = riga ? riga.closest('.draft-card') : null;
+    ricordaUI(card ? card.id : null);
+}
+
+function ripristinaUI() {
+    let salvato = null;
+    try {
+        salvato = JSON.parse(sessionStorage.getItem(MEMORIA_UI) || 'null');
+    } catch (e) {
+        salvato = null;
+    }
+    if (!salvato) return null;
+
+    const scheda = document.querySelector(`.scheda[data-scheda="${salvato.scheda}"]`);
+    if (scheda) {
+        schedaAttiva = salvato.scheda;
+        document.querySelectorAll('.scheda').forEach(b => b.classList.toggle('attiva', b === scheda));
+    }
+    const stato = document.querySelector(`.status-filter[data-filter="${salvato.stato}"]`);
+    if (stato) {
+        filtroStato = salvato.stato;
+        document.querySelectorAll('.status-filter').forEach(b => b.classList.toggle('active', b === stato));
+    }
+    return salvato;
+}
 
 function applicaFiltri() {
     document.querySelectorAll('.draft-card').forEach(c => {
@@ -677,6 +746,7 @@ function mostraScheda(nome, bottone) {
     schedaAttiva = nome;
     document.querySelectorAll('.scheda').forEach(b => b.classList.toggle('attiva', b === bottone));
     applicaFiltri();
+    ricordaUI();
 }
 
 function filterDrafts(btn) {
@@ -684,6 +754,7 @@ function filterDrafts(btn) {
     btn.classList.add('active');
     filtroStato = btn.dataset.filter;
     applicaFiltri();
+    ricordaUI();
 }
 
 // ----------------------------------------------------------- calendario
@@ -766,6 +837,11 @@ function disegnaCalendario() {
 }
 
 disegnaCalendario();
+const uiRipristinata = ripristinaUI();
 applicaFiltri();
+if (uiRipristinata && uiRipristinata.ancora) {
+    const card = document.getElementById(uiRipristinata.ancora);
+    if (card && card.style.display !== 'none') card.scrollIntoView({ block: 'center' });
+}
 </script>
 {% endblock %}

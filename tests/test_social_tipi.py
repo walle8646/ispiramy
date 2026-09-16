@@ -253,12 +253,32 @@ def test_una_data_sbagliata_non_crea_l_uscita(admin, pulizia):
 
 # --------------------------------------------------------------------------- pagina
 
-def test_la_pagina_offre_il_selettore_del_tipo_e_l_aggiunta_di_uscite():
+def _pagina():
     import io
     import os
     percorso = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
                             "app", "templates", "admin", "social.html")
-    html = io.open(percorso, encoding="utf-8").read()
+    return io.open(percorso, encoding="utf-8").read()
+
+
+def test_la_pagina_offre_il_selettore_del_tipo_e_l_aggiunta_di_uscite():
+    html = _pagina()
     assert "cambiaTipo({{ c.id }}, this.value)" in html
     assert "aggiungiUscita({{ c.id }})" in html
     assert "piattaforme_per_tipo(c.content_kind)" in html, "le piattaforme offerte dipendono dal tipo"
+
+
+def test_la_pagina_ricorda_scheda_e_filtro_quando_si_ricarica():
+    """Aggiungere un social ricarica la pagina: senza memoria si tornava in
+    cima alla prima scheda, perdendo il punto in cui si stava lavorando."""
+    html = _pagina()
+    assert "sessionStorage.setItem(MEMORIA_UI" in html
+    assert "function ripristinaUI()" in html
+    assert "ripristinaUI();" in html, "lo stato va riletto al caricamento della pagina"
+
+
+def test_eliminare_un_uscita_tocca_la_riga_giusta():
+    """La riga si chiama uscita-N da quando le card sono i contenuti."""
+    html = _pagina()
+    assert "document.getElementById(`uscita-${id}`)" in html
+    assert "document.getElementById(`draft-${id}`)" not in html
