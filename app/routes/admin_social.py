@@ -269,6 +269,42 @@ async def admin_social_generate_media(draft_id: int, request: Request):
         return JSONResponse({"ok": False, "message": str(e)[:300]}, status_code=500)
 
 
+@router.post("/social/drafts/{draft_id}/kind")
+async def admin_social_set_kind(draft_id: int, request: Request):
+    """Sposta la bozza in un'altra scheda, senza rigenerare il media.
+
+    Il tipo e' una classificazione: un video gia' fatto con le slide deve poter
+    stare fra i post video senza rifarlo daccapo (e senza ripagare la voce).
+    """
+    admin_user = require_admin(request)
+    if not admin_user:
+        return JSONResponse({"ok": False, "message": "Non autorizzato"}, status_code=403)
+
+    try:
+        corpo = await request.json()
+    except Exception:
+        corpo = {}
+    stile = (corpo or {}).get("stile")
+    if stile not in TIPI:
+        return JSONResponse({"ok": False, "message": "Tipo di contenuto non valido"}, status_code=400)
+
+    with Session(engine) as session:
+        draft = session.get(SocialDraft, draft_id)
+        if not draft:
+            return JSONResponse({"ok": False, "message": "Draft non trovato"}, status_code=404)
+        if stile not in tipi_ammessi(draft.platform):
+            return JSONResponse({
+                "ok": False,
+                "message": f"{ETICHETTE_TIPO[stile]} non è pubblicabile su {PLATFORM_LABELS.get(draft.platform, draft.platform)}",
+            }, status_code=400)
+        draft.content_kind = stile
+        draft.updated_at = datetime.utcnow()
+        session.add(draft)
+        session.commit()
+    logger.info(f"Admin social: draft {draft_id} spostato in '{stile}'")
+    return {"ok": True, "message": f"Spostato in «{ETICHETTE_TIPO[stile]}»"}
+
+
 @router.post("/social/drafts/{draft_id}/publish")
 async def admin_social_publish_now(draft_id: int, request: Request):
     """Pubblica subito un draft approvato (o ritenta un failed dopo verifica idempotente)."""

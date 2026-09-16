@@ -277,6 +277,23 @@
         cursor: pointer;
     }
     .scheda.attiva { background: #2e7d32; color: #fff; }
+    .tipo-scelta {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: .8rem;
+        color: #777;
+        margin-right: 4px;
+    }
+    .tipo-scelta select {
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        padding: 7px 10px;
+        font-size: .85rem;
+        color: #333;
+        background: #fff;
+        cursor: pointer;
+    }
     .tipo-chip {
         background: #eef4ef;
         color: #2e7d32;
@@ -421,6 +438,13 @@
         {% endif %}
 
         <div class="draft-actions">
+            <label class="tipo-scelta">Tipo
+                <select onchange="cambiaTipo({{ d.id }}, this.value)">
+                    {% for tipo in tipi_ammessi(d.platform) %}
+                    <option value="{{ tipo }}" {% if tipi[d.id] == tipo %}selected{% endif %}>{{ etichette_tipo[tipo] }}</option>
+                    {% endfor %}
+                </select>
+            </label>
             {% if d.status in ('draft', 'approved', 'failed', 'rejected') %}
             <button class="btn btn-light" onclick="saveDraft({{ d.id }})"><i class="fas fa-floppy-disk"></i> Salva</button>
             {% endif %}
@@ -521,6 +545,13 @@ async function retryDraft(id, raggiuntoLaPiattaforma) {
         'a volte il social segnala un errore anche quando pubblica.\n\n' +
         'Ritentare con un nuovo invio?')) return;
     await draftAction(id, 'approve');
+}
+
+async function cambiaTipo(id, stile) {
+    // Solo classificazione: sposta la bozza di scheda senza rigenerare il media
+    const r = await post(`/admin/social/drafts/${id}/kind`, { stile });
+    toast(r.message, !r.ok);
+    if (r.ok) setTimeout(() => location.reload(), 800);
 }
 
 async function generateMedia(id, stile) {
