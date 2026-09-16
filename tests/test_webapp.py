@@ -122,10 +122,11 @@ def test_le_frasi_dell_invito_non_spezzano_il_javascript():
     era già successo con 'come un'app' e la pagina restava senza JavaScript."""
     import re
 
-    for riga in _blocco_invito().splitlines():
+    # Nei commenti gli apostrofi sono liberi: si guarda solo il codice
+    codice = re.sub(r"/\*.*?\*/", "", _blocco_invito(), flags=re.S)
+    codice = re.sub(r"//[^\n]*", "", codice)
+    for riga in codice.splitlines():
         nuda = riga.strip()
-        if nuda.startswith("//") or nuda.startswith("/*") or nuda.startswith("*"):
-            continue
         assert not re.search(r"'[^'\n]*[A-Za-z]'[A-Za-z]", nuda), f"apostrofo da proteggere: {nuda}"
 
 
@@ -173,3 +174,36 @@ def test_anche_la_pagina_profilo_ha_il_collegamento():
     account = account[:account.index("</div>\n                </div>")]
     assert 'id="voceInstallaProfilo"' in account
     assert "voceInstallaProfilo" in _blocco_invito(), "deve essere collegata come le altre"
+
+
+def test_il_manifest_dichiara_se_stesso_come_app_collegata(client):
+    """Senza questa dichiarazione il browser non risponde a chi gli chiede se
+    l'app e' gia' installata: dal browser normale continueremmo a proporla."""
+    m = client.get("/manifest.webmanifest").json()
+    collegate = m["related_applications"]
+    assert collegate and collegate[0]["platform"] == "webapp"
+    assert collegate[0]["url"].endswith("/manifest.webmanifest")
+    # true direbbe al browser di proporre l'altra app al posto della nostra
+    assert m["prefer_related_applications"] is False
+
+
+def test_chiediamo_al_browser_se_l_app_c_e_gia():
+    """Aprendo il sito dal browser dopo aver installato l'app, la pagina non ha
+    modo di accorgersene da sola: lo deve chiedere."""
+    invito = _blocco_invito()
+    assert "navigator.getInstalledRelatedApps" in invito
+    assert "accendiVoci" in invito, "la risposta deve accendere o spegnere le voci"
+
+
+def test_le_voci_si_spengono_con_una_classe_non_con_lo_stile_in_riga():
+    """Le aree toccabili impongono display: inline-flex !important: un
+    display: none scritto sull'elemento perdeva, e nel profilo la voce
+    restava li' anche a chi aveva gia' installato l'app."""
+    base = _file("app", "templates", "base.html")
+    assert ".voce-installa-nascosta" in base and "display: none !important;" in base
+    assert "classList.toggle('voce-installa-nascosta'" in _blocco_invito()
+    for modello in ("base.html", "profile.html"):
+        testo = _file("app", "templates", modello)
+        for riga in testo.splitlines():
+            if "voceInstalla" in riga and "<a " in riga:
+                assert "display: none" not in riga, f"{modello}: usa la classe, non lo stile in riga"

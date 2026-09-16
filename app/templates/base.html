@@ -908,7 +908,7 @@
 
             <!-- Sul telefono il menu del profilo e' un cassetto dentro un altro
                  cassetto: qui la voce sta in chiaro, appena aperto il menu -->
-            <a href="#" class="navbar-link voce-installa-telefono" id="voceInstallaTelefono" style="display: none;">
+            <a href="#" class="navbar-link voce-installa-telefono voce-installa-nascosta" id="voceInstallaTelefono">
                 <i class="fas fa-mobile-alt"></i>
                 <span class="navbar-link-text">Installa l&#39;app</span>
             </a>
@@ -950,7 +950,7 @@
                             <span>Admin</span>
                         </a>
                         {% endif %}
-                        <a href="#" class="user-menu-item" id="voceInstalla" style="display: none;">
+                        <a href="#" class="user-menu-item voce-installa-nascosta" id="voceInstalla">
                             <i class="fas fa-mobile-alt"></i>
                             <span>Installa l&#39;app</span>
                         </a>
@@ -1678,6 +1678,13 @@
 
     <!-- 📱 Ispiramy come app: guscio in cache e invito all'installazione -->
     <style>
+        /* Le voci "installa" si spengono con questa classe e non con lo stile in
+           riga: le aree toccabili impongono display: inline-flex !important e
+           un display: none scritto sull'elemento perdeva il confronto. */
+        .voce-installa-nascosta {
+            display: none !important;
+        }
+
         .invito-app {
             position: fixed;
             left: 12px;
@@ -1787,8 +1794,26 @@
         const bottone = document.getElementById('invitoInstalla');
         let richiesta = null;
 
-        const installata = window.matchMedia('(display-mode: standalone)').matches
+        /* Aperta dentro l'app installata. Dal browser normale questo e' falso
+           anche se l'app c'e': ci pensa chiediAlBrowser() qui sotto. */
+        const dentroLApp = window.matchMedia('(display-mode: standalone)').matches
             || window.navigator.standalone === true;
+        const SEGNO = 'ispiramy-app-installata';
+
+        function segnata() {
+            try { return localStorage.getItem(SEGNO) === '1'; } catch (e) { return false; }
+        }
+
+        function segna(ceLHa) {
+            try {
+                if (ceLHa) { localStorage.setItem(SEGNO, '1'); }
+                else { localStorage.removeItem(SEGNO); }
+            } catch (e) { /* navigazione privata */ }
+        }
+
+        if (dentroLApp) { segna(true); }
+        // Cambia in corsa: il browser puo' dirci dopo com'e' messa davvero
+        let cELApp = dentroLApp || segnata();
         // Durante una videochiamata non si interrompe nessuno
         const inChiamata = location.pathname.indexOf('/booking/call/') === 0;
 
@@ -1851,7 +1876,7 @@
         // Da solo il banner si fa vedere solo sul telefono: sul computer c'e'
         // gia' l'icona del browser, e ci pensa la voce di menu
         function daSolo() {
-            return window.innerWidth <= 768 && !installata && !inChiamata && !rimandato();
+            return window.innerWidth <= 768 && !cELApp && !inChiamata && !rimandato();
         }
 
         if (invito) {
@@ -1869,31 +1894,56 @@
         window.addEventListener('beforeinstallprompt', function (evento) {
             evento.preventDefault();
             richiesta = evento;
-            if (!installata) { vociMenu.forEach(function (v) { v.style.display = ''; }); }
+            // Se il browser offre di installarla, qui non e' installata
+            segna(false);
+            accendiVoci(false);
             if (daSolo()) { mostra(false); }
         });
 
         window.addEventListener('appinstalled', function () {
             chiudi();
-            vociMenu.forEach(function (v) { v.style.display = 'none'; });
+            segna(true);
+            accendiVoci(true);
         });
 
         /* La voce nel menu e' l'unica strada sempre aperta: per chi ha chiuso
            il banner, per chi e' al computer, per chi non lo ha mai visto. */
-        if (!installata) {
-            vociMenu.forEach(function (voce) {
-                voce.style.display = '';
-                voce.addEventListener('click', function (evento) {
-                    evento.preventDefault();
-                    if (richiesta) {
-                        richiesta.prompt();
-                        richiesta.userChoice.finally(function () { richiesta = null; });
-                        return;
-                    }
-                    mostra(true);
-                });
+        vociMenu.forEach(function (voce) {
+            voce.addEventListener('click', function (evento) {
+                evento.preventDefault();
+                if (richiesta) {
+                    richiesta.prompt();
+                    richiesta.userChoice.finally(function () { richiesta = null; });
+                    return;
+                }
+                mostra(true);
             });
+        });
+
+        accendiVoci(cELApp);
+
+        function accendiVoci(ceLHa) {
+            cELApp = ceLHa;
+            vociMenu.forEach(function (v) { v.classList.toggle('voce-installa-nascosta', ceLHa); });
+            if (ceLHa && invito) { invito.classList.remove('visibile'); }
         }
+
+        /* Dal browser normale, dopo l'installazione, la pagina non ha modo di
+           accorgersene da sola: continuerebbe a proporre "installa" a chi l'app
+           ce l'ha gia'. Chrome risponde grazie a related_applications nel
+           manifest; dove la domanda non esiste (iPhone) restiamo al segno
+           lasciato dall'installazione, e comunque un browser che ci offre
+           l'installazione ci sta dicendo che li' l'app non c'e'. */
+        function chiediAlBrowser() {
+            if (!navigator.getInstalledRelatedApps) { return; }
+            navigator.getInstalledRelatedApps().then(function (app) {
+                const ceL = app && app.length > 0;
+                segna(ceL);
+                accendiVoci(ceL);
+            }).catch(function () { /* niente risposta: lasciamo com'e' */ });
+        }
+
+        chiediAlBrowser();
 
         /* Se l'evento non arriva - su iPhone non esiste proprio, e su Android
            puo' mancare per mille motivi - non lasciamo la pagina muta. */
