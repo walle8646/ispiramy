@@ -943,6 +943,10 @@
                             <span>Admin</span>
                         </a>
                         {% endif %}
+                        <a href="#" class="user-menu-item" id="voceInstalla" style="display: none;">
+                            <i class="fas fa-mobile-alt"></i>
+                            <span>Installa l&#39;app</span>
+                        </a>
                         <a href="/logout" class="user-menu-item logout-item">
                             <i class="fas fa-sign-out-alt"></i>
                             <span>Logout</span>
@@ -1728,7 +1732,10 @@
         }
 
         @media (min-width: 769px) {
-            .invito-app { display: none !important; }
+            .invito-app {
+                left: auto;
+                width: 380px;
+            }
         }
     </style>
 
@@ -1752,9 +1759,15 @@
         }
 
         const RICORDA = 'ispiramy-invito-app';
-        const GIORNI_DI_PAUSA = 30;
+        /* Quanto sta zitto il banner dopo una chiusura. Tre giorni: abbastanza
+           da non diventare molesto, poco da ricapitare a chi ci ripensa. */
+        const GIORNI_DI_PAUSA = 3;
+
         const invito = document.getElementById('invitoApp');
-        if (!invito) { return; }
+        const voceMenu = document.getElementById('voceInstalla');
+        const testo = document.getElementById('invitoTesto');
+        const bottone = document.getElementById('invitoInstalla');
+        let richiesta = null;
 
         const installata = window.matchMedia('(display-mode: standalone)').matches
             || window.navigator.standalone === true;
@@ -1771,20 +1784,66 @@
         }
 
         function chiudi() {
-            invito.classList.remove('visibile');
+            if (invito) { invito.classList.remove('visibile'); }
             try { localStorage.setItem(RICORDA, String(Date.now())); } catch (e) { /* navigazione privata */ }
         }
 
-        document.getElementById('invitoChiudi').addEventListener('click', chiudi);
+        /* Dove sta la voce "installa" in questo browser. utile=false significa
+           che da qui non si installa proprio niente. */
+        function istruzioni() {
+            const ua = navigator.userAgent;
+            const suApple = /iPad|iPhone|iPod/.test(ua) && !window.MSStream;
+            if (suApple) {
+                if (!/Safari/.test(ua) || /CriOS|FxiOS|EdgiOS/.test(ua)) {
+                    return { utile: false, frase: "Su iPhone si installa solo da Safari: apri Ispiramy li&#39;." };
+                }
+                return { utile: true, frase: 'Tocca <strong>Condividi</strong>, poi "Aggiungi alla schermata Home".' };
+            }
+            if (/Android/.test(ua)) {
+                return { utile: true, frase: 'Apri il menu <strong>&#8942;</strong> del browser e tocca "Installa app".' };
+            }
+            if (/Firefox/.test(ua)) {
+                return { utile: false, frase: "Questo browser non installa i siti come app: usa Chrome o Edge." };
+            }
+            if (/Edg\//.test(ua)) {
+                return { utile: true, frase: 'Menu <strong>&#8230;</strong> del browser, poi "App" e "Installa questo sito".' };
+            }
+            if (/Chrome/.test(ua)) {
+                return { utile: true, frase: "Nella barra degli indirizzi tocca l&#39;icona di installazione, a destra." };
+            }
+            return { utile: false, frase: "Questo browser non installa i siti come app: usa Chrome o Edge." };
+        }
 
-        if (installata || inChiamata || rimandato()) { return; }
-
-        const testo = document.getElementById('invitoTesto');
-        const bottone = document.getElementById('invitoInstalla');
-        let richiesta = null;
-
-        function mostra() {
+        /* forzato = l'ha chiesto la persona dal menu, quindi si mostra comunque:
+           niente pause, niente limiti di schermo. */
+        function mostra(forzato) {
+            if (!invito) { return; }
+            if (richiesta) {
+                testo.innerHTML = "<strong>Installa Ispiramy</strong>Si apre come un'app.";
+                bottone.style.display = '';
+            } else {
+                const dove = istruzioni();
+                if (!dove.utile && !forzato) { return; }
+                testo.innerHTML = '<strong>Installa Ispiramy</strong>' + dove.frase;
+                bottone.style.display = 'none';
+            }
             invito.classList.add('visibile');
+        }
+
+        // Da solo il banner si fa vedere solo sul telefono: sul computer c'e'
+        // gia' l'icona del browser, e ci pensa la voce di menu
+        function daSolo() {
+            return window.innerWidth <= 768 && !installata && !inChiamata && !rimandato();
+        }
+
+        if (invito) {
+            document.getElementById('invitoChiudi').addEventListener('click', chiudi);
+
+            bottone.addEventListener('click', function () {
+                if (!richiesta) { chiudi(); return; }
+                richiesta.prompt();
+                richiesta.userChoice.finally(function () { richiesta = null; chiudi(); });
+            });
         }
 
         /* Android: il browser ci passa lui l'installazione, basta chiedergliela.
@@ -1792,45 +1851,35 @@
         window.addEventListener('beforeinstallprompt', function (evento) {
             evento.preventDefault();
             richiesta = evento;
-            testo.innerHTML = "<strong>Installa Ispiramy</strong>Si apre come un'app.";
-            bottone.style.display = '';
-            mostra();
+            if (voceMenu) { voceMenu.style.display = ''; }
+            if (daSolo()) { mostra(false); }
         });
 
-        bottone.addEventListener('click', function () {
-            if (!richiesta) { chiudi(); return; }
-            richiesta.prompt();
-            richiesta.userChoice.finally(function () { richiesta = null; chiudi(); });
+        window.addEventListener('appinstalled', function () {
+            chiudi();
+            if (voceMenu) { voceMenu.style.display = 'none'; }
         });
 
-        window.addEventListener('appinstalled', chiudi);
-
-        /* Se quell'evento non arriva - su iPhone non esiste proprio, e su
-           Android puo' mancare per mille motivi - non lasciamo la pagina muta:
-           diciamo a mano dove sta la voce giusta in quel browser. */
-        function aMano() {
-            const ua = navigator.userAgent;
-            const suApple = /iPad|iPhone|iPod/.test(ua) && !window.MSStream;
-            if (suApple) {
-                if (!/Safari/.test(ua) || /CriOS|FxiOS|EdgiOS/.test(ua)) {
-                    // Fuori da Safari su iPhone non si installa niente
-                    return null;
+        /* La voce nel menu e' l'unica strada sempre aperta: per chi ha chiuso
+           il banner, per chi e' al computer, per chi non lo ha mai visto. */
+        if (voceMenu && !installata) {
+            voceMenu.style.display = '';
+            voceMenu.addEventListener('click', function (evento) {
+                evento.preventDefault();
+                if (richiesta) {
+                    richiesta.prompt();
+                    richiesta.userChoice.finally(function () { richiesta = null; });
+                    return;
                 }
-                return 'Tocca <strong>Condividi</strong>, poi "Aggiungi alla schermata Home".';
-            }
-            if (/Android/.test(ua)) {
-                return 'Apri il menu <strong>&#8942;</strong> del browser e tocca "Installa app".';
-            }
-            return null;
+                mostra(true);
+            });
         }
 
+        /* Se l'evento non arriva - su iPhone non esiste proprio, e su Android
+           puo' mancare per mille motivi - non lasciamo la pagina muta. */
         setTimeout(function () {
-            if (richiesta || invito.classList.contains('visibile')) { return; }
-            const istruzioni = aMano();
-            if (!istruzioni) { return; }
-            testo.innerHTML = '<strong>Installa Ispiramy</strong>' + istruzioni;
-            bottone.style.display = 'none';
-            mostra();
+            if (richiesta || !invito || invito.classList.contains('visibile')) { return; }
+            if (daSolo()) { mostra(false); }
         }, 3000);
     })();
     </script>

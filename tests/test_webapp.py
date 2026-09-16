@@ -127,3 +127,27 @@ def test_le_frasi_dell_invito_non_spezzano_il_javascript():
         if nuda.startswith("//") or nuda.startswith("/*") or nuda.startswith("*"):
             continue
         assert not re.search(r"'[^'\n]*[A-Za-z]'[A-Za-z]", nuda), f"apostrofo da proteggere: {nuda}"
+
+
+def test_la_pausa_dopo_la_x_dura_tre_giorni():
+    """Chi chiude il banner non lo rivede per tre giorni: abbastanza da non
+    essere molesto, poco da ricapitare a chi ci ripensa."""
+    assert "const GIORNI_DI_PAUSA = 3;" in _blocco_invito()
+
+
+def test_c_e_sempre_una_voce_per_installare_nel_menu():
+    """Il banner si può chiudere e sul computer non compare: senza una voce
+    fissa nel menu, chi la vuole installare non ha nessuna strada."""
+    base = _file("app", "templates", "base.html")
+    assert 'id="voceInstalla"' in base
+    menu = base[base.index('<div class="user-menu-dropdown"'):base.index("</div>", base.index('id="voceInstalla"'))]
+    assert "voceInstalla" in menu, "la voce deve stare nel menu del profilo"
+    invito = _blocco_invito()
+    assert "mostra(true)" in invito, "dal menu il banner si apre anche se era stato chiuso"
+
+
+def test_dal_computer_il_banner_non_compare_da_solo():
+    """Sul desktop l'installazione la offre già il browser: il banner si vede
+    solo se lo chiede la persona dal menu."""
+    invito = _blocco_invito()
+    assert "window.innerWidth <= 768" in invito
