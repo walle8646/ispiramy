@@ -31,14 +31,17 @@ def configurato() -> bool:
     return bool(os.getenv("PEXELS_API_KEY"))
 
 
-def _file_migliore(video: dict) -> Optional[dict]:
-    """Il file piu' leggero fra quelli verticali e abbastanza grandi."""
+def _file_migliore(video: dict, orizzontale: bool = False) -> Optional[dict]:
+    """Il file piu' leggero fra quelli del verso giusto e abbastanza grandi."""
     candidati = []
     for file in video.get("video_files") or []:
         larghezza, altezza = file.get("width") or 0, file.get("height") or 0
         if not file.get("link") or larghezza < LARGHEZZA_MINIMA:
             continue
-        if altezza <= larghezza:
+        if orizzontale:
+            if larghezza <= altezza:
+                continue  # verticale: ritagliato in 16:9 resterebbe una fessura
+        elif altezza <= larghezza:
             continue  # orizzontale: ritagliato in 9:16 perderebbe troppo
         candidati.append((larghezza * altezza, file))
     if not candidati:
@@ -66,8 +69,12 @@ def _scarica(url: str, destinazione: Path) -> bool:
         return False
 
 
-def cerca_clip(parole: str, durata_minima: float, cartella: Path, nome: str) -> Optional[dict]:
-    """Cerca una clip verticale per queste parole chiave.
+def cerca_clip(parole: str, durata_minima: float, cartella: Path, nome: str,
+               orientamento: str = "portrait") -> Optional[dict]:
+    """Cerca una clip per queste parole chiave.
+
+    L'orientamento e' verticale per i social e orizzontale per il video della
+    homepage, che vive dentro un riquadro 16:9.
 
     Ritorna {"percorso", "autore", "id"} oppure None: un ritorno vuoto non e'
     un errore, vuol dire solo che quella scena si fa con la slide.
@@ -79,7 +86,7 @@ def cerca_clip(parole: str, durata_minima: float, cartella: Path, nome: str) -> 
         risposta = requests.get(
             RICERCA,
             headers={"Authorization": os.getenv("PEXELS_API_KEY")},
-            params={"query": parole, "orientation": "portrait", "size": "medium", "per_page": 15},
+            params={"query": parole, "orientation": orientamento, "size": "medium", "per_page": 15},
             timeout=30,
         )
     except requests.RequestException as e:
@@ -94,7 +101,7 @@ def cerca_clip(parole: str, durata_minima: float, cartella: Path, nome: str) -> 
         if (v.get("duration") or 0) >= max(2.0, durata_minima)
     ]
     for scelto in video[:5]:
-        file = _file_migliore(scelto)
+        file = _file_migliore(scelto, orizzontale=(orientamento == "landscape"))
         if not file:
             continue
         percorso = cartella / f"{nome}.mp4"
