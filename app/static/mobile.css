@@ -334,3 +334,333 @@
         padding-top: 0 !important;
     }
 }
+
+/* ==========================================================================
+   📱 ASPETTO DA APP (solo telefono, fino a 768px)
+
+   Chi apre il sito dal telefono si aspetta le cose dove le mette un'app: le
+   destinazioni in basso sotto il pollice, niente menu a panino da indovinare,
+   niente piede di pagina lungo tre schermate. Sopra i 768px non cambia nulla.
+   ========================================================================== */
+@media (max-width: 768px) {
+    /* La barra copre gli ultimi 60px: senza questo spazio, l'ultima riga di
+       ogni pagina resta sotto e non si legge mai */
+    body {
+        padding-bottom: calc(62px + env(safe-area-inset-bottom)) !important;
+    }
+
+    .schede {
+        position: fixed;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        z-index: 1200;
+        display: flex;
+        align-items: stretch;
+        background: rgba(255, 255, 255, 0.97);
+        backdrop-filter: blur(10px);
+        border-top: 1px solid #e6eae7;
+        padding-bottom: env(safe-area-inset-bottom);
+        box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.06);
+    }
+
+    .scheda {
+        flex: 1 1 0;
+        min-width: 0;
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 3px;
+        padding: 8px 2px 7px;
+        border: none;
+        background: none;
+        font-family: inherit;
+        font-size: 10.5px;
+        font-weight: 600;
+        line-height: 1;
+        color: #7b8a80;
+        text-decoration: none;
+        cursor: pointer;
+    }
+
+    .scheda i {
+        font-size: 19px;
+    }
+
+    .scheda span {
+        max-width: 100%;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    /* Dove sei adesso: il verde pieno piu' la lineetta in alto, come le app */
+    .scheda.attiva {
+        color: #2e7d32;
+    }
+
+    .scheda.attiva::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 22%;
+        right: 22%;
+        height: 3px;
+        border-radius: 0 0 3px 3px;
+        background: #43a047;
+    }
+
+    .scheda-pallino {
+        display: none;
+        position: absolute;
+        top: 6px;
+        right: 50%;
+        margin-right: -18px;
+        width: 9px;
+        height: 9px;
+        border-radius: 50%;
+        background: #dc3545;
+        border: 2px solid white;
+    }
+
+    .scheda-pallino.acceso {
+        display: block;
+    }
+
+    /* Il menu a panino sparisce: le destinazioni sono le schede qui sotto.
+       In alto restano solo campanella e chat, come nelle app, e il profilo
+       si raggiunge dal foglio del menu invece che da un secondo cassetto. */
+    /* La barra in alto ha gia' le sue regole dentro base.html, marcate
+       !important: per spegnerle serve un selettore piu' preciso, non basta
+       ripetere la stessa cosa qui. */
+    .navbar .hamburger-btn,
+    .navbar .navbar-link,
+    .navbar .register-btn,
+    .navbar .user-profile-dropdown {
+        display: none !important;
+    }
+
+    /* Una riga sola: marchio a sinistra, icone a destra */
+    .navbar .navbar-left {
+        width: auto !important;
+        flex: 1 1 auto !important;
+    }
+
+    .navbar .search-wrapper {
+        display: none !important;
+    }
+
+    .icona-cerca-telefono {
+        display: inline-flex !important;
+        align-items: center;
+        justify-content: center;
+        width: 36px;
+        height: 36px;
+        color: #1b5e20;
+        font-size: 19px;
+        text-decoration: none;
+    }
+
+    .navbar .navbar-links {
+        display: flex !important;
+        flex-direction: row !important;
+        align-items: center !important;
+        justify-content: flex-end !important;
+        width: auto !important;
+        order: 2 !important;
+        gap: 18px !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        background: none !important;
+        box-shadow: none !important;
+    }
+
+    /* Il piede di pagina e' una cosa da sito: i suoi collegamenti stanno nel
+       foglio del menu, dove si cercano davvero */
+    .footer {
+        display: none !important;
+    }
+
+    /* Il pulsante "Crea una Richiesta" della community stava incollato in
+       fondo: ora quel posto e' delle schede, quindi sale sopra */
+    .ask-button-sticky-bottom {
+        bottom: calc(62px + env(safe-area-inset-bottom)) !important;
+    }
+
+    /* La chat galleggiante finiva dietro la barra */
+    .chat-widget {
+        bottom: calc(74px + env(safe-area-inset-bottom)) !important;
+    }
+
+    .chat-notification {
+        bottom: calc(150px + env(safe-area-inset-bottom)) !important;
+    }
+
+    /* ---------- Il foglio che sale dal basso ---------- */
+    .foglio-velo {
+        position: fixed;
+        inset: 0;
+        z-index: 1250;
+        background: rgba(12, 30, 14, 0.45);
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.2s ease;
+    }
+
+    .foglio-velo.aperto {
+        opacity: 1;
+        pointer-events: auto;
+    }
+
+    .foglio {
+        position: fixed;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        z-index: 1300;
+        max-height: 80vh;
+        overflow-y: auto;
+        padding: 10px 16px calc(20px + env(safe-area-inset-bottom));
+        background: white;
+        border-radius: 20px 20px 0 0;
+        box-shadow: 0 -8px 30px rgba(0, 0, 0, 0.2);
+        transform: translateY(102%);
+        transition: transform 0.25s ease;
+    }
+
+    .foglio.aperto {
+        transform: translateY(0);
+    }
+
+    .foglio-maniglia {
+        width: 42px;
+        height: 4px;
+        margin: 2px auto 14px;
+        border-radius: 3px;
+        background: #d7ded8;
+    }
+
+    .foglio-persona {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 10px 6px 16px;
+        text-decoration: none;
+        color: #1b5e20;
+        border-bottom: 1px solid #eef2ef;
+    }
+
+    .foglio-persona img {
+        width: 46px;
+        height: 46px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 2px solid #c8e6c9;
+    }
+
+    .foglio-persona strong {
+        display: block;
+        font-size: 1rem;
+    }
+
+    .foglio-persona span {
+        font-size: 0.82rem;
+        color: #78909c;
+    }
+
+    .foglio-ospite {
+        display: flex;
+        gap: 10px;
+        padding-bottom: 14px;
+        border-bottom: 1px solid #eef2ef;
+    }
+
+    .foglio-bottone {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 46px;
+        border-radius: 23px;
+        background: #43a047;
+        color: white;
+        font-weight: 600;
+        text-decoration: none;
+    }
+
+    .foglio-bottone.secondario {
+        background: #f0f8f0;
+        color: #2e7d32;
+    }
+
+    .foglio-voci {
+        display: flex;
+        flex-direction: column;
+        padding-top: 8px;
+    }
+
+    .foglio-voci a,
+    .foglio-voci button {
+        position: relative;
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        min-height: 52px;
+        padding: 0 6px;
+        border: none;
+        background: none;
+        font-family: inherit;
+        font-size: 0.97rem;
+        font-weight: 500;
+        color: #33404a;
+        text-decoration: none;
+        text-align: left;
+        cursor: pointer;
+    }
+
+    .foglio-voci i {
+        width: 22px;
+        text-align: center;
+        color: #43a047;
+    }
+
+    .foglio-uscita,
+    .foglio-uscita i {
+        color: #dc3545 !important;
+    }
+
+    .foglio-pallino {
+        display: none;
+        width: 9px;
+        height: 9px;
+        border-radius: 50%;
+        background: #dc3545;
+    }
+
+    .foglio-pallino.acceso {
+        display: inline-block;
+    }
+
+    /* Col foglio aperto la pagina sotto non deve scorrere */
+    body.foglio-aperto {
+        overflow: hidden;
+    }
+}
+
+/* Sul computer la barra e il foglio non esistono */
+@media (min-width: 769px) {
+    .schede,
+    .foglio,
+    .foglio-velo {
+        display: none !important;
+    }
+}
+
+/* L'icona della lente esiste solo sul telefono: sul computer c'e' il campo */
+@media (min-width: 769px) {
+    .icona-cerca-telefono {
+        display: none !important;
+    }
+}

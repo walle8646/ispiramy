@@ -122,7 +122,11 @@
     async function loadConversations() {
         try {
             const response = await fetch('/api/conversations');
-            const data = await response.json();
+            const risposta = await response.json();
+            // L'API risponde {conversations: [...]}, non una lista: letta come
+            // lista, data.map non esisteva e la pagina diceva sempre
+            // "Errore di connessione", anche con le conversazioni al loro posto
+            const data = Array.isArray(risposta) ? risposta : (risposta.conversations || []);
 
             const listContainer = document.getElementById('conversationList');
 

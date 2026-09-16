@@ -896,6 +896,12 @@
         
         <!-- Right: Link semplici in fila -->
         <div class="navbar-links">
+            {# Sul telefono il campo di ricerca in barra resta largo 56px e non
+               ci si scrive niente: qui diventa un'icona che porta alla ricerca
+               vera, quella della pagina Esperti. #}
+            <a href="/consultants" class="icona-cerca-telefono" aria-label="Cerca">
+                <i class="fas fa-magnifying-glass"></i>
+            </a>
             <!-- Trova Consulenti (le categorie sono nella striscia sotto la navbar) -->
             <a href="/consultants" class="navbar-link">
                 <span class="navbar-link-text">Trova Consulenti</span>
@@ -1064,10 +1070,133 @@
         </div>
     </footer>
 
+    {# ========== BARRA DELLE SCHEDE (solo telefono) ==========
+       Sul telefono il menu a panino nasconde tutto dietro due tocchi ciechi.
+       Qui le quattro destinazioni vere stanno sempre sotto il pollice, dove
+       le cerca chi e' abituato alle app, e la quinta scheda apre il resto. #}
+    <nav class="schede" id="schede" aria-label="Navigazione principale">
+        <a href="/" class="scheda {% if request.url.path == '/' %}attiva{% endif %}">
+            <i class="fas fa-house"></i>
+            <span>Home</span>
+        </a>
+        <a href="/consultants" class="scheda {% if request.url.path.startswith('/consultants') or request.url.path.startswith('/user/') %}attiva{% endif %}">
+            <i class="fas fa-user-tie"></i>
+            <span>Esperti</span>
+        </a>
+        <a href="/community" class="scheda {% if request.url.path.startswith('/community') %}attiva{% endif %}">
+            <i class="fas fa-comments"></i>
+            <span>Community</span>
+        </a>
+        {% if current_user %}
+        <a href="/messaggi" class="scheda {% if request.url.path.startswith('/messaggi') %}attiva{% endif %}">
+            <i class="fas fa-paper-plane"></i>
+            <span>Messaggi</span>
+            <span class="scheda-pallino" id="schedaMessaggiPallino"></span>
+        </a>
+        {% else %}
+        <a href="/login" class="scheda {% if request.url.path.startswith('/login') %}attiva{% endif %}">
+            <i class="fas fa-right-to-bracket"></i>
+            <span>Accedi</span>
+        </a>
+        {% endif %}
+        <button type="button" class="scheda" id="schedaMenu" onclick="apriMenuTelefono()">
+            <i class="fas fa-bars"></i>
+            <span>Menu</span>
+            <span class="scheda-pallino" id="schedaMenuPallino"></span>
+        </button>
+    </nav>
+
+    {# Il foglio che sale dal basso: tutto quello che non sta nelle schede #}
+    <div class="foglio-velo" id="foglioVelo" onclick="chiudiMenuTelefono()"></div>
+    <div class="foglio" id="foglioMenu" role="dialog" aria-label="Menu" aria-hidden="true">
+        <div class="foglio-maniglia"></div>
+        {% if current_user %}
+        <a href="/profile" class="foglio-persona">
+            <img src="{{ current_user.profile_picture or current_user|default_avatar }}"
+                 alt="" onerror="this.src='{{ current_user|default_avatar }}'">
+            <div>
+                <strong>{{ current_user.nome or 'Il tuo profilo' }} {{ current_user.cognome or '' }}</strong>
+                <span>Vedi il tuo profilo</span>
+            </div>
+        </a>
+        {% else %}
+        <div class="foglio-ospite">
+            <a href="/login" class="foglio-bottone secondario">Accedi</a>
+            <a href="/register" class="foglio-bottone">Registrati</a>
+        </div>
+        {% endif %}
+
+        <div class="foglio-voci">
+            <a href="/come-funziona"><i class="fas fa-circle-question"></i> Come funziona</a>
+            {% if current_user %}
+            <button type="button" onclick="chiudiMenuTelefono(); toggleNotifications();">
+                <i class="fas fa-bell"></i> Notifiche
+                <span class="foglio-pallino" id="foglioNotifichePallino"></span>
+            </button>
+            {% endif %}
+            <a href="#" class="voce-installa-nascosta" id="voceInstallaFoglio"><i class="fas fa-mobile-alt"></i> Installa l&#39;app</a>
+            <a href="/faq"><i class="fas fa-lightbulb"></i> Domande frequenti</a>
+            <a href="/contact"><i class="fas fa-envelope"></i> Contattaci</a>
+            {% if current_user and current_user.user_type_id >= 2 %}
+            <a href="/admin"><i class="fas fa-shield-halved"></i> Amministrazione</a>
+            {% endif %}
+            {% if current_user %}
+            <a href="/logout" class="foglio-uscita"><i class="fas fa-arrow-right-from-bracket"></i> Esci</a>
+            {% endif %}
+        </div>
+    </div>
+
     <!-- Chat Widget (incluso globalmente) -->
     {% if current_user %}
         {% include "chat_widget.html" %}
     {% endif %}
+
+    <script>
+    /* Il foglio del menu: apre, chiude, e non lascia scorrere la pagina sotto.
+       I pallini rossi sono gli stessi conteggi della barra in alto, riportati
+       sulle schede: da telefono la barra in alto non si vede quasi mai. */
+    function apriMenuTelefono() {
+        document.getElementById('foglioMenu').classList.add('aperto');
+        document.getElementById('foglioVelo').classList.add('aperto');
+        document.getElementById('foglioMenu').setAttribute('aria-hidden', 'false');
+        document.body.classList.add('foglio-aperto');
+    }
+
+    function chiudiMenuTelefono() {
+        document.getElementById('foglioMenu').classList.remove('aperto');
+        document.getElementById('foglioVelo').classList.remove('aperto');
+        document.getElementById('foglioMenu').setAttribute('aria-hidden', 'true');
+        document.body.classList.remove('foglio-aperto');
+    }
+
+    (function () {
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape') { chiudiMenuTelefono(); }
+        });
+
+        function acceso(elemento, deve) {
+            if (elemento) { elemento.classList.toggle('acceso', !!deve); }
+        }
+
+        function quanti(id) {
+            const b = document.getElementById(id);
+            if (!b || b.style.display === 'none') { return 0; }
+            return parseInt(b.textContent, 10) || 0;
+        }
+
+        // Gli stessi conteggi che aggiornano la campanella in alto
+        function aggiornaPallini() {
+            const notifiche = quanti('notificationsBadge');
+            const messaggi = quanti('headerChatBadge');
+            acceso(document.getElementById('schedaMessaggiPallino'), messaggi);
+            acceso(document.getElementById('foglioNotifichePallino'), notifiche);
+            acceso(document.getElementById('schedaMenuPallino'), notifiche);
+        }
+
+        setInterval(aggiornaPallini, 3000);
+        window.addEventListener('load', aggiornaPallini);
+    })();
+    </script>
 
     <!-- JavaScript Globale -->
     <script src="{{ statico('script.js') }}"></script>
@@ -1912,6 +2041,7 @@
             document.getElementById('voceInstalla'),
             document.getElementById('voceInstallaTelefono'),
             document.getElementById('voceInstallaProfilo'),
+            document.getElementById('voceInstallaFoglio'),
         ].filter(Boolean);
         const testo = document.getElementById('invitoTesto');
         const bottone = document.getElementById('invitoInstalla');

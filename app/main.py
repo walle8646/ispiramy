@@ -143,7 +143,30 @@ app.add_middleware(
 app.add_middleware(StagingAuthMiddleware)
 
 # Templates
-templates = Jinja2Templates(directory="app/templates")
+def _utente_in_ogni_pagina(request: Request) -> dict:
+    """Mette current_user in tutte le pagine, non solo in quelle che lo passano.
+
+    Ogni rotta doveva ricordarsi di aggiungerlo al contesto, e meta' non lo
+    faceva: sui messaggi, sulle pagine informative e su "Come funziona" la
+    barra in alto mostrava "Accedi" a chi l'accesso lo aveva gia' fatto.
+
+    Il risultato si tiene su request.state: la rotta ha gia' chiamato
+    verify_token, e senza memoria si rileggerebbe l'utente dal database a ogni
+    pagina.
+    """
+    ricordato = getattr(request.state, "utente_corrente", "?")
+    if ricordato == "?":
+        try:
+            from app.routes.auth import verify_token
+            ricordato = verify_token(request)
+        except Exception:
+            ricordato = None
+        request.state.utente_corrente = ricordato
+    return {"current_user": ricordato}
+
+
+templates = Jinja2Templates(directory="app/templates",
+                            context_processors=[_utente_in_ogni_pagina])
 # Aggiungi filtro personalizzato per nomi utenti
 templates.env.filters['display_name'] = get_display_name
 templates.env.filters['default_avatar'] = get_default_avatar
