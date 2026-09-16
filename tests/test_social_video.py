@@ -303,9 +303,9 @@ def test_il_montaggio_codifica_una_scena_alla_volta(monkeypatch, tmp_path):
     su Render (512 MB) il processo veniva ucciso e il video non usciva."""
     comandi = []
     monkeypatch.setattr(vg, "_esegui", lambda argomenti, cosa: comandi.append(argomenti))
-    slide = [tmp_path / f"s{i}.png" for i in range(4)]
+    scene = [{"tipo": "slide", "clip": None, "immagine": tmp_path / f"s{i}.png"} for i in range(4)]
     durate = [1.4, 2.25, 1.9, 3.1]
-    vg._monta("ffmpeg", slide, durate, tmp_path / "voce.wav", tmp_path / "video.mp4")
+    vg._monta("ffmpeg", scene, durate, tmp_path / "voce.wav", tmp_path / "video.mp4")
 
     scene, unione = comandi[:-1], comandi[-1]
     assert len(scene) == 4
@@ -322,6 +322,76 @@ def test_il_montaggio_codifica_una_scena_alla_volta(monkeypatch, tmp_path):
     # Il totale dei fotogrammi segue la durata della voce, senza sommare arrotondamenti
     fotogrammi = [int(c[c.index("-frames:v") + 1]) for c in scene]
     assert sum(fotogrammi) == round(sum(durate) * vg.FPS)
+
+
+def test_le_scene_di_repertorio_usano_la_clip_con_la_grafica_sopra(monkeypatch, tmp_path):
+    comandi = []
+    monkeypatch.setattr(vg, "_esegui", lambda argomenti, cosa: comandi.append(argomenti))
+    scene = [
+        {"tipo": "repertorio", "clip": tmp_path / "c1.mp4", "immagine": tmp_path / "t1.png"},
+        {"tipo": "slide", "clip": None, "immagine": tmp_path / "s2.png"},
+    ]
+    vg._monta("ffmpeg", scene, [2.0, 2.0], tmp_path / "voce.wav", tmp_path / "video.mp4")
+
+    repertorio_cmd = comandi[0]
+    assert "-stream_loop" in repertorio_cmd, "la clip si ripete se e' piu' corta della frase"
+    filtro = repertorio_cmd[repertorio_cmd.index("-filter_complex") + 1]
+    assert "overlay=0:0" in filtro and f"crop={vg.W}:{vg.H}" in filtro
+    assert "-an" in repertorio_cmd, "l'audio della clip non deve coprire la voce"
+    assert repertorio_cmd[repertorio_cmd.index("-threads") + 1] == "1"
+
+
+def test_la_musica_va_sotto_la_voce(monkeypatch, tmp_path):
+    comandi = []
+    monkeypatch.setattr(vg, "_esegui", lambda argomenti, cosa: comandi.append(argomenti))
+    scene = [{"tipo": "slide", "clip": None, "immagine": tmp_path / "s.png"}]
+    vg._monta("ffmpeg", scene, [4.0], tmp_path / "voce.wav", tmp_path / "video.mp4", musica=tmp_path / "m.mp3")
+
+    unione = comandi[-1]
+    filtro = unione[unione.index("-filter_complex") + 1]
+    assert f"volume={vg.VOLUME_MUSICA}" in filtro
+    assert "amix=inputs=2" in filtro and "normalize=0" in filtro, "amix dimezzerebbe anche la voce"
+    assert "afade=t=out" in filtro, "la musica sfuma alla fine"
+
+
+def test_senza_musica_si_monta_solo_la_voce(monkeypatch, tmp_path):
+    comandi = []
+    monkeypatch.setattr(vg, "_esegui", lambda argomenti, cosa: comandi.append(argomenti))
+    scene = [{"tipo": "slide", "clip": None, "immagine": tmp_path / "s.png"}]
+    vg._monta("ffmpeg", scene, [4.0], tmp_path / "voce.wav", tmp_path / "video.mp4")
+    assert "-filter_complex" not in comandi[-1]
+
+
+def test_le_parole_chiave_seguono_le_frasi_anche_con_l_hook_aggiunto():
+    extra = {
+        "hook": "Il capo non ti ascolta?",
+        "script_segments": ["Parla con i numeri.", "Scegli il momento giusto."],
+        "scene_keywords": ["office meeting", "woman calendar"],
+    }
+    segmenti = vg.segmenti_dello_script(extra)
+    assert len(segmenti) == 3  # l'hook e' stato messo in testa
+    assert vg.parole_per_scena(extra, segmenti) == ["", "office meeting", "woman calendar"]
+
+
+def test_senza_parole_chiave_ogni_scena_resta_senza():
+    segmenti = ["Uno", "Due"]
+    assert vg.parole_per_scena({}, segmenti) == ["", ""]
+
+
+def test_la_chiusura_non_usa_mai_il_repertorio(monkeypatch, pulizia, voce_configurata, tmp_path):
+    """Marchio e invito finale li disegniamo noi: sul video della homepage
+    proprio le scritte generate dall'AI sono uscite storpiate."""
+    cercate = []
+    monkeypatch.setattr(vg.repertorio, "cerca_clip",
+                        lambda parole, durata, cartella, nome: cercate.append(parole) or None)
+    monkeypatch.setattr(vg, "voce_elevenlabs", lambda testo: _wav_finto(0.6, vg.FREQUENZA_AUDIO))
+    monkeypatch.setattr(vg, "_in_wav", lambda ff, sorgente, dest: dest.write_bytes(sorgente.read_bytes()))
+    monkeypatch.setattr(vg, "_monta",
+                        lambda ffmpeg, scene, durate, audio, uscita, musica=None: uscita.write_bytes(b"x"))
+    monkeypatch.setattr(vg, "_carica_su_s3", lambda dati, key, ct: "https://esempio/v.mp4")
+
+    vg._produci(1, ["Prima", "Seconda", "Chiusura"], ["a", "b", "c"], "ffmpeg")
+    assert cercate == ["a", "b"], "la clip si cerca per tutte le scene tranne l'ultima"
 
 
 def test_un_ffmpeg_ucciso_dal_sistema_lo_dice(monkeypatch):

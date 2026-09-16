@@ -62,9 +62,10 @@ Rispondi ESCLUSIVAMENTE con un oggetto JSON valido con questa struttura ESATTA:
     "hashtags": ["#hashtag1", "#hashtag2", "... 8-12 hashtag italiani pertinenti"]
   },
   "tiktok": {
-    "hook": "prima frase parlata, fortissima, max 8 secondi di parlato",
-    "script": "script completo di un video di 20-30 secondi, parlato naturale, con la struttura: problema -> 2-3 consigli rapidi -> CTA finale",
-    "script_segments": ["lo stesso script diviso in 4-7 frasi brevi, dalla prima (l'hook) alla CTA: una frase per scena del video, max ~110 caratteri ciascuna"],
+    "hook": "prima frase parlata, fortissima, max 5 secondi di parlato",
+    "script": "script di un video di 15-25 secondi, parlato naturale, con la struttura: problema -> due consigli rapidi -> CTA finale",
+    "script_segments": ["lo stesso script diviso in 4-5 frasi brevissime, dalla prima (l'hook) alla CTA: una frase per scena del video, max ~70 caratteri ciascuna"],
+    "scene_keywords": ["una voce per ogni frase di script_segments, nello stesso ordine: 2-4 parole IN INGLESE che descrivono l'immagine da mostrare dietro quella frase (es. 'stressed developer desk', 'woman planning calendar'). Solo persone, luoghi o gesti reali: niente marchi, niente scritte, niente schermate di software"],
     "caption": "caption breve per TikTok",
     "hashtags": ["#hashtag1", "... 5-8 hashtag"]
   },
@@ -81,7 +82,9 @@ Rispondi ESCLUSIVAMENTE con un oggetto JSON valido con questa struttura ESATTA:
 
 I caroselli devono avere 5 slide. Le slide devono essere brevi (max ~120 caratteri ciascuna).
 Lo script TikTok viene letto da una voce sintetica: scrivi numeri, sigle e simboli come si pronunciano \
-("tre consigli", non "3 consigli"; "per cento", non "%"), niente emoji e niente hashtag nello script."""
+("tre consigli", non "3 consigli"; "per cento", non "%"), niente emoji e niente hashtag nello script.
+Il video TikTok dura 15-25 secondi: in italiano sono circa 55 parole IN TUTTO, quindi taglia corto \
+e togli ogni parola che non serve. scene_keywords deve avere esattamente un elemento per ogni frase di script_segments."""
 
 
 def fetch_top_questions(limit: int = 5) -> list[dict]:
@@ -240,7 +243,8 @@ def save_packages_as_drafts(packages: list[dict]) -> int:
                 rows.append(("tiktok",
                              _join_caption(tk.get("caption") or "", " ".join(tk.get("hashtags") or [])),
                              json.dumps({"hook": tk.get("hook"), "script": tk.get("script"),
-                                         "script_segments": tk.get("script_segments")}, ensure_ascii=False)))
+                                         "script_segments": tk.get("script_segments"),
+                                         "scene_keywords": tk.get("scene_keywords")}, ensure_ascii=False)))
 
             for platform, caption, extra in rows:
                 session.add(SocialDraft(
