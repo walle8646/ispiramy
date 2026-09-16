@@ -489,6 +489,11 @@ class SocialDraft(SQLModel, table=True):
     platform: str = Field(index=True)  # 'facebook' | 'instagram' | 'tiktok'
     caption: str = Field(max_length=5000)  # testo pronto da pubblicare (hashtag inclusi)
     media_urls: Optional[str] = Field(default=None, max_length=3000)  # URL pubblici, uno per riga (IG richiede >=1 immagine, TikTok >=1 video)
+    # Che contenuto e': 'immagini' (foto o carosello), 'video_slide' (video
+    # fatto con le nostre slide) o 'video_completo' (video con le clip di
+    # repertorio). Decide come si genera il media e in quale scheda dell'admin
+    # compare la bozza. Vuoto = quello di partenza della piattaforma.
+    content_kind: Optional[str] = Field(default=None, max_length=20, index=True)
 
     # Provenienza (domanda community da cui è stato generato)
     source_question_id: Optional[int] = Field(default=None, index=True)

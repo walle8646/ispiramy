@@ -284,10 +284,10 @@ def _pagina():
     return (Path(__file__).resolve().parent.parent / "app" / "templates" / "admin" / "social.html").read_text(encoding="utf-8")
 
 
-def test_la_pagina_ha_il_bottone_genera_video_per_tiktok():
+def test_la_pagina_ha_una_scheda_per_ogni_tipo():
     html = _pagina()
-    assert "d.platform == 'tiktok'" in html
-    assert "Genera video" in html
+    assert "mostraScheda('{{ tipo }}', this)" in html
+    assert 'data-tipo="{{ tipi[d.id] }}"' in html, "senza il tipo sulla card le schede non filtrano"
 
 
 def test_la_pagina_mostra_i_video_come_video():

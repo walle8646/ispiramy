@@ -109,7 +109,8 @@ def test_la_pagina_mostra_il_calendario_e_le_due_schede(admin, pulizia):
     assert pagina.status_code == 200
     html = pagina.text
     assert 'id="datiCalendario"' in html
-    assert "mostraScheda('post'" in html and "mostraScheda('video'" in html
+    for tipo in ("immagini", "video_slide", "video_completo"):
+        assert f"mostraScheda('{tipo}'" in html
 
     # il blocco JSON deve essere leggibile: e' il motivo per cui i dati non
     # stanno dentro il JavaScript
@@ -127,4 +128,4 @@ def test_le_card_dichiarano_la_piattaforma(admin, pulizia):
         s.refresh(d)
         pulizia.append(d.id)
     html = admin.get("/admin/social").text
-    assert f'data-platform="tiktok" id="draft-{d.id}"' in html
+    assert f'data-platform="tiktok" data-tipo="video_completo" id="draft-{d.id}"' in html

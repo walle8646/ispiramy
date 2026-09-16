@@ -352,24 +352,49 @@ def generate_image_for_draft(draft_id: int, use_ai_cover: bool = True) -> dict:
         return {"ok": True, "message": "Immagine generata", "urls": [url]}
 
 
-def generate_media_for_draft(draft_id: int, use_ai_cover: bool = True) -> dict:
-    """Genera la grafica giusta per la piattaforma del draft.
+def generate_media_for_draft(draft_id: int, use_ai_cover: bool = True, stile: Optional[str] = None) -> dict:
+    """Genera il media del draft nello stile richiesto.
 
-    Instagram vuole il carosello (e' nato per quello), TikTok un video
-    verticale, le altre piattaforme una sola immagine.
+    Tre strade distinte: immagini (carosello su Instagram, immagine singola
+    altrove), video fatto con le nostre slide, video con le clip di repertorio.
+    Senza `stile` si usa quello gia' salvato sulla bozza, o quello di partenza
+    della piattaforma. Lo stile con cui si genera resta scritto sulla bozza:
+    e' anche la scheda dell'admin in cui comparira'.
     """
+    from app.social.tipi import IMMAGINI, TIPI, VIDEO_COMPLETO, VIDEO_SLIDE, tipo_di
+
     with Session(engine) as session:
         draft = session.get(SocialDraft, draft_id)
         if not draft:
             return {"ok": False, "message": "Draft non trovato"}
         piattaforma = draft.platform
+        scelto = stile if stile in TIPI else tipo_di(draft)
 
-    if piattaforma == "tiktok":
+    if scelto in (VIDEO_COMPLETO, VIDEO_SLIDE):
         from app.social.video_generator import generate_video_for_draft
-        return generate_video_for_draft(draft_id)
-    if piattaforma == "instagram":
-        return generate_carousel_for_draft(draft_id, use_ai_cover=use_ai_cover)
-    return generate_image_for_draft(draft_id, use_ai_cover=use_ai_cover)
+        esito = generate_video_for_draft(draft_id, usa_repertorio=(scelto == VIDEO_COMPLETO))
+    elif piattaforma == "instagram":
+        esito = generate_carousel_for_draft(draft_id, use_ai_cover=use_ai_cover)
+        scelto = IMMAGINI
+    else:
+        esito = generate_image_for_draft(draft_id, use_ai_cover=use_ai_cover)
+        scelto = IMMAGINI
+
+    if esito.get("ok"):
+        _segna_tipo(draft_id, scelto)
+    return esito
+
+
+def _segna_tipo(draft_id: int, tipo: str) -> None:
+    """Ricorda con che stile e' stato generato il media di questa bozza."""
+    with Session(engine) as session:
+        draft = session.get(SocialDraft, draft_id)
+        if not draft or draft.content_kind == tipo:
+            return
+        draft.content_kind = tipo
+        draft.updated_at = datetime.utcnow()
+        session.add(draft)
+        session.commit()
 
 
 def generate_carousel_for_draft(draft_id: int, use_ai_cover: bool = True) -> dict:

@@ -143,16 +143,14 @@ def test_la_coda_ignora_i_draft_non_approvati(monkeypatch, pulizia):
     assert "non è approvato" in html, "manca l'avviso per i draft programmati ma non approvati"
 
 
-def test_il_bottone_genera_grafica_c_e_anche_per_facebook():
-    """La regola sta nel template: senza il bottone la funzione non serve a nulla."""
+def test_la_pagina_offre_i_tre_modi_di_generare():
+    """Tre bottoni distinti: immagini, video da immagini, video completo."""
     import io
     import os
     percorso = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
                             "app", "templates", "admin", "social.html")
     html = io.open(percorso, encoding="utf-8").read()
-    riga = [r for r in html.splitlines() if "generateMedia(" in r and "{% if" not in r]
-    condizione = [r for r in html.splitlines() if "genmedia" in r or "generateMedia(" in r]
-    assert condizione, "bottone Genera grafica sparito dal template"
-    blocco = html[max(0, html.find("generateMedia({{ d.id }})") - 300):html.find("generateMedia({{ d.id }})")]
-    assert "facebook" in blocco, "il bottone Genera grafica e' ancora solo per Instagram"
-    assert riga, "il bottone deve restare un onclick semplice"
+    assert "generateMedia({{ d.id }}, '{{ tipo }}')" in html
+    assert "tipi_ammessi(d.platform)" in html, "i tipi ammessi dipendono dalla piattaforma"
+    for etichetta in ("Genera immagini", "Genera video da immagini", "Genera video completo"):
+        assert etichetta in html

@@ -490,7 +490,8 @@ def _monta(ffmpeg: str, scene: list[dict], durate: list[float], audio: Path, usc
     _esegui(argomenti, "Unione delle scene")
 
 
-def _produci(draft_id: int, segmenti: list[str], parole: list[str], ffmpeg: str) -> tuple[str, float, list[str]]:
+def _produci(draft_id: int, segmenti: list[str], parole: list[str], ffmpeg: str,
+             usa_repertorio: bool = True) -> tuple[str, float, list[str]]:
     with tempfile.TemporaryDirectory(prefix=f"video-draft-{draft_id}-") as cartella:
         base = Path(cartella)
 
@@ -510,7 +511,7 @@ def _produci(draft_id: int, segmenti: list[str], parole: list[str], ffmpeg: str)
             # La chiusura resta sempre nostra: marchio e invito non li disegna
             # nessuno al posto nostro
             trovata = None
-            if i != ultima:
+            if i != ultima and usa_repertorio:
                 trovata = repertorio.cerca_clip(parole[i - 1], durate[i - 1], base, f"clip-{i}")
             if trovata:
                 immagine = base / f"testo-{i}.png"
@@ -530,8 +531,12 @@ def _produci(draft_id: int, segmenti: list[str], parole: list[str], ffmpeg: str)
         return url, sum(durate), crediti
 
 
-def generate_video_for_draft(draft_id: int) -> dict:
-    """Genera il video del draft e compila media_urls. Ritorna {ok, message}."""
+def generate_video_for_draft(draft_id: int, usa_repertorio: bool = True) -> dict:
+    """Genera il video del draft e compila media_urls. Ritorna {ok, message}.
+
+    Con usa_repertorio=False ogni scena e' una nostra slide: e' il "post video",
+    piu' sobrio e senza dipendere da Pexels.
+    """
     with Session(engine) as session:
         draft = session.get(SocialDraft, draft_id)
         if not draft:
@@ -552,7 +557,7 @@ def generate_video_for_draft(draft_id: int) -> dict:
         # Prima i controlli che costano zero: niente scene se poi manca la voce
         _config_elevenlabs()
         ffmpeg = ffmpeg_exe()
-        url, durata, crediti = _produci(draft_id, segmenti, parole, ffmpeg)
+        url, durata, crediti = _produci(draft_id, segmenti, parole, ffmpeg, usa_repertorio)
     except VideoNonGenerato as e:
         logger.warning(f"Video draft {draft_id} non generato: {e}")
         return {"ok": False, "message": str(e)}

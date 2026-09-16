@@ -277,6 +277,15 @@
         cursor: pointer;
     }
     .scheda.attiva { background: #2e7d32; color: #fff; }
+    .tipo-chip {
+        background: #eef4ef;
+        color: #2e7d32;
+        border-radius: 999px;
+        padding: 2px 10px;
+        font-size: .72rem;
+        font-weight: 600;
+        white-space: nowrap;
+    }
     .draft-card.evidenziata { box-shadow: 0 0 0 3px #43a047; }
 </style>
 {% endblock %}
@@ -323,13 +332,16 @@
         <div class="calendario-griglia" id="calendarioGriglia"></div>
     </div>
 
+    {% set icone_tipo = {'immagini': 'fa-image', 'video_slide': 'fa-photo-film', 'video_completo': 'fa-clapperboard'} %}
+    {% set azioni_tipo = {'immagini': 'Genera immagini', 'video_slide': 'Genera video da immagini', 'video_completo': 'Genera video completo'} %}
+    {% set attese_tipo = {'immagini': 'Genero le immagini...', 'video_slide': 'Genero il video (1-2 minuti)...', 'video_completo': 'Genero il video (1-2 minuti)...'} %}
+
     <div class="schede">
-        <button class="scheda attiva" data-scheda="post" onclick="mostraScheda('post', this)">
-            <i class="fas fa-file-lines"></i> Post ({{ drafts | selectattr('platform', 'in', ['facebook', 'instagram', 'linkedin']) | list | length }})
+        {% for tipo in elenco_tipi %}
+        <button class="scheda {% if loop.first %}attiva{% endif %}" data-scheda="{{ tipo }}" onclick="mostraScheda('{{ tipo }}', this)">
+            <i class="fas {{ icone_tipo[tipo] }}"></i> {{ etichette_tipo[tipo] }} ({{ conteggi_tipo.get(tipo, 0) }})
         </button>
-        <button class="scheda" data-scheda="video" onclick="mostraScheda('video', this)">
-            <i class="fas fa-film"></i> Video ({{ drafts | selectattr('platform', 'equalto', 'tiktok') | list | length }})
-        </button>
+        {% endfor %}
     </div>
 
     <div class="status-filters">
@@ -347,7 +359,7 @@
     {% endif %}
 
     {% for d in drafts %}
-    <div class="draft-card" data-status="{{ d.status }}" data-platform="{{ d.platform }}" id="draft-{{ d.id }}">
+    <div class="draft-card" data-status="{{ d.status }}" data-platform="{{ d.platform }}" data-tipo="{{ tipi[d.id] }}" id="draft-{{ d.id }}">
         <div class="draft-head">
             <div class="draft-meta">
                 <span class="platform-chip">
@@ -357,6 +369,7 @@
                     {{ platform_labels.get(d.platform, d.platform) }}
                 </span>
                 <span class="status-chip {{ d.status }}">{{ d.status }}</span>
+                <span class="tipo-chip"><i class="fas {{ icone_tipo[tipi[d.id]] }}"></i> {{ etichette_tipo[tipi[d.id]] }}</span>
                 {% if d.source_title %}<span class="draft-source">da: “{{ d.source_title[:70] }}”</span>{% endif %}
             </div>
             <span class="draft-source">#{{ d.id }} · {{ d.created_at.strftime('%d/%m %H:%M') }}</span>
@@ -411,10 +424,12 @@
             {% if d.status in ('draft', 'approved', 'failed', 'rejected') %}
             <button class="btn btn-light" onclick="saveDraft({{ d.id }})"><i class="fas fa-floppy-disk"></i> Salva</button>
             {% endif %}
-            {% if d.platform in ('instagram', 'facebook', 'linkedin') and d.status in ('draft', 'approved', 'failed') %}
-            <button class="btn btn-light" id="genmedia-{{ d.id }}" data-icona="fa-image" data-etichetta="Genera grafica" data-attesa="Genero grafica..." onclick="generateMedia({{ d.id }})"><i class="fas fa-image"></i> Genera grafica</button>
-            {% elif d.platform == 'tiktok' and d.status in ('draft', 'approved', 'failed') %}
-            <button class="btn btn-light" id="genmedia-{{ d.id }}" data-icona="fa-film" data-etichetta="Genera video" data-attesa="Genero il video (1-2 minuti)..." onclick="generateMedia({{ d.id }})"><i class="fas fa-film"></i> Genera video</button>
+            {% if d.status in ('draft', 'approved', 'failed') %}
+                {% for tipo in tipi_ammessi(d.platform) %}
+                <button class="btn btn-light" id="genmedia-{{ d.id }}-{{ tipo }}"
+                        data-icona="{{ icone_tipo[tipo] }}" data-etichetta="{{ azioni_tipo[tipo] }}" data-attesa="{{ attese_tipo[tipo] }}"
+                        onclick="generateMedia({{ d.id }}, '{{ tipo }}')"><i class="fas {{ icone_tipo[tipo] }}"></i> {{ azioni_tipo[tipo] }}</button>
+                {% endfor %}
             {% endif %}
             {% if d.status == 'draft' %}
             <button class="btn btn-primary" onclick="draftAction({{ d.id }}, 'approve')"><i class="fas fa-check"></i> Approva</button>
@@ -508,16 +523,16 @@ async function retryDraft(id, raggiuntoLaPiattaforma) {
     await draftAction(id, 'approve');
 }
 
-async function generateMedia(id) {
+async function generateMedia(id, stile) {
     // salva prima eventuali modifiche al testo
     await saveDraft(id);
-    const btn = document.getElementById(`genmedia-${id}`);
+    const btn = document.getElementById(`genmedia-${id}-${stile}`);
     // Stesso bottone per grafica e video: testi e icona li porta con se'
     const icona = btn.dataset.icona || 'fa-image';
     const etichetta = btn.dataset.etichetta || 'Genera grafica';
     btn.disabled = true;
     btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> ${btn.dataset.attesa || 'Genero grafica...'}`;
-    const r = await post(`/admin/social/drafts/${id}/generate-media`);
+    const r = await post(`/admin/social/drafts/${id}/generate-media`, { stile });
     toast(r.message, !r.ok);
     if (r.ok) setTimeout(() => location.reload(), 1200);
     else { btn.disabled = false; btn.innerHTML = `<i class="fas ${icona}"></i> ${etichetta}`; }
@@ -544,14 +559,13 @@ async function deleteDraft(id) {
 }
 
 // ----------------------------------------------------------- schede e filtri
-const PIATTAFORME_SCHEDA = { post: ['facebook', 'instagram', 'linkedin'], video: ['tiktok'] };
-let schedaAttiva = 'post';
+// Una scheda per tipo di contenuto: immagini, video da immagini, video completo
+let schedaAttiva = document.querySelector('.scheda.attiva').dataset.scheda;
 let filtroStato = 'all';
 
 function applicaFiltri() {
-    const piattaforme = PIATTAFORME_SCHEDA[schedaAttiva];
     document.querySelectorAll('.draft-card').forEach(c => {
-        const dellaScheda = piattaforme.includes(c.dataset.platform);
+        const dellaScheda = c.dataset.tipo === schedaAttiva;
         const delloStato = filtroStato === 'all' || c.dataset.status === filtroStato;
         c.style.display = (dellaScheda && delloStato) ? '' : 'none';
     });
@@ -587,14 +601,14 @@ function cambiaMese(passo) {
     disegnaCalendario();
 }
 
-function vaiAlDraft(id, piattaforma) {
-    // Il calendario mostra tutto: se la voce sta nell'altra scheda, si cambia scheda
-    const scheda = PIATTAFORME_SCHEDA.video.includes(piattaforma) ? 'video' : 'post';
-    if (scheda !== schedaAttiva) {
-        mostraScheda(scheda, document.querySelector(`.scheda[data-scheda="${scheda}"]`));
-    }
+function vaiAlDraft(id) {
     const card = document.getElementById(`draft-${id}`);
     if (!card) return;
+    // Il calendario mostra tutto: se la voce sta in un'altra scheda, si cambia scheda
+    const scheda = card.dataset.tipo;
+    if (scheda && scheda !== schedaAttiva) {
+        mostraScheda(scheda, document.querySelector(`.scheda[data-scheda="${scheda}"]`));
+    }
     card.scrollIntoView({ behavior: 'smooth', block: 'center' });
     card.classList.add('evidenziata');
     setTimeout(() => card.classList.remove('evidenziata'), 2000);
@@ -641,7 +655,7 @@ function disegnaCalendario() {
             voce.className = `calendario-voce ${v.status}`;
             voce.textContent = `${v.ora} ${ICONE_PIATTAFORMA[v.platform] || ''} ${v.titolo}`;
             voce.title = `${v.titolo} — ${v.platform}, ${v.status}`;
-            voce.onclick = () => vaiAlDraft(v.id, v.platform);
+            voce.onclick = () => vaiAlDraft(v.id);
             cella.appendChild(voce);
         });
         griglia.appendChild(cella);

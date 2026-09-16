@@ -16,6 +16,7 @@ from app.models import SocialDraft
 from app.routes.admin import require_admin
 from app.logger_config import logger
 from app.social.publisher import PLATFORM_REQUIRES_MEDIA, parse_media_urls
+from app.social.tipi import ETICHETTE as ETICHETTE_TIPO, TIPI, tipi_ammessi, tipo_di
 
 router = APIRouter(prefix="/admin")
 
@@ -44,6 +45,12 @@ async def admin_social(request: Request):
     for d in drafts:
         counts[d.status] = counts.get(d.status, 0) + 1
     calendario = _voci_calendario(drafts)
+    # Il tipo decide in quale scheda finisce la bozza: qui si risolve una volta
+    # sola, cosi' il template non deve conoscere le regole di partenza
+    tipi = {d.id: tipo_di(d) for d in drafts}
+    conteggi_tipo = {}
+    for tipo in tipi.values():
+        conteggi_tipo[tipo] = conteggi_tipo.get(tipo, 0) + 1
 
     # Stato account collegati (best effort, non bloccare la pagina se l'API è giù)
     accounts = {}
@@ -62,6 +69,11 @@ async def admin_social(request: Request):
         "drafts": drafts,
         "counts": counts,
         "calendario": calendario,
+        "tipi": tipi,
+        "conteggi_tipo": conteggi_tipo,
+        "etichette_tipo": ETICHETTE_TIPO,
+        "elenco_tipi": TIPI,
+        "tipi_ammessi": tipi_ammessi,
         "accounts": accounts,
         "platform_labels": PLATFORM_LABELS,
     })
@@ -239,9 +251,18 @@ async def admin_social_generate_media(draft_id: int, request: Request):
     if not admin_user:
         return JSONResponse({"ok": False, "message": "Non autorizzato"}, status_code=403)
 
+    # Lo stile arriva dal bottone premuto; senza, si usa quello della bozza
+    try:
+        corpo = await request.json()
+    except Exception:
+        corpo = {}
+    stile = (corpo or {}).get("stile")
+    if stile is not None and stile not in TIPI:
+        return JSONResponse({"ok": False, "message": "Tipo di contenuto non valido"}, status_code=400)
+
     try:
         from app.social.image_generator import generate_media_for_draft
-        result = await asyncio.to_thread(generate_media_for_draft, draft_id)
+        result = await asyncio.to_thread(generate_media_for_draft, draft_id, True, stile)
         return JSONResponse(result, status_code=200 if result["ok"] else 400)
     except Exception as e:
         logger.error(f"Admin social: errore generazione grafica draft {draft_id}: {e}", exc_info=True)
