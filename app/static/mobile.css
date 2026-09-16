@@ -44,7 +44,9 @@
 }
 
 /* ========== FORMS ========== */
-@media (max-width: 768px) {
+/* Fino a 1024px: anche su iPad Safari ingrandisce la pagina se un campo ha
+   il testo sotto i 16px */
+@media (max-width: 1024px) {
     input[type="text"],
     input[type="email"],
     input[type="password"],
@@ -175,12 +177,12 @@
 }
 
 /* ========== AREE TOCCABILI ==========
-   Su un telefono si tocca col polpastrello, non col puntatore: sotto i 44px
-   di altezza si sbaglia bersaglio di continuo. Apple indica 44px, Google 48.
-   Qui l'area si allarga col padding, senza cambiare la grafica: i link del
-   footer erano alti 20px, la ricerca in barra 34, i pulsanti "+" dello
-   storico 29. */
-@media (max-width: 768px) {
+   Si tocca col polpastrello, non col puntatore: sotto i 44px di altezza si
+   sbaglia bersaglio di continuo. Apple indica 44px, Google 48. Qui l'area si
+   allarga col padding, senza cambiare la grafica: i link del footer erano
+   alti 20px, la ricerca in barra 34, i pulsanti "+" dello storico 29.
+   Fino a 1024px perche' il dito e' lo stesso anche sul tablet. */
+@media (max-width: 1024px) {
     .footer-section ul {
         gap: 0 !important;
     }
@@ -237,6 +239,70 @@
     .pub-sidebar-link {
         min-height: 40px;
     }
+
+    /* Nell'elenco categorie il link stava in 29px dentro una voce alta 53:
+       il resto della riga sembrava toccabile ma non portava da nessuna parte */
+    .category-item-vertical a {
+        display: flex !important;
+        align-items: center;
+        flex: 1;
+        min-height: 36px;
+    }
+}
+
+/* ========== TABLET (769-1024) ==========
+   In verticale un iPad e' largo 820px: il menu completo della barra ci sta
+   per un soffio e sforava di 3px, facendo scorrere tutta la pagina di lato. */
+@media (min-width: 769px) and (max-width: 1024px) {
+    .navbar {
+        flex-wrap: wrap !important;
+    }
+
+    /* Senza box-sizing il campo di ricerca chiedeva 452px per starne in 400:
+       l'imbottitura si sommava alla larghezza */
+    .search-input,
+    input[type="text"],
+    input[type="search"],
+    input[type="email"],
+    textarea,
+    select {
+        box-sizing: border-box !important;
+    }
+
+    .navbar-links {
+        gap: 12px !important;
+        flex-wrap: wrap !important;
+    }
+
+    .navbar-link {
+        font-size: 0.95rem;
+    }
+
+    /* Le schede a due colonne diventano strette al punto che i pulsanti
+       escono dal bordo: meglio una colonna sola, piu' leggibile */
+    .consultants-grid {
+        grid-template-columns: 1fr !important;
+    }
+
+    .footer-buttons {
+        flex-wrap: wrap !important;
+    }
+
+    .card-link {
+        min-width: 0 !important;
+    }
+
+    /* La ricerca in barra chiedeva 452px pur potendone occupare 400: faceva
+       scorrere di lato tutta la pagina. Ora si restringe, ma non sotto i
+       200px, altrimenti resta un francobollo in cui non si legge nulla. */
+    .search-wrapper {
+        flex: 1 1 200px !important;
+        min-width: 200px !important;
+    }
+
+    .search-wrapper .search-input {
+        min-width: 0 !important;
+    }
 }
 
 /* ========== FIX OVERFLOW GLOBALE ========== */
@@ -252,5 +318,19 @@
     html {
         scroll-behavior: smooth;
         -webkit-overflow-scrolling: touch;
+    }
+}
+
+/* ========== BARRA SUL TABLET (769-1024) ==========
+   Fin quasi ai 1024px la barra va a capo e diventa alta 117-132px, ma il
+   corpo lascia spazio per 80: il titolo della pagina finiva nascosto sotto
+   al menu. Come sul telefono la barra scorre insieme alla pagina. */
+@media (min-width: 769px) and (max-width: 1024px) {
+    .navbar {
+        position: relative !important;
+    }
+
+    body {
+        padding-top: 0 !important;
     }
 }

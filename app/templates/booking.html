@@ -483,13 +483,24 @@
         margin: 0;
     }
     
-    @media (max-width: 768px) {
-        /* minmax(0, ...) e non 1fr: con 1fr la colonna non scende sotto il
-           contenuto piu' largo (il calendario) e la sezione esce dallo schermo */
+    /* Fino a 1024px una colonna sola: su iPad verticale le due colonne
+       lasciavano al calendario 336px, stretto quanto su un telefono, e i
+       riquadri degli orari sforavano. minmax(0, ...) e non 1fr: con 1fr la
+       colonna non scende sotto il contenuto piu' largo. */
+    @media (max-width: 1024px) {
         .top-row,
         .bottom-row {
             grid-template-columns: minmax(0, 1fr);
         }
+
+        /* Sette colonne da 149px non ci stanno in 725: le colonne degli orari
+           sforavano di 27px. Tre per riga, che possono anche restringersi. */
+        .weekly-slots-grid {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+    }
+
+    @media (max-width: 768px) {
         
         .weekly-slots-grid {
             grid-template-columns: repeat(3, 1fr);

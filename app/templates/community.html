@@ -1107,6 +1107,12 @@
         background: #d97706;
     }
 
+    /* Le tre colonne hanno percentuali che sommano a 100: senza border-box
+       l'imbottitura si somma alla larghezza e la pagina scorre di lato. */
+    .row > [class^="col-md-"] {
+        box-sizing: border-box;
+    }
+
     /* Instant Tooltip */
     [data-tip] {
         position: relative;
@@ -1490,6 +1496,70 @@
     /* Mobile filter toggle */
     .community-mobile-filter-toggle {
         display: none;
+    }
+
+    /* Su schermi stretti la riga in fondo alla domanda non andava a capo:
+       commenti e "utile" restavano schiacciati e il testo veniva tagliato. */
+    @media (max-width: 1024px) {
+        /* Il suggerimento appare al passaggio del mouse, che col dito non
+           c'e': restava invisibile ma largo 240px e faceva scorrere di lato
+           tutta la pagina. */
+        [data-tip]::after {
+            display: none !important;
+        }
+
+        .question-footer {
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .question-meta {
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+    }
+
+    /* TABLET (769-1024): le tre colonne hanno padding fuori dal conteggio
+       delle percentuali e sforano di 45px. Restano categorie + domande, i
+       Top Ispiramyers passano sotto in fila. */
+    @media (min-width: 769px) and (max-width: 1024px) {
+        .container > .row {
+            flex-wrap: wrap !important;
+        }
+
+        .col-md-2,
+        .col-md-6,
+        .col-md-3 {
+            box-sizing: border-box !important;
+        }
+
+        .col-md-2 {
+            flex: 0 0 30% !important;
+            max-width: 30% !important;
+        }
+
+        .col-md-6 {
+            flex: 1 1 0 !important;
+            max-width: none !important;
+        }
+
+        .col-md-3 {
+            flex: 1 1 100% !important;
+            max-width: 100% !important;
+            padding-left: 0 !important;
+            margin-top: 24px;
+        }
+
+        .col-md-3 .sidebar-right {
+            position: static !important;
+        }
+
+        .col-md-3 .top-ispiramyer-card {
+            display: inline-flex;
+            width: calc(50% - 6px);
+            margin-right: 8px;
+            vertical-align: top;
+        }
     }
 
     @media (max-width: 768px) {

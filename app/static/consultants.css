@@ -748,6 +748,15 @@ h3.consultant-name {
     }
 }
 
+/* Su tablet il titolo dell'intestazione, che di suo non va mai a capo,
+   era piu' largo dello schermo e faceva scorrere la pagina di lato */
+@media (max-width: 1024px) {
+    .search-container h1 {
+        white-space: normal;
+        font-size: 1.5em;
+    }
+}
+
 @media (max-width: 768px) {
     .consultants-container {
         grid-template-columns: 1fr;
