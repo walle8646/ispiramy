@@ -91,3 +91,39 @@ def test_l_invito_a_installare_non_disturba_durante_una_chiamata():
     base = _file("app", "templates", "base.html")
     assert "/booking/call/" in base
     assert "display-mode: standalone" in base, "a chi l'ha già installata non si chiede più niente"
+
+
+def _blocco_invito():
+    base = _file("app", "templates", "base.html")
+    return base[base.index("const RICORDA"):base.index("})();", base.index("const RICORDA"))]
+
+
+def test_il_manifest_viaggia_con_le_credenziali():
+    """Il browser chiede il manifest senza credenziali: dove il sito è protetto
+    (staging) tornava 401, quindi niente manifest e niente installazione."""
+    base = _file("app", "templates", "base.html")
+    assert 'rel="manifest"' in base
+    riga = [r for r in base.splitlines() if 'rel="manifest"' in r][0]
+    assert 'crossorigin="use-credentials"' in riga
+
+
+def test_l_invito_compare_anche_senza_l_evento_del_browser():
+    """Chrome lancia beforeinstallprompt quando gli pare, e su iPhone non esiste
+    proprio: se aspettassimo solo quello, il banner non lo vedrebbe nessuno."""
+    invito = _blocco_invito()
+    assert "beforeinstallprompt" in invito
+    assert "setTimeout" in invito, "manca il ripiego quando l'evento non arriva"
+    assert "Installa app" in invito, "su Android va detto dove sta la voce nel menu"
+    assert "Condividi" in invito, "su iPhone si installa solo da lì"
+
+
+def test_le_frasi_dell_invito_non_spezzano_il_javascript():
+    """Un apostrofo dentro una stringa fra apici singoli rompe l'intero script:
+    era già successo con 'come un'app' e la pagina restava senza JavaScript."""
+    import re
+
+    for riga in _blocco_invito().splitlines():
+        nuda = riga.strip()
+        if nuda.startswith("//") or nuda.startswith("/*") or nuda.startswith("*"):
+            continue
+        assert not re.search(r"'[^'\n]*[A-Za-z]'[A-Za-z]", nuda), f"apostrofo da proteggere: {nuda}"
