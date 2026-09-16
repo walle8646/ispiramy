@@ -43,4 +43,25 @@ def test_le_schermate_del_video_sono_quelle_vere():
     ("Aree di comptenza"): riprendendo il sito vero il problema non si pone."""
     script = _file("scripts", "genera_video_homepage.py")
     assert '"tipo": "schermata"' in script
-    assert "--screenshot=" in script, "le schermate vanno riprese dal sito, non disegnate"
+    assert "save_screenshot" in script, "le schermate vanno riprese dal sito, non disegnate"
+
+
+def test_il_video_racconta_anche_prenotazione_e_pagamento():
+    """Che si prenoti e si paghi dentro la piattaforma non si capisce da una
+    scena di videochiamata: va mostrato il riepilogo vero, spese comprese."""
+    script = _file("scripts", "genera_video_homepage.py")
+    scene = script[script.index("SCENE = ["):script.index("def _ffmpeg")]
+    assert "/book/1" in scene, "manca la schermata della prenotazione"
+    assert "paghi" in scene.lower()
+    # il riepilogo col prezzo compare solo dopo aver scelto una fascia oraria
+    assert '"clicca"' in scene
+
+
+def test_i_nomi_dei_consulenti_non_vanno_in_onda():
+    """Le schermate arrivano da profili di persone: il nome si sfoca nel
+    browser prima dello scatto, cosi' nel file non ci finisce mai."""
+    script = _file("scripts", "genera_video_homepage.py")
+    assert "NOMI_DA_SFOCARE" in script
+    for selettore in (".consultant-name", ".pub-hero-text h1", ".consultant-info h1"):
+        assert selettore in script, f"manca dalla sfocatura: {selettore}"
+    assert "blur(" in script

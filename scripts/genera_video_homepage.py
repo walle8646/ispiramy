@@ -18,9 +18,9 @@ da solo, la voce e' un di piu' per chi tocca "Attiva audio".
 """
 import argparse
 import os
-import shutil
 import subprocess
 import sys
+import time
 import wave
 from pathlib import Path
 
@@ -72,9 +72,17 @@ SCENE = [
         "fonte": {"tipo": "schermata", "percorso": "/user/1"},
     },
     {
-        "voce": "Prenoti quando ti serve e parlate in videochiamata, senza installare niente.",
+        "voce": "Prenoti l'orario che ti serve e paghi qui, con carta o PayPal.",
+        "titolo": "Prenoti e paghi qui",
+        "sotto": "L'importo resta bloccato: si paga solo se il consulente accetta",
+        "fonte": {"tipo": "schermata", "percorso": "/book/1",
+                  "clicca": ".day-slot", "fino_a": "#selectedSlotDisplay",
+                  "serve_accesso": True},
+    },
+    {
+        "voce": "All'ora scelta parlate in videochiamata, senza installare niente.",
         "titolo": "Parlate in videochiamata",
-        "sotto": "Dentro Ispiramy, senza installare niente",
+        "sotto": "Dentro Ispiramy, dal computer o dal telefono",
         "fonte": {"tipo": "repertorio", "parole": "business video conference call desk office"},
     },
     {
@@ -92,35 +100,76 @@ def _ffmpeg() -> str:
     return imageio_ffmpeg.get_ffmpeg_exe()
 
 
-def _browser() -> str:
-    """Il browser che scatta le schermate: va bene quello che c'e'."""
-    candidati = [
-        os.getenv("BROWSER_SCATTI"),
-        r"C:\Program Files\Google\Chrome\Application\chrome.exe",
-        r"C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe",
-        shutil.which("google-chrome"),
-        shutil.which("chromium"),
-    ]
-    for c in candidati:
-        if c and Path(c).exists():
-            return c
-    raise SystemExit("Serve Chrome o Edge per riprendere le schermate del sito")
+# I nomi dei consulenti non vanno in onda: le schermate arrivano da persone
+# vere (o da nomi di prova che sembrano veri) e un video promozionale non e'
+# il posto per esporli. Si sfocano nel browser prima dello scatto, cosi' nel
+# file non ci finiscono mai, nemmeno sotto la sfocatura.
+NOMI_DA_SFOCARE = """
+    .consultant-name,
+    .pub-hero-text h1,
+    .consultant-info h1,
+    .top-ispiramyer-name,
+    [data-consultant-name]
+"""
 
 
-def _scatta(sito: str, percorso: str, destinazione: Path) -> None:
-    """Una schermata vera del sito, presa da un browser senza finestra."""
-    with __import__("tempfile").TemporaryDirectory() as profilo:
-        subprocess.run([
-            _browser(),
-            "--headless=new",
-            "--disable-gpu",
-            "--hide-scrollbars",
-            f"--user-data-dir={profilo}",
-            f"--window-size={L_SCATTO},{A_SCATTO}",
-            "--virtual-time-budget=6000",
-            f"--screenshot={destinazione}",
-            sito.rstrip("/") + percorso,
-        ], check=True, capture_output=True)
+def _sessione(sito: str, utente: str = "", password: str = ""):
+    """Apre un browser senza finestra, gia' dentro col suo account se serve.
+
+    Alcune schermate (la prenotazione) esistono solo per chi ha fatto
+    l'accesso: senza, si fotograferebbe la pagina di login.
+    """
+    from selenium import webdriver
+    from selenium.webdriver.chrome.options import Options
+    from selenium.webdriver.common.by import By
+
+    opzioni = Options()
+    opzioni.add_argument("--headless=new")
+    opzioni.add_argument("--disable-gpu")
+    opzioni.add_argument("--hide-scrollbars")
+    opzioni.add_argument(f"--window-size={L_SCATTO},{A_SCATTO}")
+    browser = webdriver.Chrome(options=opzioni)
+    browser.set_window_size(L_SCATTO, A_SCATTO)
+
+    if utente and password:
+        browser.get(sito.rstrip("/") + "/login")
+        time.sleep(1.5)
+        browser.find_element(By.CSS_SELECTOR, "input[type=email], input[name=email]").send_keys(utente)
+        browser.find_element(By.CSS_SELECTOR, "input[type=password]").send_keys(password)
+        browser.find_element(By.CSS_SELECTOR, "button[type=submit], input[type=submit]").click()
+        time.sleep(3)
+    return browser
+
+
+def _scatta(browser, sito: str, percorso: str, destinazione: Path,
+            fino_a: str = None, attesa: float = 3.0, clicca: str = None) -> None:
+    """Una schermata vera del sito, coi nomi delle persone sfocati."""
+    browser.get(sito.rstrip("/") + percorso)
+    time.sleep(attesa)
+
+    if clicca:
+        # Il riepilogo col prezzo compare solo dopo aver scelto una fascia
+        # oraria: senza il clic si fotograferebbe un riquadro vuoto
+        browser.execute_script(
+            "const e=document.querySelector(arguments[0]); if(e){e.click();}", clicca)
+        time.sleep(1.5)
+
+    if fino_a:
+        # Il pezzo interessante e' piu' in basso: lo si porta sotto la barra
+        browser.execute_script(
+            "const e=document.querySelector(arguments[0]);"
+            "if(e){window.scrollTo(0, e.getBoundingClientRect().top+window.scrollY-190);}",
+            fino_a)
+        time.sleep(1.2)
+
+    browser.execute_script(
+        "const s=document.createElement('style');"
+        "s.textContent=arguments[0]+'{filter:blur(13px)!important;}';"
+        "document.head.appendChild(s);",
+        NOMI_DA_SFOCARE)
+    time.sleep(0.6)
+
+    browser.save_screenshot(str(destinazione))
     if not destinazione.exists():
         raise SystemExit(f"Schermata non riuscita: {percorso}")
 
@@ -157,10 +206,12 @@ def _sovrimpressione(scena: dict, destinazione: Path) -> None:
     altezza_testo = len(righe_titolo) * 66 + len(righe_sotto) * 40 + 40
     cima = A - altezza_testo - 70
 
-    # Sfumatura verso il basso: netta dove c'e' il testo, invisibile sopra
-    for y in range(cima - 90, A):
-        q = min(1.0, max(0.0, (y - (cima - 90)) / 160))
-        disegno.line([(0, y), (L, y)], fill=(12, 30, 14, int(200 * q)))
+    # Sfumatura verso il basso: netta dove c'e' il testo, invisibile sopra.
+    # Sulle schermate del sito, che sono bianche, una fascia leggera lasciava
+    # il sottotitolo bianco su bianco: qui arriva quasi piena.
+    for y in range(cima - 120, A):
+        q = min(1.0, max(0.0, (y - (cima - 120)) / 150))
+        disegno.line([(0, y), (L, y)], fill=(12, 30, 14, int(238 * q)))
 
     y = cima
     for riga in righe_titolo:
@@ -291,7 +342,8 @@ def _scena_video(ffmpeg: str, scena: dict, durata: float, uscita: Path,
         check=True)
 
 
-def genera(sito: str, uscita: Path, cartella: Path) -> Path:
+def genera(sito: str, uscita: Path, cartella: Path,
+           utente: str = "", password: str = "") -> Path:
     from dotenv import load_dotenv
 
     load_dotenv(RADICE / ".env")
@@ -311,14 +363,31 @@ def genera(sito: str, uscita: Path, cartella: Path) -> Path:
           f"= {sum(durate):.1f}s")
 
     print("2/5  Schermate del sito")
-    for i, scena in enumerate(SCENE):
-        if scena["fonte"]["tipo"] != "schermata":
-            continue
-        immagine = cartella / f"schermata{i}.png"
-        if not immagine.exists():
-            _scatta(sito, scena["fonte"]["percorso"], immagine)
-        scena["immagine"] = immagine
-        print("     ", scena["fonte"]["percorso"])
+    da_fare = [(i, s_) for i, s_ in enumerate(SCENE)
+               if s_["fonte"]["tipo"] == "schermata"
+               and not (cartella / f"schermata{i}.png").exists()]
+    browser = None
+    if da_fare:
+        serve_accesso = any(s_["fonte"].get("serve_accesso") for _, s_ in da_fare)
+        if serve_accesso and not (utente and password):
+            raise SystemExit(
+                "La schermata della prenotazione esiste solo per chi ha fatto "
+                "l'accesso: passa --utente e --password di un account di prova.")
+        browser = _sessione(sito, utente, password)
+    try:
+        for i, scena in enumerate(SCENE):
+            if scena["fonte"]["tipo"] != "schermata":
+                continue
+            immagine = cartella / f"schermata{i}.png"
+            if not immagine.exists():
+                _scatta(browser, sito, scena["fonte"]["percorso"], immagine,
+                        fino_a=scena["fonte"].get("fino_a"),
+                        clicca=scena["fonte"].get("clicca"))
+            scena["immagine"] = immagine
+            print("     ", scena["fonte"]["percorso"])
+    finally:
+        if browser:
+            browser.quit()
 
     print("3/5  Clip di repertorio")
     from app.social import repertorio
@@ -375,5 +444,9 @@ if __name__ == "__main__":
     parser.add_argument("--uscita", default="video_homepage.mp4")
     parser.add_argument("--lavoro", default="lavorazione_video_homepage",
                         help="cartella dei file intermedi (riusati se gia' presenti)")
+    parser.add_argument("--utente", default=os.getenv("VIDEO_UTENTE", ""),
+                        help="account con cui riprendere la pagina di prenotazione")
+    parser.add_argument("--password", default=os.getenv("VIDEO_PASSWORD", ""))
     argomenti = parser.parse_args()
-    genera(argomenti.sito, Path(argomenti.uscita), Path(argomenti.lavoro))
+    genera(argomenti.sito, Path(argomenti.uscita), Path(argomenti.lavoro),
+           argomenti.utente, argomenti.password)
