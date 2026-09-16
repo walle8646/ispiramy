@@ -90,6 +90,16 @@ def _video_generato_da_noi(url: str) -> bool:
     return "/social/draft-" in percorso and percorso.endswith("-video.mp4")
 
 
+ESTENSIONI_VIDEO = (".mp4", ".mov", ".webm")
+
+
+def _sono_video(media: list[str]) -> bool:
+    """True se il post porta un video (e non foto o caroselli)."""
+    return bool(media) and all(
+        urllib.parse.urlparse(u).path.lower().endswith(ESTENSIONI_VIDEO) for u in media
+    )
+
+
 def _configurazione_piattaforma(platform: str, media: list[str]) -> Optional[dict]:
     """Le impostazioni specifiche della piattaforma da mandare a Post for Me.
 
@@ -100,14 +110,25 @@ def _configurazione_piattaforma(platform: str, media: list[str]) -> Optional[dic
       un esperto su Ispiramy, e un contenuto promozionale non dichiarato
       TikTok puo' rimuoverlo.
     """
-    if platform != "tiktok":
-        return None
-    return {
-        "privacy_status": "public",
-        "allow_comment": True,
-        "is_ai_generated": any(_video_generato_da_noi(u) for u in media),
-        "disclose_your_brand": True,
-    }
+    if platform == "tiktok":
+        return {
+            "privacy_status": "public",
+            "allow_comment": True,
+            "is_ai_generated": any(_video_generato_da_noi(u) for u in media),
+            "disclose_your_brand": True,
+        }
+
+    # I nostri video sono verticali 9:16 da 15-30 secondi: sono Reel. Senza
+    # dirlo, la collocazione la sceglie Post for Me con un valore non
+    # documentato, e un verticale finito nel diario normale rende molto meno.
+    # Le foto e i caroselli restano nel diario.
+    if platform in ("facebook", "instagram") and _sono_video(media):
+        configurazione = {"placement": "reels"}
+        if platform == "instagram":
+            # Il Reel si vede anche nel feed del profilo, non solo nella scheda Reels
+            configurazione["share_to_feed"] = True
+        return configurazione
+    return None
 
 
 def _external_id(draft: SocialDraft) -> str:

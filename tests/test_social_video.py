@@ -227,13 +227,36 @@ def test_esce_un_mp4_che_tiktok_accetta(monkeypatch, pulizia, voce_configurata, 
 
 # --------------------------------------------------------------------------- pubblicazione
 
+def test_i_video_su_facebook_e_instagram_escono_come_reel():
+    """Un verticale 9:16 nel diario normale rende molto meno di un Reel, e
+    senza dirlo la collocazione la sceglieva Post for Me."""
+    video = ["https://ispiramy-images.s3.eu-north-1.amazonaws.com/social/draft-9/x-video.mp4"]
+    assert publisher._configurazione_piattaforma("facebook", video) == {"placement": "reels"}
+    instagram = publisher._configurazione_piattaforma("instagram", video)
+    assert instagram["placement"] == "reels"
+    assert instagram["share_to_feed"] is True, "il Reel deve vedersi anche nel feed del profilo"
+
+
+def test_le_foto_restano_nel_diario():
+    foto = ["https://esempio/a.jpg", "https://esempio/b.jpg"]
+    assert publisher._configurazione_piattaforma("facebook", foto) is None
+    assert publisher._configurazione_piattaforma("instagram", foto) is None
+    assert publisher._configurazione_piattaforma("linkedin", foto) is None
+
+
+def test_un_carosello_con_dentro_un_video_non_diventa_un_reel():
+    misto = ["https://esempio/a.jpg", "https://esempio/b.mp4"]
+    assert publisher._configurazione_piattaforma("instagram", misto) is None
+
+
 def test_tiktok_dichiara_l_ai_solo_per_i_video_generati_da_noi():
     nostro = "https://ispiramy-images.s3.eu-north-1.amazonaws.com/social/draft-9/20260915120000-video.mp4"
     girato = "https://ispiramy-images.s3.eu-north-1.amazonaws.com/uploads/intervista.mp4"
     assert publisher._configurazione_piattaforma("tiktok", [nostro])["is_ai_generated"] is True
     assert publisher._configurazione_piattaforma("tiktok", [girato])["is_ai_generated"] is False
     assert publisher._configurazione_piattaforma("tiktok", [nostro])["privacy_status"] == "public"
-    assert publisher._configurazione_piattaforma("instagram", [nostro]) is None
+    # Le dichiarazioni su AI e marchio le chiede TikTok: altrove non esistono
+    assert "is_ai_generated" not in publisher._configurazione_piattaforma("instagram", [nostro])
 
 
 def test_la_configurazione_tiktok_arriva_a_post_for_me(monkeypatch, pulizia):
