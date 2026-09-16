@@ -8,7 +8,8 @@ import pytest
 
 class TestPaginePubbliche:
     @pytest.mark.parametrize("path", ["/", "/consultants", "/login", "/register",
-                                      "/about", "/faq", "/contact", "/privacy", "/terms"])
+                                      "/about", "/come-funziona", "/faq", "/contact",
+                                      "/privacy", "/terms"])
     def test_rispondono_200(self, client, path):
         assert client.get(path).status_code == 200
 

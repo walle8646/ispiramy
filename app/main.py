@@ -180,6 +180,13 @@ from app.utils.orari import ORE_LIMITE_ANNULLAMENTO, ORE_PREAVVISO_PRENOTAZIONE
 templates.env.globals['ore_preavviso'] = ORE_PREAVVISO_PRENOTAZIONE
 templates.env.globals['ore_limite_annullamento'] = ORE_LIMITE_ANNULLAMENTO
 
+# Le cifre che raccontiamo nelle pagine devono essere quelle vere: se un domani
+# cambiano le spese di servizio, la pagina "Come funziona" cambia con loro.
+from app.utils.prezzi import PREZZO_ORARIO_MINIMO, SPESE_SERVIZIO
+templates.env.globals['spese_servizio_valore'] = float(SPESE_SERVIZIO)
+templates.env.globals['spese_servizio_euro'] = f"{float(SPESE_SERVIZIO):.2f}".replace('.', ',')
+templates.env.globals['prezzo_orario_minimo'] = PREZZO_ORARIO_MINIMO
+
 # Filtro per parsing JSON (usato per le immagini community)
 import json as _json
 def _parse_json(value):

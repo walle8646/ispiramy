@@ -180,8 +180,38 @@
     .hero-right {
         position: relative;
         display: flex;
+        /* In colonna: il video sopra e sotto il collegamento alla spiegazione.
+           In riga si mettevano fianco a fianco e sul telefono il video si
+           riduceva a un francobollo. */
+        flex-direction: column;
         align-items: center;
         justify-content: center;
+    }
+
+    /* Sotto al video: chi non si fida di un video muto legge invece */
+    .hero-spiegazione {
+        align-self: center;
+        box-sizing: border-box;
+        width: 100%;
+        max-width: 440px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 48px;
+        margin-top: 14px;
+        padding: 0 22px;
+        border-radius: 24px;
+        border: 2px solid #43a047;
+        background: rgba(255, 255, 255, 0.92);
+        color: #2e7d32;
+        font-weight: 600;
+        text-decoration: none;
+        transition: background 0.2s ease, color 0.2s ease;
+    }
+
+    .hero-spiegazione:hover {
+        background: #43a047;
+        color: white;
     }
 
     .hero-video-container {
@@ -713,6 +743,9 @@
                 <div class="video-play-overlay" id="videoPlayBtn">▶️</div>
                 <button class="video-unmute-btn" id="videoUnmuteBtn">🔇 Attiva audio</button>
             </div>
+            <a href="/come-funziona" class="hero-spiegazione">
+                Come funziona Ispiramy →
+            </a>
         </div>
     </div>
 </section>

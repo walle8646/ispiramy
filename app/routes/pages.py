@@ -10,6 +10,11 @@ async def about(request: Request):
     return request.app.state.templates.TemplateResponse("about.html", {"request": request})
 
 
+@router.get("/come-funziona", response_class=HTMLResponse)
+async def come_funziona(request: Request):
+    return request.app.state.templates.TemplateResponse("come_funziona.html", {"request": request})
+
+
 @router.get("/faq", response_class=HTMLResponse)
 async def faq(request: Request):
     return request.app.state.templates.TemplateResponse("faq.html", {"request": request})
