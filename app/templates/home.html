@@ -869,10 +869,20 @@
     const unmuteBtn = document.getElementById('videoUnmuteBtn');
     if (!video || !playBtn || !unmuteBtn) return;
 
-    // Autoplay muted
-    video.play().then(function() {
-        playBtn.classList.add('hidden');
-    }).catch(function() {});
+    // Sul telefono il video non si scarica da solo: sono 2,4 MB che partono
+    // anche sotto rete mobile, per un video che quasi nessuno guarda. Si vede
+    // la copertina, e parte al tocco.
+    const alTocco = window.matchMedia('(max-width: 768px)').matches;
+    if (alTocco) {
+        video.preload = 'none';
+        video.removeAttribute('autoplay');
+        playBtn.classList.remove('hidden');
+    } else {
+        // Sul computer parte da solo, muto
+        video.play().then(function() {
+            playBtn.classList.add('hidden');
+        }).catch(function() {});
+    }
 
     // Unmute button
     unmuteBtn.addEventListener('click', function(e) {

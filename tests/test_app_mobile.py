@@ -78,3 +78,38 @@ def test_le_conversazioni_si_leggono():
     la pagina dei messaggi diceva sempre "Errore di connessione"."""
     pagina = _file("app", "templates", "messages_inbox.html")
     assert "risposta.conversations" in pagina
+
+
+def test_le_schede_contenuto_sono_a_tutta_larghezza():
+    """Staccate, con ombra e angoli tondi, sembrano finestrelle su un foglio:
+    le app usano schede piene separate da una riga."""
+    css = _file("app", "static", "mobile.css")
+    stile = css[css.index("CONTENUTI IN STILE APP"):]
+    assert ".question-card" in stile and ".consultant-card" in stile
+    assert "box-shadow: none !important;" in stile
+    # e qualcosa deve succedere quando si tocca
+    assert ":active" in stile
+
+
+def test_la_chat_occupa_tutto_lo_schermo():
+    """Una conversazione non e' una pagina da scorrere: la casella di
+    scrittura sta sopra le schede e i messaggi scorrono in mezzo."""
+    css = _file("app", "static", "mobile.css")
+    chat = css[css.index("CHAT A TUTTO SCHERMO"):]
+    # dvh e non vh: con vh la casella finiva sotto la barra del browser
+    assert "100dvh" in chat
+    assert ".message-input-container" in chat and ".messages-area" in chat
+
+
+def test_dentro_l_app_si_tiene_conto_della_tacca():
+    css = _file("app", "static", "mobile.css")
+    assert "display-mode: standalone" in css
+    dentro = css[css.index("display-mode: standalone"):]
+    assert "env(safe-area-inset-top)" in dentro
+
+
+def test_il_video_della_home_non_si_scarica_da_solo_sul_telefono():
+    """Sono 2,4 MB che partirebbero anche sotto rete mobile."""
+    home = _file("app", "templates", "home.html")
+    assert "video.preload = 'none'" in home
+    assert "max-width: 768px" in home

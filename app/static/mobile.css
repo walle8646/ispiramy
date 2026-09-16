@@ -664,3 +664,116 @@
         display: none !important;
     }
 }
+
+/* ==========================================================================
+   📱 DENTRO L'APP INSTALLATA
+   Aperta dalla schermata Home non c'e' la barra del browser: il contenuto
+   arriva fino ai bordi dello schermo, tacca compresa. I margini di sicurezza
+   valgono zero dove non servono, quindi si possono mettere sempre.
+   ========================================================================== */
+@media all and (display-mode: standalone) {
+    .navbar {
+        padding-top: calc(10px + env(safe-area-inset-top)) !important;
+    }
+
+    .schede {
+        padding-left: env(safe-area-inset-left);
+        padding-right: env(safe-area-inset-right);
+    }
+}
+
+/* ==========================================================================
+   📱 CONTENUTI IN STILE APP (fino a 768px)
+   Le schede staccate con ombra e angoli tondi sembrano finestrelle su un
+   foglio. Nelle app il contenuto occupa tutta la larghezza e le schede sono
+   separate da una riga sottile: si legge di piu' nello stesso schermo.
+   ========================================================================== */
+@media (max-width: 768px) {
+    .question-card,
+    .consultant-card {
+        border-radius: 0 !important;
+        box-shadow: none !important;
+        border-bottom: 8px solid #eef2ef !important;
+        margin-bottom: 0 !important;
+        /* A tutta larghezza: i 16px di margine del contenitore vengono
+           annullati, il testo dentro li riprende col proprio padding */
+        margin-left: -16px !important;
+        margin-right: -16px !important;
+        width: calc(100% + 32px) !important;
+        max-width: none !important;
+    }
+
+    .question-card {
+        padding: 18px 16px !important;
+    }
+
+    /* Niente effetti al passaggio del mouse (non esiste), ma una reazione
+       immediata al tocco: e' quello che fa sembrare "viva" un'app */
+    .question-card:active,
+    .consultant-card:active,
+    .cta-card:active,
+    .scheda:active,
+    .foglio-voci a:active,
+    .foglio-voci button:active {
+        background-color: #f2f7f3 !important;
+        transform: none !important;
+    }
+
+    .question-card:hover,
+    .consultant-card:hover,
+    .cta-card:hover {
+        transform: none !important;
+        box-shadow: none !important;
+    }
+
+    /* Il riquadro grigio che il tocco lascia sui link di Android */
+    a, button {
+        -webkit-tap-highlight-color: rgba(67, 160, 71, 0.12);
+    }
+}
+
+/* ==========================================================================
+   📱 CHAT A TUTTO SCHERMO (fino a 768px)
+   Una conversazione non e' una pagina da scorrere: occupa tutta l'altezza,
+   la casella di scrittura sta sopra le schede e i messaggi scorrono in mezzo.
+   ========================================================================== */
+@media (max-width: 768px) {
+    .chat-container {
+        max-width: 100% !important;
+        padding: 0 !important;
+        /* dvh e non vh: su telefono la barra del browser compare e sparisce,
+           e con vh la casella di scrittura finiva sotto lo schermo */
+        height: calc(100dvh - 65px - 62px - env(safe-area-inset-bottom)) !important;
+    }
+
+    .chat-header {
+        border-radius: 0 !important;
+        padding: 12px 16px !important;
+        position: sticky;
+        top: 0;
+        z-index: 5;
+    }
+
+    .chat-header img {
+        width: 40px !important;
+        height: 40px !important;
+    }
+
+    .chat-header-info h2 {
+        font-size: 17px !important;
+    }
+
+    .messages-area {
+        flex: 1 1 auto !important;
+        overflow-y: auto !important;
+        -webkit-overflow-scrolling: touch;
+        overscroll-behavior: contain;
+        padding: 14px 12px !important;
+    }
+
+    .message-input-container {
+        border-radius: 0 !important;
+        padding: 10px 12px calc(10px + env(safe-area-inset-bottom)) !important;
+        border-top: 1px solid #e6eae7 !important;
+    }
+}
