@@ -60,7 +60,7 @@ SCENE = [
         "fonte": {"tipo": "repertorio", "parole": "worried man laptop home office"},
     },
     {
-        "voce": "Su Ispiramy trovi chi lo ha già risolto: esperti veri, divisi per categoria.",
+        "voce": "Su Ispirami trovi chi lo ha già risolto: esperti veri, divisi per categoria.",
         "titolo": "Trovi chi l'ha già risolto",
         "sotto": "Esperti verificati, categoria per categoria",
         "fonte": {"tipo": "schermata", "percorso": "/consultants"},
@@ -80,15 +80,25 @@ SCENE = [
                   "serve_accesso": True},
     },
     {
-        "voce": "All'ora scelta parlate in videochiamata, senza installare niente.",
+        "voce": "All'ora fissata vi trovate in videochiamata. Non devi installare niente.",
         "titolo": "Parlate in videochiamata",
         "sotto": "Dentro Ispiramy, dal computer o dal telefono",
         "fonte": {"tipo": "repertorio", "parole": "business video conference call desk office"},
     },
     {
-        "voce": "Ispiramy: l'esperienza di chi c'è già passato, a portata di click.",
+        "voce": "Alla fine lasci una recensione, e aiuti a scegliere chi viene dopo di te.",
+        "titolo": "Lasci una recensione",
+        "sotto": "Così chi viene dopo di te sceglie meglio",
+        "fonte": {"tipo": "schermata", "percorso": "/user/1",
+                  "clicca": ".reviews-toggle-header", "fino_a": ".reviews-toggle-header"},
+    },
+    {
+        # "Ispirami" e non "Ispiramy": scritto come il marchio la voce lo
+        # storpiava. E la frase e' spezzata in due, perche' detta di fila
+        # sembrava non chiudersi mai.
+        "voce": "Ispirami. L'esperienza di chi c'è già passato, a portata di un click.",
         "titolo": "Ispiramy",
-        "sotto": "L'esperienza di chi c'è già passato,\na portata di click",
+        "sotto": "L'esperienza di chi c'è già passato,\na portata di un click",
         "fonte": {"tipo": "marchio"},
     },
 ]
@@ -109,6 +119,7 @@ NOMI_DA_SFOCARE = """
     .pub-hero-text h1,
     .consultant-info h1,
     .top-ispiramyer-name,
+    .pub-review-header strong,
     [data-consultant-name]
 """
 

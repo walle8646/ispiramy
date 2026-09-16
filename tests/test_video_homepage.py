@@ -65,3 +65,25 @@ def test_i_nomi_dei_consulenti_non_vanno_in_onda():
     for selettore in (".consultant-name", ".pub-hero-text h1", ".consultant-info h1"):
         assert selettore in script, f"manca dalla sfocatura: {selettore}"
     assert "blur(" in script
+
+
+def test_il_giro_si_chiude_con_la_recensione():
+    """Il cerchio si chiude lì: chi ha ricevuto aiuto aiuta il prossimo a
+    scegliere. Senza, il video finisce con la videochiamata e basta."""
+    script = _file("scripts", "genera_video_homepage.py")
+    scene = script[script.index("SCENE = ["):script.index("def _ffmpeg")]
+    assert "recensione" in scene.lower()
+    assert "reviews-toggle-header" in scene, "le recensioni stanno dietro un pannello da aprire"
+    # anche chi scrive la recensione ha un nome
+    assert ".pub-review-header strong" in script
+
+
+def test_il_marchio_si_legge_come_si_pronuncia():
+    """Scritto "Ispiramy" la voce lo storpiava: nel parlato si scrive come
+    suona, a schermo resta il marchio giusto."""
+    script = _file("scripts", "genera_video_homepage.py")
+    scene = script[script.index("SCENE = ["):script.index("def _ffmpeg")]
+    for riga in scene.splitlines():
+        if '"voce"' in riga:
+            assert "Ispiramy" not in riga, "nel parlato va scritto Ispirami"
+    assert '"titolo": "Ispiramy"' in scene, "a schermo il marchio resta quello vero"
