@@ -163,3 +163,13 @@ def test_dal_computer_il_banner_non_compare_da_solo():
     solo se lo chiede la persona dal menu."""
     invito = _blocco_invito()
     assert "window.innerWidth <= 768" in invito
+
+
+def test_anche_la_pagina_profilo_ha_il_collegamento():
+    """«Lo vedo nel menù ma non nel profilo»: la voce nel menu dell'avatar non
+    è la pagina Profilo, dove la scheda Account è il posto che tutti guardano."""
+    profilo = _file("app", "templates", "profile.html")
+    account = profilo[profilo.index("<h3 style=\"color: #1a202c;\">Account</h3>"):]
+    account = account[:account.index("</div>\n                </div>")]
+    assert 'id="voceInstallaProfilo"' in account
+    assert "voceInstallaProfilo" in _blocco_invito(), "deve essere collegata come le altre"
