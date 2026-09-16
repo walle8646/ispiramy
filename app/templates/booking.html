@@ -484,9 +484,11 @@
     }
     
     @media (max-width: 768px) {
+        /* minmax(0, ...) e non 1fr: con 1fr la colonna non scende sotto il
+           contenuto piu' largo (il calendario) e la sezione esce dallo schermo */
         .top-row,
         .bottom-row {
-            grid-template-columns: 1fr;
+            grid-template-columns: minmax(0, 1fr);
         }
         
         .weekly-slots-grid {
@@ -528,9 +530,31 @@
         .weekly-slots-grid {
             grid-template-columns: repeat(2, 1fr);
         }
-        
+
         .duration-selector {
             grid-template-columns: 1fr;
+        }
+
+        /* Il calendario ha sette colonne: su uno schermo da 375px ci sta solo
+           con celle strette e poco spazio attorno. Prima usciva di 21px e
+           l'ultima colonna (domenica) restava tagliata fuori. */
+        .booking-section {
+            padding: 16px 12px;
+        }
+
+        .calendar-grid {
+            gap: 4px;
+        }
+
+        .calendar-day-name {
+            padding: 2px 0;
+            font-size: 0.58rem;
+        }
+
+        .calendar-day {
+            min-width: 0;
+            font-size: 0.85rem;
+            border-radius: 6px;
         }
     }
 
