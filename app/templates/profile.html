@@ -1141,6 +1141,12 @@
                         <a href="/reset-password" class="pub-sidebar-link" style="color: #2e7d32; text-decoration: none; padding: 10px 16px; background: #f0f8f0; border-radius: 8px; font-weight: 500; font-size: .9em; text-align: center; transition: all .2s;">
                             🔑 Cambia Password
                         </a>
+                        {# Acceso da base.html: solo dove le push esistono davvero #}
+                        <button type="button" class="pub-sidebar-link voce-push-nascosta" id="interruttorePush" style="border: none; cursor: pointer; text-decoration: none; color: #2e7d32; padding: 10px 16px; background: #f0f8f0; border-radius: 8px; font-weight: 500; font-size: .9em; text-align: center; transition: all .2s; font-family: inherit;">
+                            🔔 Attiva notifiche
+                        </button>
+                        <div id="spiegazionePush" class="voce-push-nascosta" style="font-size: .78em; color: #6b7280; line-height: 1.35; text-align: center;"></div>
+
                         {# Il collegamento e' acceso da base.html, che sa se l'app e' gia' installata #}
                         <a href="#" class="pub-sidebar-link voce-installa-nascosta" id="voceInstallaProfilo" style="color: #2e7d32; text-decoration: none; padding: 10px 16px; background: #f0f8f0; border-radius: 8px; font-weight: 500; font-size: .9em; text-align: center; transition: all .2s;">
                             📱 Installa l'app

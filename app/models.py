@@ -480,6 +480,32 @@ class FavoriteConsultant(SQLModel, table=True):
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
 
+class PushSubscription(SQLModel, table=True):
+    """Un telefono (o un browser) a cui possiamo mandare una notifica push.
+
+    Una persona puo' averne piu' di uno: il telefono, il tablet, il computer
+    dell'ufficio. L'endpoint e' l'indirizzo che il servizio del browser ci da'
+    al momento dell'iscrizione ed e' anche la sua identita': se ricompare
+    uguale aggiorniamo la riga invece di crearne un'altra.
+    """
+    __tablename__ = "push_subscriptions"
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    user_id: int = Field(index=True)
+
+    # L'indirizzo a cui consegnare: lungo, e diverso per ogni installazione
+    endpoint: str = Field(max_length=800, unique=True, index=True)
+    # Le due chiavi che cifrano il messaggio: senza, il browser lo rifiuta
+    p256dh: str = Field(max_length=200)
+    auth: str = Field(max_length=100)
+
+    # Serve solo a far capire alla persona quale dispositivo sta disattivando
+    dispositivo: Optional[str] = Field(default=None, max_length=300)
+
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    last_used_at: Optional[datetime] = Field(default=None)
+
+
 class SocialContent(SQLModel, table=True):
     """Un contenuto social: l'idea nata da una domanda della community.
 

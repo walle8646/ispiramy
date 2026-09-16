@@ -10,7 +10,7 @@
  * gli account che usano quel telefono. Meglio una pagina in meno che il profilo
  * di qualcun altro.
  */
-const VERSIONE = 'ispiramy-v1';
+const VERSIONE = 'ispiramy-v2';
 const SENZA_RETE = '/senza-rete';
 
 /* Il guscio: roba pubblica, senza dati di nessuno. */
@@ -84,4 +84,53 @@ self.addEventListener('fetch', (evento) => {
             fetch(richiesta).catch(() => caches.match(SENZA_RETE))
         );
     }
+});
+
+
+/* ========== NOTIFICHE PUSH ==========
+   Arrivano qui anche col sito chiuso: il telefono sveglia il worker, non la
+   pagina. Se il messaggio non si legge mostriamo comunque qualcosa, altrimenti
+   alcuni browser (Chrome) fanno comparire da soli un avviso generico del tipo
+   "questo sito e' stato aggiornato in background", che e' peggio del silenzio. */
+self.addEventListener('push', (evento) => {
+    let dati = {};
+    try {
+        dati = evento.data ? evento.data.json() : {};
+    } catch (e) {
+        dati = {};
+    }
+
+    const titolo = dati.titolo || 'Ispiramy';
+    const opzioni = {
+        body: dati.testo || '',
+        icon: '/static/icone/icona-192.png',
+        badge: '/static/icone/icona-192.png',
+        tag: dati.tag || 'ispiramy',
+        renotify: true,
+        data: { url: dati.url || '/' },
+    };
+
+    evento.waitUntil(self.registration.showNotification(titolo, opzioni));
+});
+
+/* Toccando la notifica: se c'e' gia' una finestra aperta la portiamo dove
+   serve, invece di aprirne una nuova ogni volta. */
+self.addEventListener('notificationclick', (evento) => {
+    evento.notification.close();
+    const destinazione = new URL(
+        (evento.notification.data && evento.notification.data.url) || '/',
+        self.location.origin
+    ).href;
+
+    evento.waitUntil(
+        self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((finestre) => {
+            for (const finestra of finestre) {
+                if (new URL(finestra.url).origin === self.location.origin && 'focus' in finestra) {
+                    finestra.navigate && finestra.navigate(destinazione);
+                    return finestra.focus();
+                }
+            }
+            return self.clients.openWindow(destinazione);
+        })
+    );
 });

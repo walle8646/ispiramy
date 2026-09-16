@@ -81,6 +81,22 @@ def send_notification(
                 session.commit()
                 logger.info(f"✅ Notifica in-app creata per user {user_id}: {title}")
                 success = True
+
+                # Stessa notifica, ma sul telefono anche col sito chiuso.
+                # Si aggancia qui e non a ogni singolo punto del codice: cosi'
+                # ogni notifica nuova arriva anche in push senza ricordarselo.
+                try:
+                    from app.utils import notifiche_push
+                    notifiche_push.invia(
+                        user_id=user_id,
+                        titolo=title,
+                        testo=message,
+                        url=action_url or "/",
+                        tag=type_key,
+                    )
+                except Exception as errore:
+                    # Una push che non parte non deve far fallire la notifica
+                    logger.warning(f"⚠️ Push non inviata a {user_id}: {errore}")
             
             # 2. Email (se configurata)
             if notif_type.send_email and notif_type.email_subject and notif_type.email_template:

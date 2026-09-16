@@ -1681,7 +1681,8 @@
         /* Le voci "installa" si spengono con questa classe e non con lo stile in
            riga: le aree toccabili impongono display: inline-flex !important e
            un display: none scritto sull'elemento perdeva il confronto. */
-        .voce-installa-nascosta {
+        .voce-installa-nascosta,
+        .voce-push-nascosta {
             display: none !important;
         }
 
@@ -1763,6 +1764,122 @@
         <button type="button" id="invitoInstalla">Installa</button>
         <button type="button" class="invito-chiudi" id="invitoChiudi" aria-label="Non ora">&times;</button>
     </div>
+
+    <script>
+    /* Notifiche push: l'interruttore nel profilo, se la persona ce l'ha davanti.
+       Perche' funzionino servono tre cose insieme - il permesso del browser, il
+       service worker e le chiavi sul server - e se ne manca una l'interruttore
+       resta nascosto invece di promettere qualcosa che non arrivera'. */
+    (function () {
+        const bottone = document.getElementById('interruttorePush');
+        if (!bottone) { return; }
+        const spiegazione = document.getElementById('spiegazionePush');
+        const supportato = 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
+        let chiave = '';
+
+        function mostra(testo, nota) {
+            bottone.textContent = testo;
+            bottone.classList.remove('voce-push-nascosta');
+            if (spiegazione) {
+                spiegazione.textContent = nota || '';
+                spiegazione.classList.toggle('voce-push-nascosta', !nota);
+            }
+        }
+
+        /* La chiave del server arriva in base64 per gli indirizzi web, il
+           browser la vuole in byte grezzi. */
+        function inByte(base64) {
+            const pieno = (base64 + '='.repeat((4 - base64.length % 4) % 4))
+                .replace(/-/g, '+').replace(/_/g, '/');
+            const grezzo = atob(pieno);
+            return Uint8Array.from(grezzo, function (c) { return c.charCodeAt(0); });
+        }
+
+        async function iscrizioneCorrente() {
+            const reg = await navigator.serviceWorker.ready;
+            return reg.pushManager.getSubscription();
+        }
+
+        async function attiva() {
+            bottone.disabled = true;
+            try {
+                const permesso = await Notification.requestPermission();
+                if (permesso !== 'granted') {
+                    mostra('🔔 Attiva notifiche', permesso === 'denied'
+                        ? 'Le notifiche sono bloccate nelle impostazioni del browser per questo sito.'
+                        : 'Permesso non concesso.');
+                    return;
+                }
+                const reg = await navigator.serviceWorker.ready;
+                const iscrizione = await reg.pushManager.subscribe({
+                    userVisibleOnly: true,
+                    applicationServerKey: inByte(chiave),
+                });
+                await fetch('/api/push/iscrizione', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ iscrizione: iscrizione.toJSON() }),
+                });
+                mostra('🔕 Disattiva notifiche', 'Le riceverai su questo dispositivo.');
+            } catch (errore) {
+                mostra('🔔 Attiva notifiche', 'Non ha funzionato: riprova fra poco.');
+                console.warn('Push non attivate:', errore);
+            } finally {
+                bottone.disabled = false;
+            }
+        }
+
+        async function disattiva() {
+            bottone.disabled = true;
+            try {
+                const iscrizione = await iscrizioneCorrente();
+                if (iscrizione) {
+                    await fetch('/api/push/iscrizione', {
+                        method: 'DELETE',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ endpoint: iscrizione.endpoint }),
+                    });
+                    await iscrizione.unsubscribe();
+                }
+                mostra('🔔 Attiva notifiche', '');
+            } finally {
+                bottone.disabled = false;
+            }
+        }
+
+        (async function () {
+            if (!supportato) {
+                // Su iPhone le push esistono solo dentro l'app installata
+                const suApple = /iPad|iPhone|iPod/.test(navigator.userAgent);
+                if (suApple) {
+                    mostra('🔔 Attiva notifiche', 'Su iPhone servono dopo aver aggiunto Ispiramy alla schermata Home.');
+                    bottone.disabled = true;
+                }
+                return;
+            }
+            let stato;
+            try {
+                stato = await (await fetch('/api/push/stato')).json();
+            } catch (e) {
+                return;
+            }
+            if (!stato.attivabile || !stato.chiave_pubblica) { return; }
+            chiave = stato.chiave_pubblica;
+
+            const iscrizione = await iscrizioneCorrente();
+            if (iscrizione && Notification.permission === 'granted') {
+                mostra('🔕 Disattiva notifiche', 'Le ricevi su questo dispositivo.');
+            } else {
+                mostra('🔔 Attiva notifiche', 'Ti avvisiamo di messaggi e prenotazioni anche col sito chiuso.');
+            }
+
+            bottone.addEventListener('click', function () {
+                if (bottone.textContent.indexOf('Disattiva') >= 0) { disattiva(); }
+                else { attiva(); }
+            });
+        })();
+    })();
+    </script>
 
     <script>
     (function () {
