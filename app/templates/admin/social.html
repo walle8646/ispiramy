@@ -188,6 +188,96 @@
         background: #1a1a2e; color: #fff; padding: 12px 22px; border-radius: 10px;
         font-size: .9rem; z-index: 3000; display: none; max-width: 90vw;
     }
+
+    /* Calendario condiviso */
+    .calendario {
+        background: #fff;
+        border-radius: 12px;
+        padding: 16px 18px 20px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        margin-bottom: 20px;
+    }
+    .calendario-testa {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 12px;
+    }
+    .calendario-mese { font-weight: 600; color: #1a1a2e; text-transform: capitalize; }
+    .calendario-testa button {
+        border: 1px solid #ddd;
+        background: #fff;
+        border-radius: 8px;
+        width: 34px;
+        height: 34px;
+        cursor: pointer;
+        color: #555;
+    }
+    .calendario-testa button:hover { background: #f1f8e9; border-color: #43a047; color: #2e7d32; }
+    .calendario-griglia {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        gap: 6px;
+    }
+    .calendario-giorno-nome {
+        font-size: .72rem;
+        text-transform: uppercase;
+        letter-spacing: .04em;
+        color: #888;
+        text-align: center;
+        padding-bottom: 4px;
+    }
+    .calendario-cella {
+        min-height: 78px;
+        border: 1px solid #eee;
+        border-radius: 8px;
+        padding: 4px 5px;
+        background: #fafafa;
+    }
+    .calendario-cella.fuori { opacity: .45; }
+    .calendario-cella.oggi { border-color: #43a047; background: #f1f8e9; }
+    .calendario-numero { font-size: .75rem; color: #777; }
+    .calendario-voce {
+        display: block;
+        width: 100%;
+        text-align: left;
+        border: 0;
+        border-radius: 6px;
+        margin-top: 3px;
+        padding: 2px 5px;
+        font-size: .7rem;
+        color: #fff;
+        cursor: pointer;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .calendario-voce.draft { background: #9e9e9e; }
+    .calendario-voce.approved { background: #43a047; }
+    .calendario-voce.publishing { background: #fb8c00; }
+    .calendario-voce.published { background: #1b5e20; }
+    .calendario-voce.failed { background: #c62828; }
+    .calendario-voce.rejected { background: #bdbdbd; }
+    .calendario-vuoto { color: #888; font-size: .85rem; padding: 6px 2px; }
+
+    /* Schede Post / Video */
+    .schede {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 16px;
+    }
+    .scheda {
+        border: 0;
+        background: #eee;
+        color: #555;
+        padding: 10px 20px;
+        border-radius: 10px 10px 0 0;
+        font-size: .92rem;
+        font-weight: 600;
+        cursor: pointer;
+    }
+    .scheda.attiva { background: #2e7d32; color: #fff; }
+    .draft-card.evidenziata { box-shadow: 0 0 0 3px #43a047; }
 </style>
 {% endblock %}
 
@@ -220,6 +310,28 @@
         </div>
     </div>
 
+    <!-- I dati del calendario viaggiano come JSON, non dentro il JavaScript:
+         un apostrofo o un a-capo in un titolo romperebbe l'intero script -->
+    <script type="application/json" id="datiCalendario">{{ calendario|tojson }}</script>
+
+    <div class="calendario">
+        <div class="calendario-testa">
+            <button type="button" onclick="cambiaMese(-1)" aria-label="Mese precedente"><i class="fas fa-chevron-left"></i></button>
+            <span class="calendario-mese" id="calendarioMese"></span>
+            <button type="button" onclick="cambiaMese(1)" aria-label="Mese successivo"><i class="fas fa-chevron-right"></i></button>
+        </div>
+        <div class="calendario-griglia" id="calendarioGriglia"></div>
+    </div>
+
+    <div class="schede">
+        <button class="scheda attiva" data-scheda="post" onclick="mostraScheda('post', this)">
+            <i class="fas fa-file-lines"></i> Post ({{ drafts | selectattr('platform', 'in', ['facebook', 'instagram', 'linkedin']) | list | length }})
+        </button>
+        <button class="scheda" data-scheda="video" onclick="mostraScheda('video', this)">
+            <i class="fas fa-film"></i> Video ({{ drafts | selectattr('platform', 'equalto', 'tiktok') | list | length }})
+        </button>
+    </div>
+
     <div class="status-filters">
         <button class="status-filter active" data-filter="all" onclick="filterDrafts(this)">Tutti ({{ drafts|length }})</button>
         {% for st, label in [('draft','Bozze'), ('approved','Approvati'), ('publishing','In pubblicazione'), ('published','Pubblicati'), ('failed','Falliti'), ('rejected','Rifiutati')] %}
@@ -235,7 +347,7 @@
     {% endif %}
 
     {% for d in drafts %}
-    <div class="draft-card" data-status="{{ d.status }}" id="draft-{{ d.id }}">
+    <div class="draft-card" data-status="{{ d.status }}" data-platform="{{ d.platform }}" id="draft-{{ d.id }}">
         <div class="draft-head">
             <div class="draft-meta">
                 <span class="platform-chip">
@@ -431,13 +543,112 @@ async function deleteDraft(id) {
     if (r.ok) document.getElementById(`draft-${id}`).remove();
 }
 
+// ----------------------------------------------------------- schede e filtri
+const PIATTAFORME_SCHEDA = { post: ['facebook', 'instagram', 'linkedin'], video: ['tiktok'] };
+let schedaAttiva = 'post';
+let filtroStato = 'all';
+
+function applicaFiltri() {
+    const piattaforme = PIATTAFORME_SCHEDA[schedaAttiva];
+    document.querySelectorAll('.draft-card').forEach(c => {
+        const dellaScheda = piattaforme.includes(c.dataset.platform);
+        const delloStato = filtroStato === 'all' || c.dataset.status === filtroStato;
+        c.style.display = (dellaScheda && delloStato) ? '' : 'none';
+    });
+}
+
+function mostraScheda(nome, bottone) {
+    schedaAttiva = nome;
+    document.querySelectorAll('.scheda').forEach(b => b.classList.toggle('attiva', b === bottone));
+    applicaFiltri();
+}
+
 function filterDrafts(btn) {
     document.querySelectorAll('.status-filter').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
-    const f = btn.dataset.filter;
-    document.querySelectorAll('.draft-card').forEach(c => {
-        c.style.display = (f === 'all' || c.dataset.status === f) ? '' : 'none';
-    });
+    filtroStato = btn.dataset.filter;
+    applicaFiltri();
 }
+
+// ----------------------------------------------------------- calendario
+const VOCI_CALENDARIO = JSON.parse(document.getElementById('datiCalendario').textContent || '[]');
+const ICONE_PIATTAFORMA = { facebook: 'f', instagram: 'ig', linkedin: 'in', tiktok: 'tk' };
+const GIORNI = ['Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab', 'Dom'];
+let meseMostrato = new Date();
+
+function chiaveGiorno(data) {
+    const m = String(data.getMonth() + 1).padStart(2, '0');
+    const g = String(data.getDate()).padStart(2, '0');
+    return `${data.getFullYear()}-${m}-${g}`;
+}
+
+function cambiaMese(passo) {
+    meseMostrato = new Date(meseMostrato.getFullYear(), meseMostrato.getMonth() + passo, 1);
+    disegnaCalendario();
+}
+
+function vaiAlDraft(id, piattaforma) {
+    // Il calendario mostra tutto: se la voce sta nell'altra scheda, si cambia scheda
+    const scheda = PIATTAFORME_SCHEDA.video.includes(piattaforma) ? 'video' : 'post';
+    if (scheda !== schedaAttiva) {
+        mostraScheda(scheda, document.querySelector(`.scheda[data-scheda="${scheda}"]`));
+    }
+    const card = document.getElementById(`draft-${id}`);
+    if (!card) return;
+    card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    card.classList.add('evidenziata');
+    setTimeout(() => card.classList.remove('evidenziata'), 2000);
+}
+
+function disegnaCalendario() {
+    const griglia = document.getElementById('calendarioGriglia');
+    const primo = new Date(meseMostrato.getFullYear(), meseMostrato.getMonth(), 1);
+    document.getElementById('calendarioMese').textContent =
+        primo.toLocaleDateString('it-IT', { month: 'long', year: 'numeric' });
+
+    // La settimana comincia di lunedì: in JavaScript la domenica è 0
+    const scarto = (primo.getDay() + 6) % 7;
+    const inizio = new Date(primo.getFullYear(), primo.getMonth(), 1 - scarto);
+    const oggi = chiaveGiorno(new Date());
+
+    const perGiorno = {};
+    VOCI_CALENDARIO.forEach(v => (perGiorno[v.giorno] = perGiorno[v.giorno] || []).push(v));
+
+    griglia.innerHTML = '';
+    GIORNI.forEach(nome => {
+        const intestazione = document.createElement('div');
+        intestazione.className = 'calendario-giorno-nome';
+        intestazione.textContent = nome;
+        griglia.appendChild(intestazione);
+    });
+
+    for (let i = 0; i < 42; i++) {
+        const giorno = new Date(inizio.getFullYear(), inizio.getMonth(), inizio.getDate() + i);
+        const chiave = chiaveGiorno(giorno);
+        const cella = document.createElement('div');
+        cella.className = 'calendario-cella';
+        if (giorno.getMonth() !== primo.getMonth()) cella.classList.add('fuori');
+        if (chiave === oggi) cella.classList.add('oggi');
+
+        const numero = document.createElement('div');
+        numero.className = 'calendario-numero';
+        numero.textContent = giorno.getDate();
+        cella.appendChild(numero);
+
+        (perGiorno[chiave] || []).forEach(v => {
+            const voce = document.createElement('button');
+            voce.type = 'button';
+            voce.className = `calendario-voce ${v.status}`;
+            voce.textContent = `${v.ora} ${ICONE_PIATTAFORMA[v.platform] || ''} ${v.titolo}`;
+            voce.title = `${v.titolo} — ${v.platform}, ${v.status}`;
+            voce.onclick = () => vaiAlDraft(v.id, v.platform);
+            cella.appendChild(voce);
+        });
+        griglia.appendChild(cella);
+    }
+}
+
+disegnaCalendario();
+applicaFiltri();
 </script>
 {% endblock %}

@@ -6,7 +6,7 @@ import asyncio
 from fastapi import APIRouter, Request
 from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
 from sqlmodel import Session, select
-from datetime import datetime
+from datetime import datetime, timezone
 from zoneinfo import ZoneInfo
 from pydantic import BaseModel
 from typing import Optional
@@ -43,6 +43,7 @@ async def admin_social(request: Request):
     counts = {}
     for d in drafts:
         counts[d.status] = counts.get(d.status, 0) + 1
+    calendario = _voci_calendario(drafts)
 
     # Stato account collegati (best effort, non bloccare la pagina se l'API è giù)
     accounts = {}
@@ -60,9 +61,37 @@ async def admin_social(request: Request):
         "current_user": admin_user,
         "drafts": drafts,
         "counts": counts,
+        "calendario": calendario,
         "accounts": accounts,
         "platform_labels": PLATFORM_LABELS,
     })
+
+
+def _voci_calendario(drafts) -> list[dict]:
+    """Le voci del calendario: cosa e' programmato e cosa e' gia' uscito.
+
+    Tutti gli orari in ora italiana. scheduled_at lo e' gia' (arriva dal campo
+    della pagina), published_at invece e' salvato in UTC: mostrarli insieme
+    senza convertire farebbe sembrare che un post sia uscito due ore prima di
+    quando era programmato.
+    """
+    voci = []
+    for d in drafts:
+        if d.status == "published" and d.published_at:
+            quando = d.published_at.replace(tzinfo=timezone.utc).astimezone(ITALY_TZ).replace(tzinfo=None)
+        elif d.scheduled_at:
+            quando = d.scheduled_at
+        else:
+            continue
+        voci.append({
+            "id": d.id,
+            "platform": d.platform,
+            "status": d.status,
+            "giorno": quando.strftime("%Y-%m-%d"),
+            "ora": quando.strftime("%H:%M"),
+            "titolo": (d.source_title or d.caption or "").strip()[:70],
+        })
+    return sorted(voci, key=lambda v: (v["giorno"], v["ora"]))
 
 
 class GenerateRequest(BaseModel):
