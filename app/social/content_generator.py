@@ -197,6 +197,55 @@ def generate_batch(limit: int = 5) -> list[dict]:
     return drafts
 
 
+SYSTEM_VIDEO = """Sei un social media manager italiano di "Ispiramy", un marketplace di consulenze \
+professionali online. Ti viene dato un post gia' scritto e devi ricavarne lo script di un video \
+verticale di 15-25 secondi (circa 55 parole IN TUTTO).
+
+Rispondi ESCLUSIVAMENTE con un oggetto JSON con questa struttura ESATTA:
+{
+  "script_segments": ["4-5 frasi brevissime da leggere ad alta voce, dalla prima (che ferma lo scroll) all'ultima (l'invito a cercare un esperto su Ispiramy): una frase per scena, max ~70 caratteri ciascuna"],
+  "scene_keywords": ["una voce per ogni frase, nello stesso ordine: 2-4 parole IN INGLESE che descrivono l'immagine da mostrare dietro quella frase (es. 'stressed developer desk'). Solo persone, luoghi o gesti reali: niente marchi, niente scritte, niente schermate di software"]
+}
+
+Lo script viene letto da una voce sintetica: numeri e sigle per esteso ("tre consigli", non "3 consigli"), \
+niente emoji, niente hashtag. scene_keywords deve avere esattamente un elemento per ogni frase."""
+
+
+def completa_script_video(titolo: str, caption: str, slide: Optional[list] = None) -> dict:
+    """Ricava frasi e parole chiave delle scene da un post gia' scritto.
+
+    Serve alle bozze che non nascono per il video (Instagram e Facebook hanno
+    caption e slide, non uno script) e a quelle generate prima che le parole
+    chiave esistessero: senza, il video usciva con una scena sola.
+    """
+    client = _get_client()
+    materiale = f"Titolo: {titolo or ''}\nTesto del post: {(caption or '')[:1200]}"
+    if slide:
+        materiale += "\nSlide del carosello:\n- " + "\n- ".join(str(s)[:200] for s in slide if s)
+
+    risposta = client.chat.completions.create(
+        model=MODEL,
+        messages=[
+            {"role": "system", "content": SYSTEM_VIDEO},
+            {"role": "user", "content": materiale},
+        ],
+        temperature=0.7,
+        max_tokens=700,
+        response_format={"type": "json_object"},
+    )
+    grezzo = (risposta.choices[0].message.content or "").strip()
+    try:
+        dati = json.loads(grezzo)
+    except json.JSONDecodeError as e:
+        raise GenerazioneFallita(f"script del video non leggibile ({e})") from e
+
+    segmenti = [s.strip() for s in (dati.get("script_segments") or []) if isinstance(s, str) and s.strip()]
+    parole = [p.strip() if isinstance(p, str) else "" for p in (dati.get("scene_keywords") or [])]
+    if len(segmenti) < 2:
+        raise GenerazioneFallita("il modello non ha prodotto abbastanza frasi per un video")
+    return {"script_segments": segmenti, "scene_keywords": parole}
+
+
 def _join_caption(*parts: str) -> str:
     return "\n\n".join(p.strip() for p in parts if p and p.strip())[:5000]
 

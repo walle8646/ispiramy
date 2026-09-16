@@ -105,6 +105,13 @@ def segmenti_dello_script(extra: dict) -> list[str]:
         if isinstance(s, str) and s.strip()
     ]
     if not segmenti:
+        # Le bozze Instagram non hanno uno script: hanno le slide del carosello,
+        # che sono gia' frasi brevi e in ordine. Meglio quelle che l'hook da solo.
+        segmenti = [
+            s.strip() for s in (extra.get("carousel_slides") or [])
+            if isinstance(s, str) and s.strip()
+        ]
+    if not segmenti:
         # I draft generati prima di script_segments hanno solo il blocco unico.
         # Una frase cortissima ("Ecco come.") da sola durerebbe mezzo secondo:
         # si accorpa alla successiva.
@@ -531,6 +538,46 @@ def _produci(draft_id: int, segmenti: list[str], parole: list[str], ffmpeg: str,
         return url, sum(durate), crediti
 
 
+def _materiale_sufficiente(segmenti: list[str], parole: list[str], usa_repertorio: bool) -> bool:
+    """Un video di una scena sola non e' un video: serve altro materiale."""
+    if len(segmenti) < 3:
+        return False
+    return not usa_repertorio or any(p for p in parole)
+
+
+def _completa_materiale(draft_id: int, extra: dict) -> dict:
+    """Fa scrivere al modello frasi e scene mancanti, e le salva sulla bozza.
+
+    Cosi' si paga una volta sola: la prossima generazione dello stesso draft
+    trova gia' tutto. Se il modello non e' disponibile si va avanti con quello
+    che c'e': meglio un video piu' semplice che nessun video.
+    """
+    from app.social.content_generator import completa_script_video
+
+    with Session(engine) as session:
+        draft = session.get(SocialDraft, draft_id)
+        if not draft:
+            return extra
+        titolo, caption = draft.source_title, draft.caption
+    try:
+        aggiunta = completa_script_video(titolo, caption, extra.get("carousel_slides"))
+    except Exception as e:
+        logger.warning(f"Video draft {draft_id}: script non completato ({e}), si usa il materiale esistente")
+        return extra
+
+    nuovo = dict(extra)
+    nuovo.update(aggiunta)
+    with Session(engine) as session:
+        draft = session.get(SocialDraft, draft_id)
+        if draft:
+            draft.extra_content = json.dumps(nuovo, ensure_ascii=False)[:8000]
+            draft.updated_at = datetime.utcnow()
+            session.add(draft)
+            session.commit()
+    logger.info(f"🖊️ Video draft {draft_id}: script ricavato dal post ({len(aggiunta['script_segments'])} scene)")
+    return nuovo
+
+
 def generate_video_for_draft(draft_id: int, usa_repertorio: bool = True) -> dict:
     """Genera il video del draft e compila media_urls. Ritorna {ok, message}.
 
@@ -548,9 +595,15 @@ def generate_video_for_draft(draft_id: int, usa_repertorio: bool = True) -> dict
         except json.JSONDecodeError:
             extra = {}
     segmenti = segmenti_dello_script(extra)
-    if not segmenti:
-        return {"ok": False, "message": "Questo draft non ha uno script da trasformare in video"}
     parole = parole_per_scena(extra, segmenti)
+    if not _materiale_sufficiente(segmenti, parole, usa_repertorio):
+        # Un post nato per le immagini non ha ne' script ne' scene: li si scrive
+        # adesso, partendo dal testo che c'e' gia'
+        extra = _completa_materiale(draft_id, extra)
+        segmenti = segmenti_dello_script(extra)
+        parole = parole_per_scena(extra, segmenti)
+    if not segmenti:
+        return {"ok": False, "message": "Questo draft non ha un testo da trasformare in video"}
 
     logger.info(f"🎬 Genero video per draft {draft_id} ({len(segmenti)} scene)...")
     try:

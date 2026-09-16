@@ -104,10 +104,13 @@ def test_troppi_segmenti_si_accorpano_senza_perdere_la_fine():
     assert segmenti[-1].endswith("Frase numero 14.")
 
 
-def test_senza_script_non_parte_niente(pulizia, voce_configurata):
+def test_senza_niente_da_dire_il_video_non_parte(pulizia, voce_configurata, monkeypatch):
+    """Senza testo e senza modello disponibile non c'e' materiale per un video."""
+    monkeypatch.setattr("app.social.content_generator.completa_script_video",
+                        lambda titolo, caption, slide=None: {"script_segments": [], "scene_keywords": []})
     esito = vg.generate_video_for_draft(_draft(pulizia, extra={}))
     assert esito["ok"] is False
-    assert "script" in esito["message"]
+    assert "testo" in esito["message"]
 
 
 def test_un_draft_pubblicato_non_si_rigenera(pulizia, voce_configurata):
@@ -392,6 +395,73 @@ def test_la_chiusura_non_usa_mai_il_repertorio(monkeypatch, pulizia, voce_config
 
     vg._produci(1, ["Prima", "Seconda", "Chiusura"], ["a", "b", "c"], "ffmpeg")
     assert cercate == ["a", "b"], "la clip si cerca per tutte le scene tranne l'ultima"
+
+
+def test_una_bozza_instagram_usa_le_slide_del_carosello():
+    """Instagram non ha uno script: con solo l'hook usciva un video di una
+    scena sola, quattro secondi e nessuna clip."""
+    segmenti = vg.segmenti_dello_script({
+        "hook": "Il colloquio in inglese fa paura?",
+        "carousel_slides": ["Prepara tre risposte pronte.", "Registrati e riascoltati.", "Chiedi aiuto a un esperto."],
+    })
+    assert segmenti[0] == "Il colloquio in inglese fa paura?"
+    assert len(segmenti) == 4
+
+
+def test_quando_il_materiale_non_basta():
+    assert vg._materiale_sufficiente(["a", "b"], ["x", "y"], True) is False, "due scene sono troppo poche"
+    assert vg._materiale_sufficiente(["a", "b", "c"], ["", "", ""], True) is False, "senza scene niente repertorio"
+    assert vg._materiale_sufficiente(["a", "b", "c"], ["", "", ""], False) is True, "il video di slide non le usa"
+    assert vg._materiale_sufficiente(["a", "b", "c"], ["office", "", ""], True) is True
+
+
+def test_lo_script_ricavato_resta_salvato_sulla_bozza(monkeypatch, pulizia):
+    """Si paga il modello una volta: la generazione successiva lo ritrova."""
+    monkeypatch.setattr("app.social.content_generator.completa_script_video",
+                        lambda titolo, caption, slide=None: {
+                            "script_segments": ["Uno.", "Due.", "Tre."],
+                            "scene_keywords": ["office", "calendar", "handshake"],
+                        })
+    draft_id = _draft(pulizia, extra={"hook": "Hook"}, platform="instagram")
+    nuovo = vg._completa_materiale(draft_id, {"hook": "Hook"})
+
+    assert nuovo["script_segments"] == ["Uno.", "Due.", "Tre."]
+    with Session(engine) as s:
+        salvato = json.loads(s.get(SocialDraft, draft_id).extra_content)
+    assert salvato["scene_keywords"] == ["office", "calendar", "handshake"]
+    assert salvato["hook"] == "Hook", "il resto del contenuto non si perde"
+
+
+def test_se_il_modello_non_risponde_si_va_avanti_lo_stesso(monkeypatch, pulizia):
+    def esplode(titolo, caption, slide=None):
+        raise RuntimeError("OpenAI giù")
+
+    monkeypatch.setattr("app.social.content_generator.completa_script_video", esplode)
+    draft_id = _draft(pulizia, extra={"hook": "Hook"})
+    assert vg._completa_materiale(draft_id, {"hook": "Hook"}) == {"hook": "Hook"}
+
+
+def test_un_post_instagram_diventa_un_video_con_piu_scene(monkeypatch, pulizia, voce_configurata):
+    """Il caso segnalato: 'video completo' su Instagram dava 4 secondi e un'immagine."""
+    monkeypatch.setattr("app.social.content_generator.completa_script_video",
+                        lambda titolo, caption, slide=None: {
+                            "script_segments": ["Il colloquio in inglese fa paura?", "Prepara tre risposte.",
+                                                "Registrati e riascoltati.", "Trova un esperto su Ispiramy."],
+                            "scene_keywords": ["job interview", "woman studying", "microphone recording", ""],
+                        })
+    prodotto = {}
+    monkeypatch.setattr(vg, "_produci",
+                        lambda draft_id, segmenti, parole, ffmpeg, usa_repertorio=True:
+                        prodotto.update(segmenti=segmenti, parole=parole, repertorio=usa_repertorio)
+                        or ("https://esempio/v.mp4", 18.0, ["Autore"]))
+    monkeypatch.setattr(vg, "ffmpeg_exe", lambda: "ffmpeg")
+
+    draft_id = _draft(pulizia, platform="instagram", extra={"hook": "Il colloquio in inglese fa paura?"})
+    esito = vg.generate_video_for_draft(draft_id, usa_repertorio=True)
+
+    assert esito["ok"] is True
+    assert len(prodotto["segmenti"]) == 4, "una scena sola era il bug"
+    assert any(prodotto["parole"]), "senza parole chiave non ci sarebbero clip di repertorio"
 
 
 def test_un_ffmpeg_ucciso_dal_sistema_lo_dice(monkeypatch):
