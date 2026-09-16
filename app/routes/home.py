@@ -59,6 +59,29 @@ async def home(request: Request):
                     "review_count": review_count,
                 })
             
+            # Le ultime domande della community: sul telefono, a chi ha fatto
+            # l'accesso, la home mostra le sue cose invece della vetrina, e
+            # queste sono il "che c'e' di nuovo". Si caricano col resto della
+            # pagina: un secondo giro di rete farebbe comparire il blocco dopo.
+            domande_recenti = []
+            if current_user:
+                from app.models import CommunityQuestion
+
+                righe = session.exec(
+                    select(CommunityQuestion)
+                    .where(CommunityQuestion.validation == True)  # noqa: E712
+                    .order_by(CommunityQuestion.created_at.desc())
+                    .limit(3)
+                ).all()
+                for domanda in righe:
+                    categoria = session.get(Category, domanda.category_id) if domanda.category_id else None
+                    domande_recenti.append({
+                        "id": domanda.id,
+                        "titolo": domanda.title,
+                        "categoria": categoria.name if categoria else None,
+                        "risposte": domanda.views or 0,
+                    })
+
             logger.info(f"Home page loaded with {len(consultants)} featured consultants")
             
             return request.app.state.templates.TemplateResponse(
@@ -69,6 +92,7 @@ async def home(request: Request):
                     "consultants": consultants,
                     "user": current_user,
                     "current_user": current_user,
+                    "domande_recenti": domande_recenti,
                     "hero_img_url": "https://i.imgur.com/YourImage.png"
                 }
             )

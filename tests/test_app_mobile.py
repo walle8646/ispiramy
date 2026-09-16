@@ -113,3 +113,34 @@ def test_il_video_della_home_non_si_scarica_da_solo_sul_telefono():
     home = _file("app", "templates", "home.html")
     assert "video.preload = 'none'" in home
     assert "max-width: 768px" in home
+
+
+def test_chi_e_gia_dentro_vede_le_sue_cose(client):
+    """Per chi ha gia' un account la vetrina non serve: in cima al telefono ci
+    vanno la prossima consulenza, le richieste da rispondere e la community."""
+    home = _file("app", "templates", "home.html")
+    assert 'id="miaHome"' in home
+    assert "{% if current_user %}" in home
+    assert "/api/booking/upcoming" in home, "le cose arrivano dalle API gia' esistenti"
+    # e per chi arriva la prima volta la presentazione resta
+    assert "ha-mia-home" in home
+    assert client.get("/").status_code == 200
+
+
+def test_la_vetrina_resta_a_chi_arriva_la_prima_volta():
+    """La home promozionale sparisce solo sul telefono e solo dopo l'accesso:
+    sul computer, e per chi non e' registrato, resta quella di prima."""
+    home = _file("app", "templates", "home.html")
+    blocco = home[home.index(".mia-home {"):home.index(".mia-saluto")]
+    assert "display: none;" in blocco, "di suo il blocco non si vede"
+    dentro = home[home.index("body.ha-mia-home"):]
+    assert ".hero-main" in dentro[:200] and ".cta-section" in dentro[:200]
+
+
+def test_la_home_porta_le_domande_recenti():
+    rotta = _file("app", "routes", "home.py")
+    assert "domande_recenti" in rotta
+    assert "CommunityQuestion" in rotta
+    # solo per chi ha fatto l'accesso: agli altri non servono
+    pezzo = rotta[rotta.index("domande_recenti = []"):rotta.index("logger.info(f\"Home page loaded")]
+    assert "if current_user" in pezzo

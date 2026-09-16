@@ -188,6 +188,168 @@
         justify-content: center;
     }
 
+    /* ===== LA TUA HOME (solo telefono, solo dopo l'accesso) ===== */
+    .mia-home {
+        display: none;
+    }
+
+    @media (max-width: 768px) {
+        .mia-home {
+            display: block;
+            padding: 18px 16px 8px;
+            background: #f7faf7;
+        }
+
+        /* Con le tue cose in cima, la vetrina scende: chi e' gia' cliente non
+           ha bisogno di rileggere cos'e' Ispiramy ogni volta che apre l'app */
+        body.ha-mia-home .hero-main,
+        body.ha-mia-home .cta-section {
+            display: none;
+        }
+
+        .mia-saluto {
+            margin: 0 0 14px;
+            font-size: 1.45rem;
+            color: #1b5e20;
+        }
+
+        .mia-sezione {
+            margin: 26px 0 10px;
+            font-size: 1.05rem;
+            color: #33404a;
+        }
+
+        .mia-attesa {
+            padding: 18px 0;
+            color: #8b9a90;
+            font-size: .92rem;
+        }
+
+        .mia-cosa {
+            display: block;
+            padding: 16px;
+            margin-bottom: 10px;
+            border-radius: 14px;
+            background: white;
+            border: 1px solid #e6efe7;
+            text-decoration: none;
+            color: #33404a;
+        }
+
+        .mia-cosa.urgente {
+            border-color: #43a047;
+            background: linear-gradient(135deg, #e8f5e9 0%, #ffffff 70%);
+        }
+
+        .mia-cosa .quando {
+            display: block;
+            font-size: .78rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: .04em;
+            color: #43a047;
+            margin-bottom: 4px;
+        }
+
+        .mia-cosa strong {
+            display: block;
+            font-size: 1.02rem;
+            color: #1b5e20;
+        }
+
+        .mia-cosa span.dettaglio {
+            display: block;
+            font-size: .88rem;
+            color: #68787f;
+            margin-top: 2px;
+        }
+
+        .mia-cosa .azione {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 42px;
+            margin-top: 12px;
+            padding: 0 22px;
+            border-radius: 21px;
+            background: #43a047;
+            color: white;
+            font-weight: 600;
+        }
+
+        .mia-vuota {
+            padding: 18px 16px;
+            border-radius: 14px;
+            background: white;
+            border: 1px dashed #cfe0d1;
+            color: #68787f;
+            font-size: .92rem;
+        }
+
+        .mie-scorciatoie {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 8px;
+            margin-top: 14px;
+        }
+
+        .mie-scorciatoie a {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 7px;
+            min-height: 78px;
+            padding: 10px 6px;
+            border-radius: 14px;
+            background: white;
+            border: 1px solid #e6efe7;
+            color: #2e7d32;
+            font-size: .76rem;
+            font-weight: 600;
+            text-align: center;
+            text-decoration: none;
+            line-height: 1.2;
+        }
+
+        .mie-scorciatoie i {
+            font-size: 18px;
+        }
+
+        .mia-domanda {
+            display: block;
+            padding: 14px 16px;
+            margin-bottom: 8px;
+            border-radius: 14px;
+            background: white;
+            border: 1px solid #e6efe7;
+            text-decoration: none;
+        }
+
+        .mia-domanda strong {
+            display: block;
+            color: #1b5e20;
+            font-size: .98rem;
+            line-height: 1.3;
+        }
+
+        .mia-domanda span {
+            display: block;
+            margin-top: 4px;
+            font-size: .8rem;
+            color: #78909c;
+        }
+
+        .mia-tutte {
+            display: inline-block;
+            padding: 8px 0 4px;
+            color: #2e7d32;
+            font-weight: 600;
+            font-size: .92rem;
+            text-decoration: none;
+        }
+    }
+
     /* Sotto al video: chi non si fida di un video muto legge invece */
     .hero-spiegazione {
         align-self: center;
@@ -713,6 +875,40 @@
 </section>
 
 <!-- ========== HERO MAIN ========== -->
+{% if current_user %}
+{# ========== LA TUA HOME (solo telefono) ==========
+   Chi e' gia' dentro non ha bisogno della vetrina: ha bisogno delle sue cose.
+   La prossima consulenza col pulsante per entrare, le richieste da accettare,
+   e cosa c'e' di nuovo nella community. La presentazione resta per chi arriva
+   la prima volta, e sul computer resta per tutti. #}
+<section class="mia-home" id="miaHome">
+    <h1 class="mia-saluto">Ciao {{ current_user.nome or '' }}</h1>
+
+    <div id="mieCose" class="mie-cose">
+        <div class="mia-attesa">Sto guardando le tue cose…</div>
+    </div>
+
+    <div class="mie-scorciatoie">
+        <a href="/consultants"><i class="fas fa-magnifying-glass"></i><span>Trova un esperto</span></a>
+        <a href="/community"><i class="fas fa-circle-question"></i><span>Fai una domanda</span></a>
+        <a href="/profile"><i class="fas fa-calendar-check"></i><span>Le tue prenotazioni</span></a>
+    </div>
+
+    {% if domande_recenti %}
+    <h2 class="mia-sezione">Dalla community</h2>
+    <div class="mie-domande">
+        {% for domanda in domande_recenti %}
+        <a href="/community?question={{ domanda.id }}" class="mia-domanda">
+            <strong>{{ domanda.titolo }}</strong>
+            <span>{% if domanda.categoria %}{{ domanda.categoria }} · {% endif %}{{ domanda.risposte }} interessati</span>
+        </a>
+        {% endfor %}
+    </div>
+    <a href="/community" class="mia-tutte">Vedi tutte le domande →</a>
+    {% endif %}
+</section>
+{% endif %}
+
 <section class="hero-main">
     <div class="hero-container">
         <div class="hero-left">
@@ -864,6 +1060,67 @@
 
 <script>
 (function() {
+    /* ===== LA TUA HOME: le tue cose, prese dalle stesse API del profilo ===== */
+    (function () {
+        const contenitore = document.getElementById('mieCose');
+        if (!contenitore) { return; }
+
+        // La vetrina si nasconde solo quando questo blocco c'e' davvero
+        document.body.classList.add('ha-mia-home');
+
+        function quando(minuti) {
+            if (minuti <= 0) { return 'ora'; }
+            if (minuti < 60) { return `fra ${minuti} minuti`; }
+            const ore = Math.round(minuti / 60);
+            if (ore < 24) { return `fra ${ore} ${ore === 1 ? 'ora' : 'ore'}`; }
+            const giorni = Math.round(ore / 24);
+            return `fra ${giorni} ${giorni === 1 ? 'giorno' : 'giorni'}`;
+        }
+
+        function scappa(testo) {
+            const d = document.createElement('div');
+            d.textContent = testo || '';
+            return d.innerHTML;
+        }
+
+        function scheda(b) {
+            const altro = b.other_user || {};
+            const orario = (b.start_time || '').slice(0, 5);
+            // Se si puo' entrare, quello e' l'unico pulsante che conta
+            const azione = b.can_join
+                ? `<span class="azione">Partecipa alla videochiamata</span>`
+                : '';
+            return `<a href="/booking/call/${b.id}" class="mia-cosa ${b.can_join ? 'urgente' : ''}">
+                <span class="quando">${b.can_join ? 'Si comincia' : quando(b.time_until_minutes)}</span>
+                <strong>Consulenza con ${scappa(altro.name)}</strong>
+                <span class="dettaglio">${orario} · ${b.duration} minuti${altro.profession ? ' · ' + scappa(altro.profession) : ''}</span>
+                ${azione}
+            </a>`;
+        }
+
+        function richiesta(r) {
+            const altro = r.other_user || {};
+            return `<a href="/profile" class="mia-cosa urgente">
+                <span class="quando">Da rispondere</span>
+                <strong>${scappa(altro.name)} ti ha chiesto una consulenza</strong>
+                <span class="dettaglio">Accettala o rifiutala dal profilo</span>
+            </a>`;
+        }
+
+        fetch('/api/booking/upcoming')
+            .then(function (r) { return r.ok ? r.json() : null; })
+            .then(function (dati) {
+                if (!dati) { contenitore.innerHTML = ''; return; }
+                const pezzi = (dati.requests || []).map(richiesta)
+                    .concat((dati.bookings || []).map(scheda));
+                contenitore.innerHTML = pezzi.length
+                    ? pezzi.join('')
+                    : `<div class="mia-vuota">Non hai consulenze in programma.
+                       Quando ne prenoti una la trovi qui, col pulsante per entrare.</div>`;
+            })
+            .catch(function () { contenitore.innerHTML = ''; });
+    })();
+
     const video = document.getElementById('heroVideo');
     const playBtn = document.getElementById('videoPlayBtn');
     const unmuteBtn = document.getElementById('videoUnmuteBtn');
