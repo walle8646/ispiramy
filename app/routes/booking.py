@@ -13,6 +13,7 @@ from app.routes.auth import get_current_user
 from app.utils.agora_recording import start_recording, stop_recording, get_recording_url
 from app.logger_config import logger
 from app.utils.stripe_config import create_checkout_session
+from app.utils.prezzi import centesimi, spese_servizio, totale_cliente
 from app.utils_user import has_payment_method
 from app.utils.orari import (
     ORE_LIMITE_ANNULLAMENTO, ORE_PREAVVISO_PRENOTAZIONE, data_consulenza,
@@ -343,6 +344,7 @@ async def booking_page(
             "paypal_available": _is_paypal_available() and bool(getattr(consultant, 'paypal_email', None)),
             "consultant_has_payment": has_payment_method(consultant),
             "requires_acceptance": richiede_accettazione(consultant),
+            "spese_servizio": float(spese_servizio()),
             "client_questions": client_questions
         })
 
@@ -595,6 +597,7 @@ async def create_booking(
             payment_method="stripe",
             payment_held_until=end_datetime_full + timedelta(hours=48),
             acceptance_deadline=scadenza_risposta(booking_datetime_full) if con_accettazione else None,
+            service_fee=spese_servizio(),
             client_notes=client_notes or "Prenotazione diretta",
             description=description,
             community_question_id=int(community_question_id) if community_question_id else None,
@@ -610,8 +613,10 @@ async def create_booking(
 
         # Create Stripe Checkout Session
         try:
-            # Convert price to cents (Stripe uses smallest currency unit)
-            amount_cents = int(float(price) * 100)
+            # Il cliente paga la consulenza piu' le spese di servizio; a
+            # booking.price resta il solo valore della consulenza, che e' la
+            # base della commissione e del pagamento al consulente
+            amount_cents = centesimi(totale_cliente(price))
 
             # Pagamento alla piattaforma — il trasferimento al consulente avviene dopo 48h
             if consultant.stripe_account_id and consultant.stripe_onboarding_complete:
@@ -637,6 +642,7 @@ async def create_booking(
                     'description': description,
                     'community_question_id': str(community_question_id) if community_question_id else '',
                     'price': f"{float(price):.2f}",  # prezzo totale, non la tariffa oraria
+                    'service_fee': f"{float(spese_servizio()):.2f}",  # quanto dell'incasso non e' consulenza
                     'recording_requested': str(recording_requested).lower(),  # 👈 Valore inviato a Stripe
                     'requires_acceptance': 'true' if con_accettazione else 'false',
                 },

@@ -14,6 +14,7 @@ from app.utils_user import has_payment_method
 from app.logger_config import logger
 from app.routes.booking import slot_gia_prenotato
 from app.utils.stripe_config import create_checkout_session
+from app.utils.prezzi import PREZZO_ORARIO_MINIMO, centesimi, spese_servizio, totale_cliente
 
 router = APIRouter()
 
@@ -86,11 +87,18 @@ async def create_consultation_offer(
             raise HTTPException(status_code=403, detail="Configura un metodo di pagamento (Stripe o PayPal) nel tuo profilo prima di offrire consulenze")
         
         # Validate inputs
-        if price < 15:
-            raise HTTPException(status_code=400, detail="Il prezzo della consulenza deve essere almeno 15€")
-        
         if duration_minutes not in [60, 90, 120]:
             raise HTTPException(status_code=400, detail="Durata non valida. Scegli tra 60, 90 o 120 minuti")
+
+        # Il minimo è orario: un'offerta da 30 minuti a 15€ vale 30€/ora ed è
+        # regolare, una da 2 ore a 30€ vale 15€/ora e non lo è.
+        minimo = PREZZO_ORARIO_MINIMO * duration_minutes / 60
+        if price < minimo:
+            raise HTTPException(
+                status_code=400,
+                detail=f"La tariffa minima è {PREZZO_ORARIO_MINIMO}€/ora: "
+                       f"per {duration_minutes} minuti servono almeno {minimo:.0f}€",
+            )
         
         # Get client user
         client = session.get(User, client_user_id)
@@ -266,6 +274,7 @@ async def show_booking_page(
             "consultant_category": consultant_category,
             "consultant_skills": consultant_skills,
             "client_questions": client_questions,
+            "spese_servizio": float(spese_servizio()),
             "stripe_available": bool(getattr(consultant, 'stripe_onboarding_complete', False)),
             "paypal_available": _is_paypal_available() and bool(getattr(consultant, 'paypal_email', None)),
             "debug_mode": os.getenv("DEBUG", "false").lower() == "true"
@@ -430,6 +439,7 @@ async def confirm_booking(
             payment_status="pending",
             payment_method="stripe",
             payment_held_until=fine + timedelta(hours=48),
+            service_fee=spese_servizio(),
             community_question_id=int(community_question_id) if community_question_id else None,
             client_notes=description if description.strip() else f"Prenotazione da offerta consulenza #{offer.id}",
             description=description,
@@ -444,8 +454,8 @@ async def confirm_booking(
 
         # Create Stripe Checkout Session
         try:
-            # Convert price to cents (Stripe uses smallest currency unit)
-            amount_cents = int(float(offer.price) * 100)
+            # Il cliente paga la consulenza piu' le spese di servizio
+            amount_cents = centesimi(totale_cliente(offer.price))
             
             # Pagamento alla piattaforma — il trasferimento al consulente avviene dopo 48h
             
@@ -467,6 +477,7 @@ async def confirm_booking(
                     'duration_minutes': str(offer.duration_minutes),
                     'community_question_id': str(community_question_id) if community_question_id else '',
                     'description': description,
+                    'service_fee': f"{float(spese_servizio()):.2f}",
                     'recording_requested': str(recording_requested).lower()
                 },
             )

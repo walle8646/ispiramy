@@ -517,14 +517,24 @@
         </div>
         
         <div class="detail-row">
-            <span class="detail-label">Prezzo</span>
-            <span class="detail-value price-highlight">
+            <span class="detail-label">Consulenza</span>
+            <span class="detail-value">
                 €{{ "%.2f"|format(offer.price) }}
                 <span class="locked-badge">
                     <i class="fas fa-lock"></i>
                     Bloccato
                 </span>
             </span>
+        </div>
+
+        <div class="detail-row">
+            <span class="detail-label">Spese di servizio</span>
+            <span class="detail-value">€{{ "%.2f"|format(spese_servizio) }}</span>
+        </div>
+
+        <div class="detail-row">
+            <span class="detail-label">Totale</span>
+            <span class="detail-value price-highlight">€{{ "%.2f"|format(offer.price + spese_servizio) }}</span>
         </div>
         
         <div class="detail-row">

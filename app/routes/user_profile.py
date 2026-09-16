@@ -6,6 +6,7 @@ from sqlmodel import select, and_, func
 from app.routes.auth import verify_token
 from app.logger_config import logger
 from app.utils.email import send_profile_verification_request
+from app.utils.prezzi import PREZZO_ORARIO_MINIMO
 from app.utils_user import has_payment_method
 from app.utils.ai_service import genera_aree_interesse, genera_tags, valida_profilo, modera_immagine
 from typing import Optional
@@ -325,10 +326,9 @@ async def update_profile(
                 db_user.aree_interesse = aree_interesse
                 logger.info(f"✅ Aree di interesse aggiornate per user {db_user.id}: '{aree_interesse}'")
             if prezzo_consulenza is not None:
-                # Validazione: prezzo minimo 15 euro
-                if prezzo_consulenza < 15:
+                if prezzo_consulenza < PREZZO_ORARIO_MINIMO:
                     return JSONResponse(
-                        {"error": "Il prezzo della consulenza deve essere almeno 15€/ora"},
+                        {"error": f"Il prezzo della consulenza deve essere almeno {PREZZO_ORARIO_MINIMO}€/ora"},
                         status_code=400
                     )
                 db_user.prezzo_consulenza = prezzo_consulenza

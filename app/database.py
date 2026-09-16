@@ -121,6 +121,7 @@ COLONNE_AGGIUNTE = [
     ("user", "auto_accept_bookings", "BOOLEAN NOT NULL DEFAULT TRUE"),  # migration_add_booking_acceptance
     ("booking", "acceptance_deadline", "TIMESTAMP"),         # migration_add_booking_acceptance
     ("booking", "paypal_authorization_id", "VARCHAR(64)"),   # migration_add_booking_acceptance
+    ("booking", "service_fee", "NUMERIC(10, 2)"),            # migration_add_booking_service_fee
 ]
 
 

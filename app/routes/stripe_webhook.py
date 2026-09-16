@@ -6,6 +6,7 @@ from fastapi import APIRouter, Request, HTTPException
 from fastapi.responses import JSONResponse
 from sqlmodel import Session
 from datetime import datetime, timedelta
+from decimal import Decimal, InvalidOperation
 from zoneinfo import ZoneInfo
 import os
 import json
@@ -103,6 +104,14 @@ def _after_booking_confirmed(db_session, booking, messaggio_consulente=None):
     conferma_consulenza(db_session, booking, messaggio_consulente=messaggio_consulente)
 
 
+def _spese_dai_metadati(metadata) -> Decimal:
+    """Le spese di servizio dichiarate al checkout, 0 se la sessione è più vecchia di questa voce."""
+    try:
+        return Decimal(str((metadata or {}).get("service_fee") or "0"))
+    except (InvalidOperation, TypeError, ValueError):
+        return Decimal("0")
+
+
 async def handle_direct_booking(session_id, payment_intent_id, metadata, amount_total=None):
     """Handle direct booking payment"""
     client_user_id = int(metadata.get('client_user_id'))
@@ -186,9 +195,14 @@ async def handle_direct_booking(session_id, payment_intent_id, metadata, amount_
         # da 90 o 120 minuti veniva registrata a un prezzo inferiore a quello
         # pagato — e il transfer a 48h (calcolato su booking.price) pagava meno
         # del dovuto al consulente.
+        # Le spese di servizio sono incassate insieme alla consulenza ma non ne
+        # fanno parte: vanno tolte dall'importo pagato, altrimenti gonfierebbero
+        # la commissione e il pagamento al consulente.
+        spese = _spese_dai_metadati(metadata)
+
         price = None
         if amount_total:
-            price = round(amount_total / 100, 2)
+            price = round(amount_total / 100 - float(spese), 2)
         elif metadata.get('price'):
             try:
                 price = round(float(metadata['price']), 2)
@@ -220,6 +234,7 @@ async def handle_direct_booking(session_id, payment_intent_id, metadata, amount_
             end_time=end_time,
             duration_minutes=duration_minutes,
             price=price,
+            service_fee=spese or None,
             status="confirmed",
             payment_status="held",
             payment_method="stripe",
@@ -320,6 +335,7 @@ async def handle_consultation_offer_booking(session_id, payment_intent_id, metad
             end_time=end_time,
             duration_minutes=duration_minutes,
             price=offer.price,
+            service_fee=_spese_dai_metadati(metadata) or None,
             status="confirmed",
             payment_status="held",
             payment_method="stripe",

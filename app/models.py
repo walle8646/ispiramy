@@ -241,7 +241,11 @@ class Booking(SQLModel, table=True):
     duration_minutes: int  # 60, 90, 120 (minimo 1 ora)
     
     status: str = Field(default="pending")  # pending_payment, awaiting_acceptance, confirmed, completed, cancelled, no_show
-    price: Optional[Decimal] = None
+    price: Optional[Decimal] = None  # valore della consulenza: su questo si calcolano commissione e pagamento al consulente
+    # Spese di servizio pagate dal cliente in aggiunta al prezzo. Restano a
+    # Ispiramy e non entrano mai nel conto del consulente. Salvate qui perché
+    # se un domani cambiano, le prenotazioni già fatte restano quelle che erano.
+    service_fee: Optional[Decimal] = Field(default=None)
     payment_status: str = Field(default="pending")  # pending, authorized, held, paid, released, refunded, partially_refunded, voided, failed
     payment_method: Optional[str] = None
     transaction_id: Optional[str] = None

@@ -17,6 +17,7 @@ from app.models import User, Booking, Dispute, DisputeMessage, Review, Community
 from app.routes.auth import verify_token
 from app.logger_config import logger
 from app.utils.orari import now_italy_naive
+from app.utils.prezzi import centesimi, totale_pagato
 
 router = APIRouter(prefix="/admin")
 
@@ -420,15 +421,19 @@ async def admin_update_dispute_status(dispute_id: int, data: DisputeStatusReques
                     refund_pct = data.refund_percentage if data.refund_percentage is not None else 100
                     refund_pct = max(0, min(100, refund_pct))
                     
+                    # Due basi diverse: al cliente si rimborsa anche la parte di
+                    # spese di servizio che ha pagato, al consulente spetta solo
+                    # la quota sul valore della consulenza.
                     amount_cents = int(float(booking.price) * 100)
-                    
+                    totale_cents = centesimi(totale_pagato(booking))
+
                     if booking.payment_method == "paypal" and booking.paypal_capture_id:
                         # === PayPal refund/payout ===
                         try:
                             from app.utils.paypal_config import refund_capture, create_payout
                             
                             if refund_pct > 0:
-                                refund_amount = round(float(booking.price) * refund_pct / 100, 2)
+                                refund_amount = round(totale_cents * refund_pct / 100 / 100, 2)
                                 result = refund_capture(booking.paypal_capture_id, amount=refund_amount, currency="EUR")
                                 if result:
                                     from decimal import Decimal
@@ -481,8 +486,8 @@ async def admin_update_dispute_status(dispute_id: int, data: DisputeStatusReques
                             stripe.api_key = os.getenv("STRIPE_SECRET_KEY")
                             
                             if refund_pct > 0:
-                                # Rimborso (parziale o totale) al cliente
-                                refund_amount_cents = int(amount_cents * refund_pct / 100)
+                                # Rimborso (parziale o totale) al cliente, spese di servizio comprese
+                                refund_amount_cents = int(totale_cents * refund_pct / 100)
                                 refund = stripe.Refund.create(
                                     payment_intent=booking.stripe_payment_intent_id,
                                     amount=refund_amount_cents

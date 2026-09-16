@@ -947,8 +947,8 @@
 
                         <div class="form-group">
                             <label>Prezzo della Consulenza Orario (€) <span style="color: #d32f2f;">*</span></label>
-                            <input type="number" name="prezzo_consulenza" value="{{ user.prezzo_consulenza or 150 }}" min="15" step="5" required>
-                            <small style="color: #d32f2f;">⚠️ Minimo 15€/ora</small>
+                            <input type="number" name="prezzo_consulenza" value="{{ user.prezzo_consulenza or 150 }}" min="20" step="5" required>
+                            <small style="color: #d32f2f;">⚠️ Minimo 20€/ora</small>
                         </div>
 
                         <!-- Si salva subito al cambio (niente name: non passa dal form) -->

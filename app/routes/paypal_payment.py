@@ -14,6 +14,7 @@ import json
 from app.database import engine
 from app.models import Booking, User, ConsultationOffer
 from app.utils.paypal_config import authorize_order, create_order, capture_order, is_configured
+from app.utils.prezzi import spese_servizio, totale_cliente
 from app.utils.booking_requests import (
     conferma_consulenza, metti_in_attesa, richiede_accettazione, scadenza_risposta,
 )
@@ -148,6 +149,7 @@ async def create_booking_paypal(request: Request):
             payment_method="paypal",
             payment_held_until=held_until,
             acceptance_deadline=scadenza_risposta(booking_dt) if con_accettazione else None,
+            service_fee=spese_servizio(),
             client_notes=client_notes or "Prenotazione diretta",
             description=description,
             community_question_id=int(community_question_id) if community_question_id else None,
@@ -160,7 +162,8 @@ async def create_booking_paypal(request: Request):
         # Crea ordine PayPal
         app_url = os.getenv("BASE_URL", "http://localhost:8080")
         order = create_order(
-            amount=float(price),
+            # Il cliente paga consulenza + spese di servizio
+            amount=float(totale_cliente(price)),
             currency="EUR",
             return_url=f"{app_url}/booking/paypal/capture?booking_id={new_booking.id}",
             cancel_url=f"{app_url}/booking/paypal/cancel?booking_id={new_booking.id}",
@@ -265,6 +268,7 @@ async def create_consultation_paypal(offer_id: int, request: Request):
             payment_status="pending",
             payment_method="paypal",
             payment_held_until=held_until,
+            service_fee=spese_servizio(),
             community_question_id=int(community_question_id) if community_question_id else None,
             client_notes=description if description.strip() else f"Prenotazione da offerta consulenza #{offer.id}",
             recording_requested=recording_requested
@@ -275,7 +279,7 @@ async def create_consultation_paypal(offer_id: int, request: Request):
         
         app_url = os.getenv("BASE_URL", "http://localhost:8080")
         order = create_order(
-            amount=float(offer.price),
+            amount=float(totale_cliente(offer.price)),
             currency="EUR",
             return_url=f"{app_url}/booking/paypal/capture?booking_id={new_booking.id}&offer_id={offer.id}",
             cancel_url=f"{app_url}/booking/paypal/cancel?booking_id={new_booking.id}",

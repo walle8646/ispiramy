@@ -750,6 +750,14 @@
             <span id="summaryDuration">-</span>
         </div>
         <div class="summary-row">
+            <span>Consulenza:</span>
+            <span id="summaryConsultationPrice">€ -</span>
+        </div>
+        <div class="summary-row">
+            <span>Spese di servizio:</span>
+            <span id="summaryServiceFee">€ -</span>
+        </div>
+        <div class="summary-row">
             <span>Totale:</span>
             <span id="summaryPrice">€ -</span>
         </div>
@@ -820,6 +828,9 @@
     const ETICHETTA_CONFERMA = {{ ('Invia richiesta' if requires_acceptance else 'Conferma Prenotazione')|tojson }};
     const consultantId = {{ consultant.id }};
     const pricePerHour = {{ consultant.prezzo_consulenza or 0 }};
+    // Le spese di servizio le somma il server al momento del pagamento: qui
+    // servono solo per mostrare al cliente quanto pagherà davvero
+    const speseServizio = {{ spese_servizio }};
     
     // Dati domande community del cliente
     let selectedQuestionId = null;
@@ -1189,7 +1200,9 @@
                 <p style="margin: 0.5rem 0;"><strong>Orario:</strong> ${slot.start_time} - ${slot.end_time}</p>
                 <p style="margin: 0.5rem 0;"><strong>Durata:</strong> ${selectedDuration} minuti</p>
                 <hr style="margin: 1rem 0;">
-                <p style="margin: 0.5rem 0; font-size: 1.2rem;"><strong>Totale:</strong> <span style="color: #43a047;">€ ${((pricePerHour / 60) * selectedDuration).toFixed(2)}</span></p>
+                <p style="margin: 0.5rem 0;"><strong>Consulenza:</strong> € ${((pricePerHour / 60) * selectedDuration).toFixed(2)}</p>
+                <p style="margin: 0.5rem 0; color: #666;"><strong>Spese di servizio:</strong> € ${speseServizio.toFixed(2)}</p>
+                <p style="margin: 0.5rem 0; font-size: 1.2rem;"><strong>Totale:</strong> <span style="color: #43a047;">€ ${((pricePerHour / 60) * selectedDuration + speseServizio).toFixed(2)}</span></p>
             </div>
         `;
         
@@ -1213,8 +1226,10 @@
         document.getElementById('summaryTime').textContent = `${slot.start_time} - ${slot.end_time}`;
         document.getElementById('summaryDuration').textContent = `${duration} minuti`;
         
-        const totalPrice = (pricePerHour / 60) * duration;
-        document.getElementById('summaryPrice').textContent = `€ ${totalPrice.toFixed(2)}`;
+        const consultationPrice = (pricePerHour / 60) * duration;
+        document.getElementById('summaryConsultationPrice').textContent = `€ ${consultationPrice.toFixed(2)}`;
+        document.getElementById('summaryServiceFee').textContent = `€ ${speseServizio.toFixed(2)}`;
+        document.getElementById('summaryPrice').textContent = `€ ${(consultationPrice + speseServizio).toFixed(2)}`;
         
         document.getElementById('confirmBookingBtn').disabled = false;
     }
