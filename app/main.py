@@ -87,8 +87,39 @@ class CSRFMiddleware(BaseHTTPMiddleware):
 # Attivo SOLO se STAGING_PASSWORD è impostata (quindi: ON su staging, OFF su prod e locale).
 STAGING_PASSWORD = os.getenv("STAGING_PASSWORD", "")
 STAGING_USER = os.getenv("STAGING_USER", "ispiramy")
-# Path esenti (webhook esterni non possono fare Basic Auth)
-STAGING_AUTH_EXEMPT = ("/webhook/", "/api/stripe/webhook", "/api/stripe/connect-webhook")
+# Path esenti (webhook esterni non possono fare Basic Auth).
+# Ci sono anche i file dell'app installabile: il manifest, l'icona e il service
+# worker li chiede il sistema operativo, non il browser, e senza credenziali si
+# prendeva un 401. Su iPhone il risultato era un'icona vuota sulla schermata
+# Home e un'app che all'apertura non caricava niente. Non sono segreti: sono il
+# logo e quattro righe di configurazione.
+STAGING_AUTH_EXEMPT = ("/webhook/", "/api/stripe/webhook", "/api/stripe/connect-webhook",
+                       "/manifest.webmanifest", "/sw.js", "/senza-rete", "/static/icone/")
+
+# Una volta entrati, il lasciapassare resta in un cookie firmato: l'app
+# installata su iPhone ha una memoria sua, separata da Safari, e senza questo
+# chiedeva di nuovo la password a ogni avvio.
+COOKIE_STAGING = "ispiramy_staging"
+GIORNI_LASCIAPASSARE = 30
+
+
+def _lasciapassare() -> str:
+    from itsdangerous import URLSafeTimedSerializer
+
+    return URLSafeTimedSerializer(os.getenv("SESSION_SECRET", "dev")).dumps("staging")
+
+
+def _lasciapassare_valido(valore: str) -> bool:
+    from itsdangerous import BadSignature, SignatureExpired, URLSafeTimedSerializer
+
+    if not valore:
+        return False
+    try:
+        URLSafeTimedSerializer(os.getenv("SESSION_SECRET", "dev")).loads(
+            valore, max_age=GIORNI_LASCIAPASSARE * 86400)
+        return True
+    except (BadSignature, SignatureExpired):
+        return False
 
 
 class StagingAuthMiddleware(BaseHTTPMiddleware):
@@ -97,8 +128,8 @@ class StagingAuthMiddleware(BaseHTTPMiddleware):
             path = request.url.path
             if not any(path.startswith(p) for p in STAGING_AUTH_EXEMPT):
                 auth = request.headers.get("Authorization", "")
-                authorized = False
-                if auth.startswith("Basic "):
+                authorized = _lasciapassare_valido(request.cookies.get(COOKIE_STAGING, ""))
+                if not authorized and auth.startswith("Basic "):
                     try:
                         decoded = base64.b64decode(auth[6:]).decode("utf-8")
                         user, _, pwd = decoded.partition(":")
@@ -112,6 +143,15 @@ class StagingAuthMiddleware(BaseHTTPMiddleware):
                         status_code=401,
                         headers={"WWW-Authenticate": 'Basic realm="Ispiramy Staging"'},
                     )
+
+                risposta = await call_next(request)
+                if not _lasciapassare_valido(request.cookies.get(COOKIE_STAGING, "")):
+                    risposta.set_cookie(
+                        COOKIE_STAGING, _lasciapassare(),
+                        max_age=GIORNI_LASCIAPASSARE * 86400,
+                        httponly=True, samesite="lax", secure=True, path="/",
+                    )
+                return risposta
         return await call_next(request)
 
 
