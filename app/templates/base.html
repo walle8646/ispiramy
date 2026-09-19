@@ -1290,6 +1290,9 @@
             if (chatButton) chatButton.style.display = 'none';
             if (chatWindow) {
                 chatWindow.classList.add('open');
+                // Come negli altri punti che aprono la chat: sul telefono
+                // copre tutto lo schermo e la pagina sotto resta ferma
+                document.body.classList.add('chat-aperta');
                 if (typeof window.chatWidget !== 'undefined') {
                     window.chatWidget.isOpen = true;
                 }

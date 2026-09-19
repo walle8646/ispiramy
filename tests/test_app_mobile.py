@@ -197,3 +197,18 @@ def test_le_etichette_stanno_anche_sui_telefoni_piccoli():
     """A 320px un quinto di schermo non basta per "Community"."""
     css = _file("app", "static", "mobile.css")
     assert "@media (max-width: 360px)" in css
+
+
+def test_la_chat_copre_tutto_da_qualunque_porta_si_entri():
+    """La finestra si apre da tre punti nel widget e da uno in base.html
+    (il pulsante in alto): quello era rimasto indietro e l'elenco delle
+    conversazioni si fermava prima del fondo."""
+    base = _file("app", "templates", "base.html")
+    riapri = base[base.index("function reopenChatWidget"):]
+    riapri = riapri[:riapri.index("console.log('✅ Widget chat riaperto')")]
+    assert "chat-aperta" in riapri, "il pulsante in alto non segnala che la chat e' aperta"
+
+    widget = _file("app", "templates", "chat_widget.html")
+    aperture = widget.count("chatWindow.classList.add('open')")
+    segnali = widget.count("classList.add('chat-aperta')")
+    assert segnali == aperture, "ogni apertura deve segnalare lo schermo intero"
