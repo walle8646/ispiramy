@@ -196,15 +196,103 @@
     @media (max-width: 768px) {
         .mia-home {
             display: block;
-            padding: 18px 16px 8px;
+            padding: 14px 16px 4px;
             background: #f7faf7;
         }
 
-        /* Con le tue cose in cima, la vetrina scende: chi e' gia' cliente non
-           ha bisogno di rileggere cos'e' Ispiramy ogni volta che apre l'app */
+        /* Con le tue cose in cima, la vetrina sparisce: chi e' gia' cliente
+           non ha bisogno di rileggere cos'e' Ispiramy ogni volta che apre
+           l'app, e ogni pezzo promozionale in piu' e' una schermata in piu'
+           da scorrere prima di arrivare a quello che gli serve. */
         body.ha-mia-home .hero-main,
-        body.ha-mia-home .cta-section {
+        body.ha-mia-home .cta-section,
+        body.ha-mia-home .categories-nav,
+        body.ha-mia-home .how-section {
             display: none;
+        }
+
+        /* I consulenti in evidenza diventano righe: la scheda grande occupava
+           uno schermo intero a testa, e per vedere il secondo nome bisognava
+           scorrere. */
+        body.ha-mia-home .featured {
+            padding: 4px 16px 8px;
+        }
+
+        body.ha-mia-home .featured-title {
+            margin: 18px 0 10px;
+            font-size: 1.05rem;
+            text-align: left;
+        }
+
+        body.ha-mia-home .consultant-grid {
+            display: flex !important;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        body.ha-mia-home .consultant-card {
+            display: grid !important;
+            grid-template-columns: 44px minmax(0, 1fr) auto;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 14px !important;
+            background: white !important;
+            border: 1px solid #e6efe7 !important;
+            border-bottom: 1px solid #e6efe7 !important;
+            border-radius: 14px !important;
+            margin: 0 !important;
+            width: auto !important;
+            max-width: none !important;
+            text-align: left;
+        }
+
+        body.ha-mia-home .consultant-avatar {
+            width: 44px !important;
+            height: 44px !important;
+            border-radius: 50% !important;
+            object-fit: cover;
+            margin: 0 !important;
+        }
+
+        body.ha-mia-home .consultant-card h3 {
+            margin: 0 !important;
+            font-size: .98rem !important;
+            color: #1b5e20 !important;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        body.ha-mia-home .consultant-profession {
+            grid-column: 2;
+            margin: 2px 0 0 !important;
+            font-size: .8rem !important;
+            color: #78909c !important;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        body.ha-mia-home .consultant-price {
+            grid-column: 3;
+            grid-row: 1 / span 2;
+            margin: 0 !important;
+            font-size: .95rem !important;
+            font-weight: 700;
+            color: #2e7d32 !important;
+            white-space: nowrap;
+        }
+
+        /* Quello che in una riga non ci sta: sta tutto nel profilo, a un tocco */
+        body.ha-mia-home .consultant-category,
+        body.ha-mia-home .consultant-stats,
+        body.ha-mia-home .consultant-view-profile {
+            display: none !important;
+        }
+
+        /* Tre bastano: sono un assaggio, non l'elenco */
+        body.ha-mia-home .consultant-card:nth-child(n+4) {
+            display: none !important;
         }
 
         .mia-saluto {
@@ -214,7 +302,7 @@
         }
 
         .mia-sezione {
-            margin: 26px 0 10px;
+            margin: 18px 0 8px;
             font-size: 1.05rem;
             color: #33404a;
         }
@@ -227,8 +315,8 @@
 
         .mia-cosa {
             display: block;
-            padding: 16px;
-            margin-bottom: 10px;
+            padding: 14px;
+            margin-bottom: 8px;
             border-radius: 14px;
             background: white;
             border: 1px solid #e6efe7;
@@ -298,8 +386,8 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            gap: 7px;
-            min-height: 78px;
+            gap: 6px;
+            min-height: 68px;
             padding: 10px 6px;
             border-radius: 14px;
             background: white;
@@ -318,12 +406,18 @@
 
         .mia-domanda {
             display: block;
-            padding: 14px 16px;
-            margin-bottom: 8px;
+            padding: 12px 14px;
+            margin-bottom: 7px;
             border-radius: 14px;
             background: white;
             border: 1px solid #e6efe7;
             text-decoration: none;
+        }
+
+        /* Due assaggi bastano: il resto e' a un tocco, nella scheda Community.
+           Tre riempivano mezzo schermo e spingevano i consulenti fuori. */
+        .mia-domanda:nth-child(n+3) {
+            display: none;
         }
 
         .mia-domanda strong {

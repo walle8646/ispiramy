@@ -144,3 +144,25 @@ def test_la_home_porta_le_domande_recenti():
     # solo per chi ha fatto l'accesso: agli altri non servono
     pezzo = rotta[rotta.index("domande_recenti = []"):rotta.index("logger.info(f\"Home page loaded")]
     assert "if current_user" in pezzo
+
+
+def test_nell_app_la_home_non_si_scorre_a_lungo():
+    """Chips, "Come funziona" e le schede consulenti grandi occupavano tre
+    schermate prima di arrivare alle proprie cose."""
+    home = _file("app", "templates", "home.html")
+    nascosti = home[home.index("body.ha-mia-home .hero-main"):]
+    nascosti = nascosti[:nascosti.index("}")]
+    for pezzo in (".categories-nav", ".how-section", ".cta-section"):
+        assert pezzo in nascosti, f"{pezzo} resta nella home dell'app"
+
+
+def test_i_consulenti_in_evidenza_diventano_righe():
+    """La scheda grande occupava uno schermo intero a testa: per vedere il
+    secondo nome bisognava scorrere."""
+    home = _file("app", "templates", "home.html")
+    assert "body.ha-mia-home .consultant-card" in home
+    compatto = home[home.index("body.ha-mia-home .consultant-card"):]
+    assert "grid-template-columns: 44px" in compatto[:400]
+    # tre bastano, e senza le parti che in una riga non ci stanno
+    assert "nth-child(n+4)" in home
+    assert "body.ha-mia-home .consultant-stats" in home
