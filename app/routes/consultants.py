@@ -92,6 +92,21 @@ LINGUE = [
 CODICI_LINGUA = {codice for codice, _, _ in LINGUE}
 
 
+LINGUA_SOTTINTESA = "it"
+
+
+def lingue_per_la_ricerca(utente: User) -> list[str]:
+    """Le lingue con cui si puo' essere trovati.
+
+    Chi non ha dichiarato niente lo diamo per italiano: la maggior parte dei
+    profili non ha spuntato le lingue, e senza questa ipotesi il filtro
+    "Italiano" ne mostrerebbe tre su cinquanta. Resta un'ipotesi, quindi vale
+    per la ricerca ma non viene scritta sulla scheda come se l'avesse detto
+    lui: li' compaiono solo le lingue dichiarate.
+    """
+    return lingue_parlate(utente) or [LINGUA_SOTTINTESA]
+
+
 def lingue_parlate(utente: User) -> list[str]:
     """I codici lingua dichiarati nel profilo, o lista vuota."""
     if not utente.languages:
@@ -252,15 +267,6 @@ async def consultants_page(
             if min_price is not None and min_price >= 10:
                 query_stmt = query_stmt.where(User.prezzo_consulenza >= min_price)
             
-            # Chi cerca in inglese ha bisogno di qualcuno che l'inglese lo
-            # parli: le lingue stanno in un JSON, e il codice fra virgolette
-            # ("en") non si confonde con le parole del campo libero
-            if lingua and lingua in CODICI_LINGUA:
-                query_stmt = query_stmt.where(
-                    and_(User.languages.isnot(None),
-                         User.languages.ilike(f'%"{lingua}"%'))
-                )
-
             if max_price is not None and max_price >= 10:
                 query_stmt = query_stmt.where(User.prezzo_consulenza <= max_price)
             
@@ -323,6 +329,16 @@ async def consultants_page(
                 )
                 all_results = all_results[:MAX_CANDIDATI]
             
+            # ========== FILTRO PER LINGUA ==========
+            # Si fa qui e non in SQL: "non ha dichiarato niente" sono tre casi
+            # diversi nel database (colonna vuota, JSON senza codici, lista
+            # vuota) e in Python si leggono tutti con la stessa funzione.
+            if lingua and lingua in CODICI_LINGUA:
+                all_results = [
+                    utente for utente in all_results
+                    if lingua in lingue_per_la_ricerca(utente)
+                ]
+
             # ========== SCORING E ORDINAMENTO ==========
             if search and keywords:
                 # Calcola score per ogni risultato

@@ -9,7 +9,12 @@ import io
 import os
 
 from app.models import User
-from app.routes.consultants import CODICI_LINGUA, LINGUE, lingue_parlate
+from app.routes.consultants import (
+    CODICI_LINGUA,
+    LINGUE,
+    lingue_parlate,
+    lingue_per_la_ricerca,
+)
 from app.utils.orari import con_fuso
 
 RADICE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -35,10 +40,7 @@ def test_le_lingue_si_leggono_comunque_siano_salvate():
 
 
 def test_il_filtro_lingua_esiste_ed_e_prudente(client):
-    """Il codice si cerca fra virgolette ("en"): senza, un campo libero che
-    contiene "en" dentro una parola farebbe comparire il consulente sbagliato."""
     rotta = _file("app", "routes", "consultants.py")
-    assert 'User.languages.ilike(f\'%"{lingua}"%\')' in rotta
     assert "lingua in CODICI_LINGUA" in rotta, "solo i codici che conosciamo"
     assert client.get("/consultants?lingua=en").status_code == 200
     # un valore inventato non deve rompere la pagina
@@ -90,3 +92,21 @@ def test_a_schermo_si_vede_anche_l_ora_di_chi_guarda():
 
     prenota = _file("app", "templates", "booking.html")
     assert prenota.count("etichettaFuso") >= 2, "orario scelto e riepilogo"
+
+
+def test_chi_non_dichiara_niente_si_da_per_italiano():
+    """Quasi nessuno ha spuntato le lingue: senza questa ipotesi il filtro
+    "Italiano" mostrerebbe tre profili su cinquanta."""
+    assert lingue_per_la_ricerca(_utente(languages=None)) == ["it"]
+    assert lingue_per_la_ricerca(_utente(languages='{"codes": [], "other": ""}')) == ["it"]
+    # chi ha dichiarato vale quello che ha detto: niente italiano d'ufficio
+    assert lingue_per_la_ricerca(_utente(languages='{"codes": ["en"]}')) == ["en"]
+
+
+def test_l_ipotesi_non_finisce_sulla_scheda():
+    """Sulla scheda si scrivono solo le lingue dichiarate: dare per scontato
+    l'italiano aiuta a farsi trovare, ma non e' una cosa che ha detto lui."""
+    rotta = _file("app", "routes", "consultants.py")
+    pezzo = rotta[rotta.index("'lingue': ["):rotta.index("'category': None")]
+    assert "lingue_parlate(user)" in pezzo
+    assert "lingue_per_la_ricerca" not in pezzo
