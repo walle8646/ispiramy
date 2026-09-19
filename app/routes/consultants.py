@@ -112,26 +112,39 @@ def calculate_relevance_score(user: User, keywords: list[str], expanded_keywords
                               nome_categoria: str = "") -> float:
     """
     Calcola uno score di rilevanza per l'utente.
-    
-    Score più alto = match migliore
+
+    Score più alto = match migliore.
+
+    Le aree di interesse pesano più dei tag perché le prime le scrive il
+    consulente, i secondi li deduce l'AI dalla descrizione: se nella bio c'è
+    scritto "amante dei viaggi", fra i tag può finirci "viaggi" anche se di
+    viaggi non si occupa. Un profilo così deve restare in fondo, non in cima.
     """
     score = 0.0
-    user_text = testo_competenze(user, nome_categoria)
-    
-    # +10 punti per ogni keyword originale trovata
+    dichiarate = (user.aree_interesse or '').lower()
+    categoria = (nome_categoria or '').lower()
+    dedotti = (user.tags or '').lower()
+
     for keyword in keywords:
-        if keyword in user_text:
-            score += 10
-    
-    # +5 punti per ogni keyword espansa trovata
+        if keyword in dichiarate:
+            score += 10          # competenza scritta dal consulente
+        elif keyword in categoria:
+            score += 6           # la categoria in cui si è messo
+        elif keyword in dedotti:
+            score += 3           # solo un tag dedotto: indizio debole
+
     for keyword in expanded_keywords:
-        if keyword in user_text:
+        if keyword in dichiarate:
             score += 5
-    
+        elif keyword in categoria:
+            score += 3
+        elif keyword in dedotti:
+            score += 1
+
     # +1 punto per consulenze vendute: a parità di competenza viene prima chi
     # ha già lavorato sulla piattaforma
     score += user.consulenze_vendute
-    
+
     return score
 
 @router.get("/consultants", response_class=HTMLResponse)

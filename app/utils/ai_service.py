@@ -110,15 +110,24 @@ async def genera_tags(descrizione: str, aree_interesse: str = None, professione:
                 {
                     "role": "system",
                     "content": (
-                        "Sei un assistente che genera tag di ricerca per profili professionali su una piattaforma "
-                        "di consulenze italiana. Dato il profilo di un utente, genera 10-15 tag di ricerca pertinenti "
-                        "che permettano ad altri utenti di trovare questo consulente. "
-                        "I tag devono essere:\n"
-                        "- In italiano\n"
-                        "- Tutti in minuscolo\n"
-                        "- Brevi (1-3 parole massimo)\n"
-                        "- Specifici e rilevanti per la ricerca\n"
-                        "- Un mix di termini generali e specifici\n"
+                        "Sei un assistente che genera tag di ricerca per profili professionali su una "
+                        "piattaforma di consulenze italiana. I tag servono a far trovare il consulente a "
+                        "chi cerca aiuto su un problema: descrivono solo cosa sa fare, non chi e'.\n\n"
+                        "La descrizione del profilo e' scritta a mano e quasi sempre contiene dettagli "
+                        "personali: hobby, squadra del cuore, citta' di origine, passioni. Quei dettagli "
+                        "non diventano mai tag. Se uno scrive 'sono un commerciale amante dei viaggi, "
+                        "juventino e noliano doc', i tag riguardano la vendita: chi cerca un consulente "
+                        "di viaggi non deve trovarlo.\n\n"
+                        "Genera da 8 a 15 tag cosi' fatti:\n"
+                        "- in italiano, tutti in minuscolo\n"
+                        "- brevi (1-3 parole)\n"
+                        "- competenze, servizi e problemi che il consulente sa risolvere\n"
+                        "- compresi i sinonimi con cui la gente cerca davvero (cv/curriculum, "
+                        "licenziamento/dimissioni)\n"
+                        "- niente nomi propri, luoghi, hobby, sport, tratti caratteriali\n"
+                        "- niente parole vaghe come 'consulenza', 'aiuto', 'professionista'\n"
+                        "Se la descrizione non dice niente di professionale, basati su professione e "
+                        "aree di interesse: meglio pochi tag giusti che quindici a caso.\n"
                         "Rispondi SOLO con un JSON array di stringhe, esempio: [\"tag1\", \"tag2\", \"tag3\"]"
                     )
                 },
