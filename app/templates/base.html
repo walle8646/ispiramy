@@ -1198,6 +1198,64 @@
     })();
     </script>
 
+    <script>
+    /* ===== ORARI E FUSO =====
+       Tutti gli orari del sito sono ora italiana: le prenotazioni si salvano
+       cosi' e il calendario del consulente e' il suo. Finche' non passiamo a
+       salvare in UTC, il minimo indispensabile e' dirlo: chi guarda da un
+       altro fuso deve sapere di che ora stiamo parlando, e vedere la sua.  */
+    (function () {
+        const FUSO_SITO = 'Europe/Rome';
+        let fusoDiChiGuarda = FUSO_SITO;
+        try {
+            fusoDiChiGuarda = Intl.DateTimeFormat().resolvedOptions().timeZone || FUSO_SITO;
+        } catch (e) { /* browser molto vecchi: restiamo sull'ora italiana */ }
+
+        window.fusoDiChiGuarda = fusoDiChiGuarda;
+
+        /* Si legge da window a ogni chiamata e non si congela al caricamento:
+           cosi' si puo' provare un altro fuso senza cambiare le impostazioni
+           del computer, e domani si potra' far scegliere il fuso alla persona. */
+        function fusoAttuale() {
+            return window.fusoDiChiGuarda || FUSO_SITO;
+        }
+
+        Object.defineProperty(window, 'fusoDiverso', {
+            get: function () { return fusoAttuale() !== FUSO_SITO; }
+        });
+
+        /* Quanto e' avanti il fuso di chi guarda rispetto all'Italia, in quel
+           preciso giorno: l'ora legale non cambia nello stesso momento nei due
+           paesi, quindi la differenza non e' sempre la stessa. */
+        function scarto(data) {
+            const senzaFuso = new Date(data.getTime());
+            const inItalia = new Date(senzaFuso.toLocaleString('en-US', { timeZone: FUSO_SITO }));
+            const daNoi = new Date(senzaFuso.toLocaleString('en-US', { timeZone: fusoAttuale() }));
+            return daNoi.getTime() - inItalia.getTime();
+        }
+
+        /* "15:00" del giorno indicato, visto dal fuso di chi guarda. */
+        window.oraNelTuoFuso = function (giorno, ora) {
+            if (!window.fusoDiverso || !giorno || !ora) { return null; }
+            try {
+                const base = new Date(`${giorno}T${ora.length === 5 ? ora : ora.slice(0, 5)}:00`);
+                if (isNaN(base)) { return null; }
+                const spostata = new Date(base.getTime() + scarto(base));
+                return spostata.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
+            } catch (e) {
+                return null;
+            }
+        };
+
+        /* Il testo da mettere accanto a un orario: "(ora italiana)" e, se chi
+           guarda sta altrove, anche l'ora sua. */
+        window.etichettaFuso = function (giorno, ora) {
+            const tua = window.oraNelTuoFuso(giorno, ora);
+            return tua ? `ora italiana · da te le ${tua}` : 'ora italiana';
+        };
+    })();
+    </script>
+
     <!-- JavaScript Globale -->
     <script src="{{ statico('script.js') }}"></script>
     

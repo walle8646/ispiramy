@@ -1232,7 +1232,8 @@
         display.innerHTML = `
             <div style="text-align: left;">
                 <p style="margin: 0.5rem 0;"><strong>Data:</strong> ${date.toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</p>
-                <p style="margin: 0.5rem 0;"><strong>Orario:</strong> ${slot.start_time} - ${slot.end_time}</p>
+                <p style="margin: 0.5rem 0;"><strong>Orario:</strong> ${slot.start_time} - ${slot.end_time}
+                   <span style="color:#78909c; font-size:.85rem;">(${window.etichettaFuso ? window.etichettaFuso(dateStr, slot.start_time) : 'ora italiana'})</span></p>
                 <p style="margin: 0.5rem 0;"><strong>Durata:</strong> ${selectedDuration} minuti</p>
                 <hr style="margin: 1rem 0;">
                 <p style="margin: 0.5rem 0;"><strong>Consulenza:</strong> € ${((pricePerHour / 60) * selectedDuration).toFixed(2)}</p>
@@ -1258,7 +1259,11 @@
         
         document.getElementById('summaryDate').textContent = 
             new Date(dateStr).toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
-        document.getElementById('summaryTime').textContent = `${slot.start_time} - ${slot.end_time}`;
+        // L'orario e' quello italiano: chi prenota dall'estero deve saperlo
+        // prima di pagare, non dopo
+        const fuso = window.etichettaFuso ? window.etichettaFuso(dateStr, slot.start_time) : 'ora italiana';
+        document.getElementById('summaryTime').textContent =
+            `${slot.start_time} - ${slot.end_time} (${fuso})`;
         document.getElementById('summaryDuration').textContent = `${duration} minuti`;
         
         const consultationPrice = (pricePerHour / 60) * duration;

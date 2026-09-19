@@ -897,3 +897,21 @@ h3.consultant-name {
         justify-content: center;
     }
 }
+
+
+/* Lingue parlate sulla scheda: piccole, sotto la professione */
+.consultant-lingue {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin: 6px 0 0;
+}
+
+.consultant-lingue span {
+    padding: 2px 8px;
+    border-radius: 10px;
+    background: #f0f5f1;
+    color: #4b5a65;
+    font-size: .76em;
+    white-space: nowrap;
+}

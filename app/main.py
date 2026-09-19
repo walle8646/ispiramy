@@ -1,4 +1,5 @@
 ﻿import os
+from urllib.parse import urlencode
 import secrets
 import base64
 from pathlib import Path
@@ -236,6 +237,26 @@ def statico(percorso: str) -> str:
 
 
 templates.env.globals['statico'] = statico
+
+
+def con_parametro(request: Request, chiave: str, valore=None) -> str:
+    """L'indirizzo di adesso con un filtro cambiato (o tolto, se valore e' None).
+
+    I collegamenti dei filtri erano catene di condizioni dentro il template,
+    una per ogni combinazione: aggiungerne uno significava riscriverle tutte,
+    e bastava dimenticarne una per perdere la ricerca cambiando categoria.
+    """
+    parametri = dict(request.query_params)
+    parametri.pop("page", None)  # cambiando filtro si riparte dalla prima pagina
+    if valore in (None, ""):
+        parametri.pop(chiave, None)
+    else:
+        parametri[chiave] = str(valore)
+    coda = urlencode(parametri)
+    return f"{request.url.path}?{coda}" if coda else request.url.path
+
+
+templates.env.globals['con_parametro'] = con_parametro
 
 # Le regole di preavviso servono anche al JavaScript delle pagine: un solo
 # valore, definito in app/utils/orari.py.

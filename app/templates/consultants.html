@@ -105,6 +105,23 @@
                 {% endfor %}
             </div>
 
+            {# Chi cerca aiuto in un'altra lingua ha bisogno di qualcuno che
+               quella lingua la parli: senza questo filtro, una ricerca in
+               inglese porta consulenti che rispondono solo in italiano. #}
+            <h3>Lingua parlata</h3>
+            <div class="rating-filter">
+                <a href="{{ con_parametro(request, 'lingua') }}"
+                   class="rating-option {% if not lingua_scelta %}active{% endif %}">
+                    Tutte
+                </a>
+                {% for codice, nome, bandiera in lingue_disponibili %}
+                <a href="{{ con_parametro(request, 'lingua', codice) }}"
+                   class="rating-option {% if lingua_scelta == codice %}active{% endif %}">
+                    {{ bandiera }} {{ nome }}
+                </a>
+                {% endfor %}
+            </div>
+
             <h3>Categorie</h3>
             <ul class="category-filters">
                 <li>
@@ -224,6 +241,15 @@
                             
                             <!-- Professione subito sotto il nome -->
                             <p class="profession">{{ item.professione or 'Consulente' }}</p>
+
+                            {# Le bandiere dicono in che lingua si puo' parlare
+                               con questa persona: e' la prima cosa che serve
+                               sapere a chi non parla italiano. #}
+                            {% if item.lingue %}
+                            <p class="consultant-lingue" title="Lingue parlate">
+                                {% for codice, nome, bandiera in item.lingue %}<span>{{ bandiera }} {{ nome }}</span>{% endfor %}
+                            </p>
+                            {% endif %}
                             
                             <!-- Descrizione -->
                             {% if item.descrizione %}

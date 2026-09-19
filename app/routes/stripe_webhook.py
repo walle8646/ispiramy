@@ -16,6 +16,7 @@ from app.utils.stripe_config import construct_webhook_event
 from app.logger_config import logger
 from app.scheduler import schedule_booking_reminders, schedule_payment_release, schedule_noshow_check
 from app.utils.booking_requests import conferma_consulenza, metti_in_attesa
+from app.utils.orari import con_fuso
 from app.utils.notification_service import send_notification
 
 router = APIRouter()
@@ -313,7 +314,7 @@ async def handle_consultation_offer_booking(session_id, payment_intent_id, metad
                 db_session, existing_booking,
                 messaggio_consulente=(
                     f"{client_name} ha accettato la tua offerta e prenotato per il "
-                    f"{existing_booking.booking_date:%d/%m/%Y} alle {start_time}"
+                    f"{existing_booking.booking_date:%d/%m/%Y} alle {con_fuso(start_time)}"
                 ),
             )
             logger.info(f"✅ Booking {existing_booking.id} da offerta confermato dal pagamento")
@@ -364,7 +365,7 @@ async def handle_consultation_offer_booking(session_id, payment_intent_id, metad
         _after_booking_confirmed(
             db_session, new_booking,
             messaggio_consulente=(
-                f"{client_name} ha accettato la tua offerta e prenotato per il {selected_date} alle {start_time}"
+                f"{client_name} ha accettato la tua offerta e prenotato per il {selected_date} alle {con_fuso(start_time)}"
             ),
         )
 

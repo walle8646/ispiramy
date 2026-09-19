@@ -2,6 +2,7 @@ from fastapi import APIRouter, Request, Query
 from fastapi.responses import HTMLResponse
 from sqlmodel import select, or_, and_, func
 from typing import Optional
+import json
 import re
 
 from app.database import get_session
@@ -77,6 +78,32 @@ def expand_with_skills(keywords: list[str]) -> list[str]:
             expanded.update(SKILL_CATEGORIES[keyword])
     
     return list(expanded)
+
+# ========== LINGUE PARLATE ==========
+# Stesse voci della scheda profilo (lang_it, lang_en, ...): sono salvate come
+# {"codes": ["it", "en"], "other": "..."} nella colonna languages.
+LINGUE = [
+    ("it", "Italiano", "🇮🇹"),
+    ("en", "Inglese", "🇬🇧"),
+    ("fr", "Francese", "🇫🇷"),
+    ("es", "Spagnolo", "🇪🇸"),
+    ("de", "Tedesco", "🇩🇪"),
+]
+CODICI_LINGUA = {codice for codice, _, _ in LINGUE}
+
+
+def lingue_parlate(utente: User) -> list[str]:
+    """I codici lingua dichiarati nel profilo, o lista vuota."""
+    if not utente.languages:
+        return []
+    try:
+        dati = json.loads(utente.languages)
+    except (json.JSONDecodeError, TypeError):
+        return []
+    if isinstance(dati, list):
+        return [c for c in dati if isinstance(c, str)]
+    return [c for c in (dati.get("codes") or []) if isinstance(c, str)]
+
 
 def clean_search_query(query: str) -> list[str]:
     """Pulisce e splitta la query di ricerca."""
@@ -155,6 +182,7 @@ async def consultants_page(
     min_price: Optional[float] = Query(None),
     max_price: Optional[float] = Query(None),
     min_rating: Optional[float] = Query(None),
+    lingua: Optional[str] = Query(None),
     page: int = Query(1, ge=1)
 ):
     """Pagina consulenti con filtri avanzati e ricerca intelligente"""
@@ -224,6 +252,15 @@ async def consultants_page(
             if min_price is not None and min_price >= 10:
                 query_stmt = query_stmt.where(User.prezzo_consulenza >= min_price)
             
+            # Chi cerca in inglese ha bisogno di qualcuno che l'inglese lo
+            # parli: le lingue stanno in un JSON, e il codice fra virgolette
+            # ("en") non si confonde con le parole del campo libero
+            if lingua and lingua in CODICI_LINGUA:
+                query_stmt = query_stmt.where(
+                    and_(User.languages.isnot(None),
+                         User.languages.ilike(f'%"{lingua}"%'))
+                )
+
             if max_price is not None and max_price >= 10:
                 query_stmt = query_stmt.where(User.prezzo_consulenza <= max_price)
             
@@ -376,6 +413,7 @@ async def consultants_page(
                     'prezzo_consulenza': user.prezzo_consulenza,
                     'review_avg': stats['avg'],
                     'review_count': stats['count'],
+                    'lingue': [voce for voce in LINGUE if voce[0] in lingue_parlate(user)],
                     'category': None
                 }
                 
@@ -407,6 +445,8 @@ async def consultants_page(
                     "min_price": min_price,
                     "max_price": max_price,
                     "min_rating": min_rating,
+                    "lingue_disponibili": LINGUE,
+                    "lingua_scelta": lingua if lingua in CODICI_LINGUA else None,
                     "current_page": page,
                     "total_pages": total_pages,
                     "total_count": total_count

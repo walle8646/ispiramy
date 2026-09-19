@@ -19,7 +19,7 @@ from sqlmodel import Session, select
 from app.database import engine, DATABASE_URL
 from app.models import Notification, Booking, User, Review, Dispute
 from app.logger_config import logger
-from app.utils.orari import now_italy_naive
+from app.utils.orari import con_fuso, now_italy_naive
 from app.utils.notification_service import send_notification
 import os
 
@@ -80,7 +80,7 @@ def send_booking_reminder_notification(booking_id: int, user_id: int, is_consult
             if minutes_before == 60:
                 type_key = 'reminder_1h'
                 title = "📅 Promemoria Consulenza"
-                message = f"La tua consulenza con {other_user.nome} {other_user.cognome} inizia tra 1 ora (alle {booking.start_time})"
+                message = f"La tua consulenza con {other_user.nome} {other_user.cognome} inizia tra 1 ora (alle {con_fuso(booking.start_time)})"
                 time_label = "1 ora"
             else:
                 type_key = 'reminder_10min'

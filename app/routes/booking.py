@@ -16,7 +16,7 @@ from app.utils.stripe_config import create_checkout_session
 from app.utils.prezzi import centesimi, spese_servizio, totale_cliente, totale_pagato
 from app.utils_user import has_payment_method
 from app.utils.orari import (
-    ORE_LIMITE_ANNULLAMENTO, ORE_PREAVVISO_PRENOTAZIONE, data_consulenza,
+    ORE_LIMITE_ANNULLAMENTO, ORE_PREAVVISO_PRENOTAZIONE, con_fuso, data_consulenza,
     iso_ora_italiana, now_italy_naive,
 )
 from app.utils.booking_requests import (
@@ -1746,7 +1746,7 @@ async def refuse_booking(booking_id: int, request: Request):
                 user_id=booking.client_user_id,
                 type_key='booking_refused',
                 title="Consulenza Rifiutata",
-                message=f"{consultant_name} ha rifiutato la tua consulenza del {booking.booking_date.strftime('%d/%m/%Y')} alle {booking.start_time}",
+                message=f"{consultant_name} ha rifiutato la tua consulenza del {booking.booking_date.strftime('%d/%m/%Y')} alle {con_fuso(booking.start_time)}",
                 template_data={
                     'client_name': client_name,
                     'consultant_name': consultant_name,

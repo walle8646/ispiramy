@@ -19,7 +19,7 @@ from typing import Optional
 from zoneinfo import ZoneInfo
 
 from app.logger_config import logger
-from app.utils.orari import data_consulenza, now_italy_naive
+from app.utils.orari import con_fuso, data_consulenza, now_italy_naive
 
 ITALY_TZ = ZoneInfo("Europe/Rome")
 
@@ -135,7 +135,7 @@ def conferma_consulenza(session, booking, *, messaggio_consulente: Optional[str]
         type_key="booking_confirmed",
         title="Nuova Prenotazione!",
         message=messaggio_consulente or (
-            f"{nome_cliente} ha prenotato una consulenza per il {data} alle {booking.start_time}"
+            f"{nome_cliente} ha prenotato una consulenza per il {data} alle {con_fuso(booking.start_time)}"
         ),
         template_data=dettagli,
         related_booking_id=booking.id,
@@ -186,7 +186,7 @@ def avvisa_annullamento(session, booking, annullata_da_user_id: int, motivo: Opt
         user_id=destinatario_id,
         type_key="booking_cancelled",
         title="Consulenza annullata",
-        message=f"{nome_altro} ha annullato la consulenza del {data} alle {booking.start_time}",
+        message=f"{nome_altro} ha annullato la consulenza del {data} alle {con_fuso(booking.start_time)}",
         template_data={
             "user_name": _nome(destinatario, "Ciao"),
             "other_name": nome_altro,
@@ -339,7 +339,7 @@ def accetta_richiesta(session, booking, consulente_id: int) -> None:
         title="Richiesta accettata",
         message=(
             f"{nome_consulente} ha accettato la tua consulenza del "
-            f"{booking.booking_date:%d/%m/%Y} alle {booking.start_time}"
+            f"{booking.booking_date:%d/%m/%Y} alle {con_fuso(booking.start_time)}"
         ),
         template_data={
             "client_name": _nome(cliente, "Cliente"),

@@ -30,6 +30,19 @@ ORE_PREAVVISO_PRENOTAZIONE = 2
 ORE_LIMITE_ANNULLAMENTO = 2
 
 
+# Come si scrive un orario a chi lo legge. Il sito lavora in ora italiana:
+# finche' e' cosi', va detto ogni volta che un orario finisce in un messaggio
+# o in un'email, perche' chi vive in un altro fuso non ha modo di saperlo.
+FUSO_MOSTRATO = "ora italiana"
+
+
+def con_fuso(ora: str) -> str:
+    """Un orario scritto per una persona: "15:00 (ora italiana)"."""
+    if not ora:
+        return ""
+    return f"{ora} ({FUSO_MOSTRATO})"
+
+
 def data_consulenza(valore) -> date:
     """La data di una prenotazione, comunque arrivi dal database.
 

@@ -1180,6 +1180,9 @@
         function scheda(b) {
             const altro = b.other_user || {};
             const orario = (b.start_time || '').slice(0, 5);
+            // Gli orari del sito sono italiani: da un altro fuso lo diciamo
+            const fuso = window.etichettaFuso ? window.etichettaFuso(b.date, orario) : '';
+            const notaFuso = (fuso && fuso !== 'ora italiana') ? ` · ${fuso}` : '';
             // Se si puo' entrare, quello e' l'unico pulsante che conta
             const azione = b.can_join
                 ? `<span class="azione">Partecipa alla videochiamata</span>`
@@ -1187,7 +1190,7 @@
             return `<a href="/booking/call/${b.id}" class="mia-cosa ${b.can_join ? 'urgente' : ''}">
                 <span class="quando">${b.can_join ? 'Si comincia' : quando(b.time_until_minutes)}</span>
                 <strong>Consulenza con ${scappa(altro.name)}</strong>
-                <span class="dettaglio">${orario} · ${b.duration} minuti${altro.profession ? ' · ' + scappa(altro.profession) : ''}</span>
+                <span class="dettaglio">${orario} · ${b.duration} minuti${altro.profession ? ' · ' + scappa(altro.profession) : ''}${notaFuso}</span>
                 ${azione}
             </a>`;
         }
