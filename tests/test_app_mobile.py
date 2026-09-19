@@ -166,3 +166,34 @@ def test_i_consulenti_in_evidenza_diventano_righe():
     # tre bastano, e senza le parti che in una riga non ci stanno
     assert "nth-child(n+4)" in home
     assert "body.ha-mia-home .consultant-stats" in home
+
+
+def test_la_chat_a_comparsa_copre_tutto_lo_schermo():
+    """Si fermava prima del fondo: in quella striscia il dito scorreva la
+    pagina sotto invece dei messaggi."""
+    widget = _file("app", "templates", "chat_widget.html")
+    assert "body.chat-aperta .chat-widget" in widget
+    aperta = widget[widget.index("body.chat-aperta .chat-widget"):]
+    assert "position: fixed !important;" in aperta[:400]
+    # inset e' recente: i quattro lati devono esserci comunque
+    assert "bottom: 0 !important;" in aperta[:400]
+    assert "overscroll-behavior: contain" in widget, "lo scorrimento non deve passare alla pagina"
+    # e la pagina sotto resta ferma
+    assert "classList.add('chat-aperta')" in widget
+
+
+def test_le_misure_recenti_hanno_un_ripiego():
+    """dvh, inset ed env() non esistono sui telefoni di qualche anno fa: una
+    riga che il browser non capisce viene buttata via, e senza la versione
+    semplice prima resta senza valore."""
+    css = _file("app", "static", "mobile.css")
+    assert "height: calc(100vh - 127px) !important;" in css
+    assert "padding-bottom: 62px !important;" in css
+    widget = _file("app", "templates", "chat_widget.html")
+    assert "padding-top: 12px !important;" in widget
+
+
+def test_le_etichette_stanno_anche_sui_telefoni_piccoli():
+    """A 320px un quinto di schermo non basta per "Community"."""
+    css = _file("app", "static", "mobile.css")
+    assert "@media (max-width: 360px)" in css

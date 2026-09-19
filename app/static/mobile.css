@@ -346,6 +346,7 @@
     /* La barra copre gli ultimi 60px: senza questo spazio, l'ultima riga di
        ogni pagina resta sotto e non si legge mai */
     body {
+        padding-bottom: 62px !important;
         padding-bottom: calc(62px + env(safe-area-inset-bottom)) !important;
     }
 
@@ -387,6 +388,20 @@
 
     .scheda i {
         font-size: 19px;
+    }
+
+    /* Sui telefoni piccoli (320px: iPhone SE, Android di fascia bassa) la
+       quinta parte di schermo non basta per "Community", che restava tagliato */
+    @media (max-width: 360px) {
+        .scheda {
+            font-size: 9.5px;
+            padding-left: 1px;
+            padding-right: 1px;
+        }
+
+        .scheda i {
+            font-size: 18px;
+        }
     }
 
     .scheda span {
@@ -486,11 +501,13 @@
     /* Il pulsante "Crea una Richiesta" della community stava incollato in
        fondo: ora quel posto e' delle schede, quindi sale sopra */
     .ask-button-sticky-bottom {
+        bottom: 62px !important;
         bottom: calc(62px + env(safe-area-inset-bottom)) !important;
     }
 
     /* La chat galleggiante finiva dietro la barra */
     .chat-widget {
+        bottom: 74px !important;
         bottom: calc(74px + env(safe-area-inset-bottom)) !important;
     }
 
@@ -643,8 +660,10 @@
         display: inline-block;
     }
 
-    /* Col foglio aperto la pagina sotto non deve scorrere */
-    body.foglio-aperto {
+    /* Col foglio (o la chat) aperti, la pagina sotto non deve scorrere:
+       altrimenti il dito muove quella invece del contenuto che si guarda */
+    body.foglio-aperto,
+    body.chat-aperta {
         overflow: hidden;
     }
 }
@@ -742,7 +761,9 @@
         max-width: 100% !important;
         padding: 0 !important;
         /* dvh e non vh: su telefono la barra del browser compare e sparisce,
-           e con vh la casella di scrittura finiva sotto lo schermo */
+           e con vh la casella di scrittura finiva sotto lo schermo. Chi non
+           conosce dvh (Android di qualche anno fa) si tiene la riga prima. */
+        height: calc(100vh - 127px) !important;
         height: calc(100dvh - 65px - 62px - env(safe-area-inset-bottom)) !important;
     }
 

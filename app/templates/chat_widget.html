@@ -621,7 +621,57 @@
             left: 0;
             width: 100%;
         }
-        
+
+        /* Aperta, la chat prende tutto lo schermo, barra delle schede
+           compresa: prima si fermava prima del fondo e in quella striscia
+           scorreva la pagina sotto invece dei messaggi. */
+        body.chat-aperta .chat-widget {
+            position: fixed !important;
+            /* i quattro lati prima di inset: inset non esiste sui browser
+               di qualche anno fa, e l'intera riga verrebbe buttata via */
+            top: 0 !important;
+            right: 0 !important;
+            bottom: 0 !important;
+            left: 0 !important;
+            inset: 0 !important;
+            width: 100% !important;
+            z-index: 2000 !important;
+        }
+
+        /* Combacia col contenitore invece di misurarsi da sola: cosi' non
+           parte 20px piu' in basso lasciando la casella di scrittura sotto
+           il bordo dello schermo. */
+        body.chat-aperta .chat-window {
+            position: absolute !important;
+            top: 0 !important;
+            right: 0 !important;
+            bottom: 0 !important;
+            left: 0 !important;
+            inset: 0 !important;
+            width: 100% !important;
+            height: auto !important;
+            max-height: none !important;
+            border-radius: 0 !important;
+        }
+
+        /* Prima il valore semplice, poi quello con il margine di sicurezza:
+           dove env() non esiste resta buono il primo */
+        body.chat-aperta .chat-header {
+            padding-top: 12px !important;
+            padding-top: calc(12px + env(safe-area-inset-top)) !important;
+        }
+
+        body.chat-aperta .chat-input-area {
+            padding-bottom: 10px !important;
+            padding-bottom: calc(10px + env(safe-area-inset-bottom)) !important;
+        }
+
+        /* Lo scorrimento resta nei messaggi e non passa alla pagina sotto */
+        .chat-messages {
+            overscroll-behavior: contain;
+            -webkit-overflow-scrolling: touch;
+        }
+
         .chat-window {
             width: 100%;
             height: calc(100vh - 60px);
@@ -1214,6 +1264,8 @@
         // Open window
         chatButton.style.display = 'none';
         chatWindow.classList.add('open');
+        // Sul telefono la chat copre tutto: la pagina sotto non deve scorrere
+        document.body.classList.add('chat-aperta');
         chatWidget.isOpen = true;
         
         // Remove pulse animation when opening chat
@@ -1242,6 +1294,7 @@
         
         // Chiudi finestra
         chatWindow.classList.remove('open');
+        document.body.classList.remove('chat-aperta');
         
         // Nascondi completamente il widget (sia finestra che bottone)
         const chatWidgetContainer = document.getElementById('chatWidget');
@@ -1271,6 +1324,7 @@
         
         // Chiudi finestra ma mantieni bottone visibile
         chatWindow.classList.remove('open');
+        document.body.classList.remove('chat-aperta');
         chatButton.style.display = 'block';
         chatWidget.isOpen = false;
         
@@ -1284,6 +1338,8 @@
     function maximizeChat() {
         chatButton.style.display = 'none';
         chatWindow.classList.add('open');
+        // Sul telefono la chat copre tutto: la pagina sotto non deve scorrere
+        document.body.classList.add('chat-aperta');
         chatWidget.isOpen = true;
         if (chatWidget.currentUserId) {
             loadMessages();
@@ -1656,6 +1712,8 @@
         // Apri finestra
         chatButton.style.display = 'none';
         chatWindow.classList.add('open');
+        // Sul telefono la chat copre tutto: la pagina sotto non deve scorrere
+        document.body.classList.add('chat-aperta');
         chatWidget.isOpen = true;
         
         // Mostra lista conversazioni (view di default)
