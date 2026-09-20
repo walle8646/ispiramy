@@ -1773,12 +1773,12 @@
                 
                 <!-- Categorie -->
                 <div class="sidebar-categories">
-                    <h3 class="sidebar-section-title"><i class="fas fa-folder"></i> Categorie</h3>
+                    <h3 class="sidebar-section-title"><i class="fas fa-folder"></i> {{ t('filtri.categorie') }}</h3>
                     <ul class="category-list-vertical">
                         <li class="category-item-vertical {% if not selected_category %}active{% endif %}" style="border-left: 4px solid transparent;">
                             <a href="/community{% if search_query %}?search={{ search_query }}{% endif %}" style="display: flex; align-items: center; gap: 12px; text-decoration: none; color: inherit; width: 100%;">
                                 <span class="category-icon">📋</span>
-                                <span>Tutte le categorie</span>
+                                <span>{{ t('filtri.tutte_categorie') }}</span>
                             </a>
                         </li>
                         
@@ -1791,7 +1791,7 @@
                                     <li class="category-item-vertical category-parent {% if selected_category == item.parent.id %}active{% endif %}" style="border-left: 4px solid #2e7d32; flex: 1; margin: 0;">
                                         <a href="/community?category={{ item.parent.id }}{% if search_query %}&search={{ search_query }}{% endif %}" style="display: flex; align-items: center; gap: 12px; text-decoration: none; color: inherit; width: 100%;">
                                             <span class="category-icon">{{ item.parent.icon }}</span>
-                                            <span>{{ item.parent.name }}</span>
+                                            <span>{{ nc(item.parent.name) }}</span>
                                         </a>
                                     </li>
                                     {% if item.children %}
@@ -1806,7 +1806,7 @@
                                     <li class="category-item-vertical {% if selected_category == child.id %}active{% endif %}" style="border-left: 4px solid #2e7d32; font-size: 0.9rem; padding: 10px 12px; margin: 0;">
                                         <a href="/community?category={{ child.id }}{% if search_query %}&search={{ search_query }}{% endif %}" style="display: flex; align-items: center; gap: 12px; text-decoration: none; color: inherit; width: 100%;">
                                             <span class="category-icon">{{ child.icon }}</span>
-                                            <span>{{ child.name }}</span>
+                                            <span>{{ nc(child.name) }}</span>
                                         </a>
                                     </li>
                                     {% endfor %}
@@ -1847,7 +1847,7 @@
                     {% endif %}
                     {% if selected_category %}
                     <div class="filter-tag">
-                        <i class="fas fa-folder"></i> {{ categories|selectattr('id', 'equalto', selected_category)|map(attribute='name')|first }}
+                        <i class="fas fa-folder"></i> {{ nc(categories|selectattr('id', 'equalto', selected_category)|map(attribute='name')|first) }}
                         <a href="/community{% if search_query %}?search={{ search_query }}{% endif %}" class="filter-clear">✕</a>
                     </div>
                     {% endif %}
@@ -1862,7 +1862,7 @@
             
             {% if selected_category %}
             <h2 style="margin-bottom: 16px; font-size: 1.75rem; color: #333;">
-                <i class="fas fa-filter" style="color: #43a047;"></i> {{ categories|selectattr('id', 'equalto', selected_category)|map(attribute='name')|first }}
+                <i class="fas fa-filter" style="color: #43a047;"></i> {{ nc(categories|selectattr('id', 'equalto', selected_category)|map(attribute='name')|first) }}
             </h2>
             {% elif search_query %}
             <h2 style="margin-bottom: 16px; font-size: 1.75rem; color: #333;">
@@ -1970,7 +1970,7 @@
                     <div class="question-footer">
                         <div class="question-tags">
                             {% if item.category %}
-                            <span class="tag">{{ item.category.icon }} {{ item.category.name }}</span>
+                            <span class="tag">{{ item.category.icon }} {{ nc(item.category.name) }}</span>
                             {% endif %}
                             {% if item.question.tags %}
                                 {% for tag in item.question.tags.split(',') %}
@@ -2236,7 +2236,7 @@
                     <option value="">Seleziona una categoria...</option>
                     {% for category in categories %}
                     {% if category.is_principal %}
-                    <option value="{{ category.id }}">{{ category.icon }} {{ category.name }}</option>
+                    <option value="{{ category.id }}">{{ category.icon }} {{ nc(category.name) }}</option>
                     {% endif %}
                     {% endfor %}
                 </select>
@@ -2320,7 +2320,7 @@
                     <option value="">Seleziona una categoria...</option>
                     {% for category in categories %}
                     {% if category.is_principal %}
-                    <option value="{{ category.id }}">{{ category.icon }} {{ category.name }}</option>
+                    <option value="{{ category.id }}">{{ category.icon }} {{ nc(category.name) }}</option>
                     {% endif %}
                     {% endfor %}
                 </select>

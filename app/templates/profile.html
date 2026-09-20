@@ -688,7 +688,7 @@
                     <h1>{{ user|display_name }}</h1>
                     <p class="pub-role">{{ user.professione or 'Professione non impostata' }}</p>
                     {% if user_category %}
-                    <div class="pub-cat-pill">{{ user_category.icon }} {{ user_category.name }}</div>
+                    <div class="pub-cat-pill">{{ user_category.icon }} {{ nc(user_category.name) }}</div>
                     {% endif %}
                     {% if aree_interesse_list %}
                     <div class="pub-hero-skills">

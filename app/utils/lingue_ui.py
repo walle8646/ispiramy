@@ -77,3 +77,28 @@ def traduci(chiave: str, lingua: str) -> str:
     if parola:
         return parola
     return _catalogo(PREDEFINITA).get(chiave, chiave)
+
+
+# Le categorie stanno nel database, non nei template: il nome italiano e' la
+# chiave, perche' e' quello che il database ha davvero (ed e' unico). Una
+# categoria aggiunta dall'amministrazione e non ancora tradotta resta in
+# italiano: meglio una parola italiana in mezzo all'inglese che una categoria
+# che sparisce dai filtri.
+@lru_cache(maxsize=1)
+def _categorie() -> dict:
+    percorso = os.path.join(CARTELLA, "categorie.json")
+    try:
+        with open(percorso, encoding="utf-8") as file:
+            return json.load(file)
+    except (OSError, json.JSONDecodeError):
+        return {}
+
+
+def nome_categoria(nome: Optional[str], lingua: str) -> str:
+    """Il nome della categoria nella lingua chiesta.
+
+    In italiano si usa sempre quello del database: e' li' che si cambia.
+    """
+    if not nome or lingua == PREDEFINITA:
+        return nome or ""
+    return _categorie().get(nome.strip(), {}).get(lingua) or nome

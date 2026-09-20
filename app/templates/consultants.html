@@ -137,7 +137,7 @@
                                class="category-parent {% if selected_category == item.parent.id %}active{% endif %}"
                                style="border-left: 4px solid {{ item.parent.color }};">
                                 <span class="category-icon">{{ item.parent.icon }}</span>
-                                {{ item.parent.name }}
+                                {{ nc(item.parent.name) }}
                             </a>
                             {% if item.children %}
                             <button class="category-toggle-btn" data-category-id="{{ item.parent.id }}" type="button">▼</button>
@@ -154,7 +154,7 @@
                                    class="{% if selected_category == child.id %}active{% endif %}"
                                    style="border-left: 4px solid {{ child.color }};">
                                     <span class="category-icon">{{ child.icon }}</span>
-                                    {{ child.name }}
+                                    {{ nc(child.name) }}
                                 </a>
                             </li>
                             {% endfor %}
@@ -237,7 +237,7 @@
                             
                             <!-- Categoria sotto la foto -->
                             {% if item.category %}
-                            <span class="category-badge">{{ item.category.icon }} {{ item.category.name }}</span>
+                            <span class="category-badge">{{ item.category.icon }} {{ nc(item.category.name) }}</span>
                             {% endif %}
                         </div>
                         

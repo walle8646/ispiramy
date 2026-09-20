@@ -208,13 +208,17 @@ def _utente_in_ogni_pagina(request: Request) -> dict:
 
 def _lingua_in_ogni_pagina(request: Request) -> dict:
     # La lingua scelta e la funzione per tradurre, in tutte le pagine.
-    from app.utils.lingue_ui import LINGUE_UI, lingua_di, traduci
+    from app.utils.lingue_ui import (LINGUE_UI, lingua_di, nome_categoria,
+                                     traduci)
 
     lingua = lingua_di(request)
     return {
         "lingua_ui": lingua,
         "lingue_ui": LINGUE_UI,
         "t": lambda chiave: traduci(chiave, lingua),
+        # nc = nome categoria: le categorie stanno nel database, quindi non
+        # hanno una chiave nel catalogo ma si traducono dal nome italiano
+        "nc": lambda nome: nome_categoria(nome, lingua),
     }
 
 

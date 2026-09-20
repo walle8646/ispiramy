@@ -962,7 +962,7 @@
     <div class="categories-nav-content">
         {% for category in categories %}
         <a href="/consultants?category={{ category.id }}" class="category-btn">
-            <span>{{ category.name }}</span>
+            <span>{{ nc(category.name) }}</span>
         </a>
         {% endfor %}
     </div>
@@ -994,7 +994,7 @@
         {% for domanda in domande_recenti %}
         <a href="/community?question={{ domanda.id }}" class="mia-domanda">
             <strong>{{ domanda.titolo }}</strong>
-            <span>{% if domanda.categoria %}{{ domanda.categoria }} · {% endif %}{{ domanda.risposte }} interessati</span>
+            <span>{% if domanda.categoria %}{{ nc(domanda.categoria) }} · {% endif %}{{ domanda.risposte }} {{ t('home.interessati') }}</span>
         </a>
         {% endfor %}
     </div>
@@ -1118,7 +1118,7 @@
 
             {% if item.category %}
             <span class="consultant-category" style="background: {{ item.category.color }}20; color: {{ item.category.color }};">
-                {{ item.category.icon }} {{ item.category.name }}
+                {{ item.category.icon }} {{ nc(item.category.name) }}
             </span>
             {% endif %}
 

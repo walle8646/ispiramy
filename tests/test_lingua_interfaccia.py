@@ -14,6 +14,7 @@ from app.utils.lingue_ui import (
     PREDEFINITA,
     lingua_del_browser,
     lingua_valida,
+    nome_categoria,
     traduci,
 )
 
@@ -136,3 +137,35 @@ def test_i_pulsanti_si_traducono_come_il_resto():
     assert '></i> Segui e Richiedi' not in community
     assert "💬 Messaggia" not in community
     assert '></i> Messaggia' not in community
+
+
+def test_le_categorie_si_traducono_dal_nome_italiano():
+    """Le categorie stanno nel database: la chiave e' il nome italiano, che
+    e' unico, cosi' non serve toccare il database per tradurle."""
+    categorie = json.loads(_file("app", "traduzioni", "categorie.json"))
+    assert len(categorie) > 40, "l'elenco sembra a meta'"
+    senza_inglese = [nome for nome, parole in categorie.items()
+                     if not parole.get("en", "").strip()]
+    assert not senza_inglese, senza_inglese
+
+    primo = next(iter(categorie))
+    assert nome_categoria(primo, "en") == categorie[primo]["en"]
+    # in italiano comanda il database: se l'amministrazione rinomina una
+    # categoria, la pagina italiana deve mostrare il nome nuovo
+    assert nome_categoria(primo, "it") == primo
+    # e una categoria aggiunta dopo resta in italiano invece di sparire
+    assert nome_categoria("Categoria Inventata", "en") == "Categoria Inventata"
+    assert nome_categoria(None, "en") == ""
+
+
+def test_i_filtri_delle_categorie_passano_dalla_traduzione():
+    """Il nome della categoria arriva dal database: se un template lo stampa
+    cosi' com'e', quel filtro resta italiano anche col sito in inglese."""
+    for percorso in ("app/templates/home.html",
+                     "app/templates/consultants.html",
+                     "app/templates/community.html"):
+        testo = _file(*percorso.split("/"))
+        for scritta in ("{{ category.name }}", "{{ child.name }}",
+                        "{{ item.parent.name }}", "{{ item.category.name }}"):
+            assert scritta not in testo, f"{percorso}: {scritta} senza nc()"
+        assert "nc(" in testo
