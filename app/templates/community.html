@@ -2025,7 +2025,7 @@
                                       font-weight: 500;
                                       transition: all 0.2s;">
                                 <i class="fas fa-check-circle" style="color: #66bb6a;"></i>
-                                💬 Messaggia
+                                💬 {{ t('community.messaggia') }}
                             </button>
                             
                             <!-- Bottone Segui e Richiedi (destra) -->
@@ -2033,8 +2033,8 @@
                                 class="btn-follow-question" 
                                 data-question-id="{{ item.question.id }}"
                                 onclick="toggleFollowQuestion({{ item.question.id }})"
-                                data-tip="Segui per ricevere aggiornamenti e per essere contattati sull'argomento dai consulenti che hanno contattato questo cliente">
-                                <i class="fas fa-heart"></i> Segui e Richiedi
+                                data-tip="{{ t('community.segui_richiedi_tip') }}">
+                                <i class="fas fa-heart"></i> {{ t('community.segui_richiedi') }}
                             </button>
                         </div>
                         {% elif not user.is_verified or not user_has_payment %}
@@ -2066,8 +2066,8 @@
                                 class="btn-follow-question" 
                                 data-question-id="{{ item.question.id }}"
                                 onclick="toggleFollowQuestion({{ item.question.id }})"
-                                data-tip="Segui per ricevere aggiornamenti e per essere contattati sull'argomento dai consulenti che hanno contattato questo cliente">
-                                <i class="fas fa-heart"></i> Segui e Richiedi
+                                data-tip="{{ t('community.segui_richiedi_tip') }}">
+                                <i class="fas fa-heart"></i> {{ t('community.segui_richiedi') }}
                             </button>
                         </div>
                         {% endif %}
@@ -3556,7 +3556,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         <button 
                             class="follower-message-btn"
                             onclick="startDirectMessage(${follower.id}, '${escapeJsString(fullName)}', '${escapeJsString(avatar)}')">
-                            <i class="fas fa-envelope"></i> Messaggia
+                            <i class="fas fa-envelope"></i> {{ t('community.messaggia') }}
                         </button>
                     </div>
                 `;

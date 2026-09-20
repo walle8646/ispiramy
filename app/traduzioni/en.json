@@ -87,5 +87,9 @@
   "home.cta_community": "Community Q&A",
   "home.cta_community_pulsante": "Go to Q&A →",
   "home.hero_placeholder": "What do you need? E.g. taxes, career change…",
-  "home.come_funziona": "How Ispiramy works →"
+  "home.come_funziona": "How Ispiramy works →",
+  "home.vedi_tutti_consulenti": "See All Experts →",
+  "community.messaggia": "Message",
+  "community.segui_richiedi": "Follow & Request",
+  "community.segui_richiedi_tip": "Follow to get updates and to be contacted about this topic by the experts who reached out to this client"
 }

@@ -87,5 +87,9 @@
   "home.cta_community": "Community Q&A",
   "home.cta_community_pulsante": "Vai a Q&A →",
   "home.hero_placeholder": "Di cosa hai bisogno? Es. partita IVA, cambio lavoro…",
-  "home.come_funziona": "Come funziona Ispiramy →"
+  "home.come_funziona": "Come funziona Ispiramy →",
+  "home.vedi_tutti_consulenti": "Vedi Tutti i Consulenti →",
+  "community.messaggia": "Messaggia",
+  "community.segui_richiedi": "Segui e Richiedi",
+  "community.segui_richiedi_tip": "Segui per ricevere aggiornamenti e per essere contattati sull'argomento dai consulenti che hanno contattato questo cliente"
 }

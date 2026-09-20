@@ -122,3 +122,17 @@ def test_una_lingua_senza_consulenti_non_svuota_la_pagina():
     assert "nessuno_in_quella_lingua = True" in pezzo
     # e lo si dice a chi guarda, invece di far finta di niente
     assert "esperti.nessuno_in_lingua" in _file("app", "templates", "consultants.html")
+
+
+def test_i_pulsanti_si_traducono_come_il_resto():
+    """Una pagina inglese con i pulsanti in italiano e' peggio di una pagina
+    tutta in italiano: sembra rotta. Sono le tre scritte segnalate da chi
+    usava il sito in inglese."""
+    home = _file("app", "templates", "home.html")
+    community = _file("app", "templates", "community.html")
+    assert "Vedi Tutti i Consulenti" not in home
+    # nei commenti del file il nome del pulsante puo' restare in italiano:
+    # qui si guarda solo la scritta che finisce nella pagina
+    assert '></i> Segui e Richiedi' not in community
+    assert "💬 Messaggia" not in community
+    assert '></i> Messaggia' not in community
