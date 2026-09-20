@@ -95,3 +95,30 @@ def test_la_ricerca_segue_la_lingua_scelta():
     pezzo = rotta[rotta.index("FILTRO PER LINGUA"):]
     assert "lingua_di(request)" in pezzo[:800]
     assert 'scelta_interfaccia != "it"' in pezzo[:800], "in italiano non si filtra niente"
+
+
+def test_le_pagine_dell_app_hanno_le_parole_tradotte():
+    """Ossatura, esperti, community, messaggi e home: sono le pagine che si
+    vedono usando l'app tutti i giorni."""
+    attese = {
+        "app/templates/base.html": 25,
+        "app/templates/consultants.html": 25,
+        "app/templates/community.html": 12,
+        "app/templates/messages_inbox.html": 4,
+        "app/templates/home.html": 15,
+    }
+    for percorso, minimo in attese.items():
+        testo = _file(*percorso.split("/"))
+        quante = testo.count("{{ t(")
+        assert quante >= minimo, f"{percorso}: solo {quante} scritte tradotte"
+
+
+def test_una_lingua_senza_consulenti_non_svuota_la_pagina():
+    """Il filtro per lingua lo mettiamo noi quando il sito e' in inglese: se
+    nessuno parla quella lingua, una pagina vuota sembra un sito rotto."""
+    rotta = _file("app", "routes", "consultants.py")
+    pezzo = rotta[rotta.index("FILTRO PER LINGUA"):rotta.index("SCORING E ORDINAMENTO")]
+    assert "filtro_automatico" in pezzo
+    assert "nessuno_in_quella_lingua = True" in pezzo
+    # e lo si dice a chi guarda, invece di far finta di niente
+    assert "esperti.nessuno_in_lingua" in _file("app", "templates", "consultants.html")

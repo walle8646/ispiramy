@@ -331,23 +331,33 @@ async def consultants_page(
             
             # ========== FILTRO PER LINGUA ==========
             # Chi ha messo il sito in inglese sta cercando in inglese: il
-            # filtro parte da li', ma resta una preferenza, non una gabbia
-            # (basta toccare "Tutte" per vedere gli altri).
+            # filtro parte da li', ma resta una preferenza, non una gabbia.
+            filtro_automatico = False
             if lingua is None:
                 from app.utils.lingue_ui import lingua_di
 
                 scelta_interfaccia = lingua_di(request)
                 if scelta_interfaccia != "it" and scelta_interfaccia in CODICI_LINGUA:
                     lingua = scelta_interfaccia
+                    filtro_automatico = True
 
             # Si fa qui e non in SQL: "non ha dichiarato niente" sono tre casi
             # diversi nel database (colonna vuota, JSON senza codici, lista
             # vuota) e in Python si leggono tutti con la stessa funzione.
+            nessuno_in_quella_lingua = False
             if lingua and lingua in CODICI_LINGUA:
-                all_results = [
+                in_lingua = [
                     utente for utente in all_results
                     if lingua in lingue_per_la_ricerca(utente)
                 ]
+                if in_lingua or not filtro_automatico:
+                    all_results = in_lingua
+                else:
+                    # Nessuno parla quella lingua e il filtro non l'ha chiesto
+                    # la persona: una pagina vuota sembra un sito rotto, molto
+                    # peggio di un elenco in una lingua che non parla.
+                    nessuno_in_quella_lingua = True
+                    lingua = None
 
             # ========== SCORING E ORDINAMENTO ==========
             if search and keywords:
@@ -473,6 +483,7 @@ async def consultants_page(
                     "min_rating": min_rating,
                     "lingue_disponibili": LINGUE,
                     "lingua_scelta": lingua if lingua in CODICI_LINGUA else None,
+                    "nessuno_in_quella_lingua": nessuno_in_quella_lingua,
                     "current_page": page,
                     "total_pages": total_pages,
                     "total_count": total_count

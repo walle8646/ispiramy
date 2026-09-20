@@ -1007,21 +1007,20 @@
     <div class="hero-container">
         <div class="hero-left">
             <h1 class="hero-title">
-                Trova l'esperto che ha già affrontato la tua sfida
+                {{ t('home.hero_titolo') }}
             </h1>
             <p class="hero-subtitle">
-                Prenota una videoconsulenza con professionisti verificati e ricevi
-                consigli concreti, su misura per la tua situazione.
+                {{ t('home.hero_testo') }}
             </p>
             <form class="hero-search" method="GET" action="/consultants">
                 <input type="text" name="search" class="hero-search-input"
-                       placeholder="Di cosa hai bisogno? Es. partita IVA, cambio lavoro…">
-                <button type="submit" class="hero-search-btn">Trova il tuo esperto →</button>
+                       placeholder="{{ t('home.hero_placeholder') }}">
+                <button type="submit" class="hero-search-btn">{{ t('home.hero_pulsante') }}</button>
             </form>
             <div class="hero-trust">
-                <span>✓ Consulenti verificati</span>
-                <span>✓ Pagamenti sicuri</span>
-                <span>✓ Videocall integrata</span>
+                <span>{{ t('home.fiducia_verificati') }}</span>
+                <span>{{ t('home.fiducia_pagamenti') }}</span>
+                <span>{{ t('home.fiducia_video') }}</span>
             </div>
         </div>
         
@@ -1035,7 +1034,7 @@
                 <button class="video-unmute-btn" id="videoUnmuteBtn">🔇 Attiva audio</button>
             </div>
             <a href="/come-funziona" class="hero-spiegazione">
-                Come funziona Ispiramy →
+                {{ t('home.come_funziona') }}
             </a>
         </div>
     </div>
@@ -1046,12 +1045,11 @@
     <div class="cta-container">
         <!-- Trova Consulenti (azione principale) -->
         <a href="/consultants" class="cta-card cta-card-primary">
-            <h3 class="cta-card-title">Trova Consulenti</h3>
+            <h3 class="cta-card-title">{{ t('home.cta_consulenti') }}</h3>
             <p class="cta-card-desc">
-                Scegli tra professionisti verificati per categoria, prezzo e recensioni.
-                Prenoti la videocall in pochi clic.
+                {{ t('home.cta_consulenti_testo') }}
             </p>
-            <span class="cta-btn">Esplora Consulenti →</span>
+            <span class="cta-btn">{{ t('home.cta_consulenti_pulsante') }}</span>
         </a>
 
         <!-- Community Q&A -->
@@ -1061,7 +1059,7 @@
                 Pubblica la tua domanda e ricevi risposte dagli esperti della community,
                 gratis.
             </p>
-            <span class="cta-btn cta-btn-secondary">Vai a Q&A →</span>
+            <span class="cta-btn cta-btn-secondary">{{ t('home.cta_community_pulsante') }}</span>
         </a>
     </div>
 </section>
@@ -1104,7 +1102,7 @@
 
 <!-- ========== FEATURED CONSULTANTS ========== -->
 <section class="featured">
-    <h2 class="featured-title">I Nostri Top Consulenti</h2>
+    <h2 class="featured-title">{{ t('home.top_consulenti') }}</h2>
     
     {% if consultants %}
     <div class="consultant-grid">

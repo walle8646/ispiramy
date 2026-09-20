@@ -878,7 +878,7 @@
                     type="text" 
                     id="globalSearch" 
                     class="search-input" 
-                    placeholder="Cerca un Ispiramy o una consulenza..."
+                    placeholder="{{ t('nav.cerca_placeholder') }}"
                     autocomplete="off"
                 >
                 <div class="search-dropdown" id="searchDropdown">
@@ -1003,7 +1003,7 @@
         <div class="notifications-list" id="notificationsList">
             <div class="notifications-empty">
                 <i class="fas fa-bell-slash"></i>
-                <p>Nessuna notifica</p>
+                <p>{{ t('notifiche.nessuna') }}</p>
             </div>
         </div>
     </div>
@@ -1416,7 +1416,7 @@
                 list.innerHTML = `
                     <div class="notifications-empty">
                         <i class="fas fa-bell-slash"></i>
-                        <p>Nessuna notifica</p>
+                        <p>{{ t('notifiche.nessuna') }}</p>
                     </div>
                 `;
                 return;

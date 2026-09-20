@@ -104,8 +104,8 @@
 
 <div class="inbox-container">
     <div class="inbox-header">
-        <h1>💬 Messaggi</h1>
-        <p style="color: #666;">Le tue conversazioni</p>
+        <h1>💬 {{ t('messaggi.titolo') }}</h1>
+        <p style="color: #666;">{{ t('messaggi.sottotitolo') }}</p>
     </div>
 
     <div class="conversation-list" id="conversationList">
@@ -135,7 +135,7 @@
                     listContainer.innerHTML = `
                         <div class="empty-state">
                             <div class="empty-state-icon">📭</div>
-                            <p>Nessuna conversazione ancora</p>
+                            <p>{{ t('messaggi.nessuna') }}</p>
                             <p style="font-size: 14px;">Inizia a chattare con i consulenti!</p>
                             <a href="/consultants" style="margin-top: 16px; display: inline-block; padding: 12px 24px; background: linear-gradient(135deg, #43a047 0%, #2e7d32 100%); color: white; border-radius: 8px; text-decoration: none;">
                                 🔍 Trova Consulenti
@@ -190,7 +190,7 @@
             }
         } catch (error) {
             console.error('Error:', error);
-            document.getElementById('conversationList').innerHTML = '<div style="text-align: center; color: #e74c3c; padding: 40px;">❌ Errore di connessione</div>';
+            document.getElementById('conversationList').innerHTML = '<div style="text-align: center; color: #e74c3c; padding: 40px;">❌ {{ t('messaggi.errore') }}</div>';
         }
     }
 

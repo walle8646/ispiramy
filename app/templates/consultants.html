@@ -10,12 +10,12 @@
     <!-- Hero Section con Ricerca -->
     <section class="search-hero">
         <div class="search-container">
-            <h1>Non sei solo: trova chi c'è già passato e può aiutarti ora</h1>
+            <h1>{{ t('esperti.titolo') }}</h1>
             <form class="search-form" method="GET" action="/consultants">
                 <input 
                     type="text" 
                     name="search" 
-                    placeholder="🔍 Cerca: finanziamenti, cambio lavoro, vendere online..."
+                    placeholder="{{ t('esperti.cerca_placeholder') }}"
                     value="{{ search_query }}"
                     class="search-input"
                 >
@@ -24,17 +24,17 @@
                 {% if min_price %}<input type="hidden" name="min_price" value="{{ min_price }}">{% endif %}
                 {% if max_price %}<input type="hidden" name="max_price" value="{{ max_price }}">{% endif %}
                 {% if min_rating %}<input type="hidden" name="min_rating" value="{{ min_rating }}">{% endif %}
-                <button type="submit" class="search-btn">Cerca</button>
+                <button type="submit" class="search-btn">{{ t('esperti.cerca') }}</button>
             </form>
             
             <!-- 🔥 Suggerimenti ricerca rapida -->
             <div class="search-suggestions">
-                <span class="suggestion-label">Ricerche popolari:</span>
-                <a href="/consultants?search=finanziamenti{% if selected_category %}&category={{ selected_category }}{% endif %}{% if min_price %}&min_price={{ min_price }}{% endif %}{% if max_price %}&max_price={{ max_price }}{% endif %}{% if min_rating %}&min_rating={{ min_rating }}{% endif %}" class="search-tag">💰 Finanziamenti</a>
-                <a href="/consultants?search=cambio lavoro{% if selected_category %}&category={{ selected_category }}{% endif %}{% if min_price %}&min_price={{ min_price }}{% endif %}{% if max_price %}&max_price={{ max_price }}{% endif %}{% if min_rating %}&min_rating={{ min_rating }}{% endif %}" class="search-tag">👔 Cambio Lavoro</a>
-                <a href="/consultants?search=social media{% if selected_category %}&category={{ selected_category }}{% endif %}{% if min_price %}&min_price={{ min_price }}{% endif %}{% if max_price %}&max_price={{ max_price }}{% endif %}{% if min_rating %}&min_rating={{ min_rating }}{% endif %}" class="search-tag">📱 Social Media</a>
-                <a href="/consultants?search=startup{% if selected_category %}&category={{ selected_category }}{% endif %}{% if min_price %}&min_price={{ min_price }}{% endif %}{% if max_price %}&max_price={{ max_price }}{% endif %}{% if min_rating %}&min_rating={{ min_rating }}{% endif %}" class="search-tag">🚀 Startup</a>
-                <a href="/consultants?search=investimenti{% if selected_category %}&category={{ selected_category }}{% endif %}{% if min_price %}&min_price={{ min_price }}{% endif %}{% if max_price %}&max_price={{ max_price }}{% endif %}{% if min_rating %}&min_rating={{ min_rating }}{% endif %}" class="search-tag">📈 Investimenti</a>
+                <span class="suggestion-label">{{ t('esperti.ricerche_popolari') }}</span>
+                <a href="/consultants?search=finanziamenti{% if selected_category %}&category={{ selected_category }}{% endif %}{% if min_price %}&min_price={{ min_price }}{% endif %}{% if max_price %}&max_price={{ max_price }}{% endif %}{% if min_rating %}&min_rating={{ min_rating }}{% endif %}" class="search-tag">{{ t('esperti.tag_finanziamenti') }}</a>
+                <a href="/consultants?search=cambio lavoro{% if selected_category %}&category={{ selected_category }}{% endif %}{% if min_price %}&min_price={{ min_price }}{% endif %}{% if max_price %}&max_price={{ max_price }}{% endif %}{% if min_rating %}&min_rating={{ min_rating }}{% endif %}" class="search-tag">{{ t('esperti.tag_cambio_lavoro') }}</a>
+                <a href="/consultants?search=social media{% if selected_category %}&category={{ selected_category }}{% endif %}{% if min_price %}&min_price={{ min_price }}{% endif %}{% if max_price %}&max_price={{ max_price }}{% endif %}{% if min_rating %}&min_rating={{ min_rating }}{% endif %}" class="search-tag">{{ t('esperti.tag_social') }}</a>
+                <a href="/consultants?search=startup{% if selected_category %}&category={{ selected_category }}{% endif %}{% if min_price %}&min_price={{ min_price }}{% endif %}{% if max_price %}&max_price={{ max_price }}{% endif %}{% if min_rating %}&min_rating={{ min_rating }}{% endif %}" class="search-tag">{{ t('esperti.tag_startup') }}</a>
+                <a href="/consultants?search=investimenti{% if selected_category %}&category={{ selected_category }}{% endif %}{% if min_price %}&min_price={{ min_price }}{% endif %}{% if max_price %}&max_price={{ max_price }}{% endif %}{% if min_rating %}&min_rating={{ min_rating }}{% endif %}" class="search-tag">{{ t('esperti.tag_investimenti') }}</a>
             </div>
         </div>
     </section>
@@ -45,7 +45,7 @@
         {% if search_query or selected_category or min_price or max_price or min_rating %}
         <div class="active-filters-container">
             <div class="active-filters">
-                <span class="filters-label">Filtri attivi:</span>
+                <span class="filters-label">{{ t('esperti.filtri_attivi') }}</span>
                 
                 {% if search_query %}
                 <a href="/consultants{% if selected_category %}?category={{ selected_category }}{% endif %}{% if min_price %}{% if selected_category %}&{% else %}?{% endif %}min_price={{ min_price }}{% endif %}{% if max_price %}&max_price={{ max_price }}{% endif %}{% if min_rating %}{% if selected_category or min_price %}&{% else %}?{% endif %}min_rating={{ min_rating }}{% endif %}" class="filter-tag">
@@ -85,7 +85,7 @@
             <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2">
                 <line x1="3" y1="5" x2="17" y2="5"/><line x1="5" y1="10" x2="15" y2="10"/><line x1="7" y1="15" x2="13" y2="15"/>
             </svg>
-            Filtri
+            {{ t('esperti.filtri') }}
         </button>
 
         <!-- Sidebar Filtri -->
@@ -212,6 +212,13 @@
         <main class="consultants-main">
             <div class="results-header">
                 <p>{{ total_count }} {{ t('risultati.consulenti') if total_count != 1 else t('risultati.consulente') }}</p>
+                {% if nessuno_in_quella_lingua %}
+                {# Il filtro per lingua lo abbiamo messo noi: se svuota la
+                   pagina si mostrano tutti, ma va detto perche' #}
+                <p style="margin: 6px 0 0; font-size: .9em; color: #78909c;">
+                    {{ t('esperti.nessuno_in_lingua') }}
+                </p>
+                {% endif %}
             </div>
 
             <div class="consultants-grid">
@@ -262,7 +269,7 @@
                                 <span class="rating">⭐ {{ item.review_avg }}/5</span>
                                 <span class="reviews">({{ item.review_count }} recension{{ 'e' if item.review_count == 1 else 'i' }})</span>
                                 {% else %}
-                                <span class="reviews">Nessuna recensione</span>
+                                <span class="reviews">{{ t('esperti.nessuna_recensione') }}</span>
                                 {% endif %}
                             </div>
                         </a>
@@ -283,10 +290,10 @@
                                     data-consultant-name="{{ item.nome }} {{ item.cognome }}"
                                     data-consultant-pic="{{ item.profile_picture or item|default_avatar }}"
                                     title="Invia un messaggio">
-                                <i class="fas fa-envelope"></i> Messaggia
+                                <i class="fas fa-envelope"></i> {{ t('esperti.messaggia') }}
                             </button>
                             <a href="/book/{{ item.id }}" class="btn-consult">
-                                <i class="fas fa-calendar-check"></i> Prenota Consulenza
+                                <i class="fas fa-calendar-check"></i> {{ t('esperti.prenota') }}
                             </a>
                         </div>
                     </div>
@@ -450,8 +457,8 @@
         sidebar.classList.toggle('mobile-open');
         btn.classList.toggle('active');
         btn.innerHTML = sidebar.classList.contains('mobile-open')
-            ? '<svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="5" x2="15" y2="15"/><line x1="15" y1="5" x2="5" y2="15"/></svg> Chiudi Filtri'
-            : '<svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="5" x2="17" y2="5"/><line x1="5" y1="10" x2="15" y2="10"/><line x1="7" y1="15" x2="13" y2="15"/></svg> Filtri';
+            ? '<svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="5" x2="15" y2="15"/><line x1="15" y1="5" x2="5" y2="15"/></svg> {{ t('esperti.chiudi_filtri') }}'
+            : '<svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="5" x2="17" y2="5"/><line x1="5" y1="10" x2="15" y2="10"/><line x1="7" y1="15" x2="13" y2="15"/></svg> {{ t('esperti.filtri') }}';
     }
     window.toggleMobileFilters = toggleMobileFilters;
 

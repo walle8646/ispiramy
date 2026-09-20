@@ -1737,7 +1737,7 @@
     <!-- Community Title -->
     <div style="padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.2);">
         <div class="container">
-            <h1 style="text-align: center; font-size: 2.5rem; margin: 0;">Fai la tua domanda e ottieni la consulenza che cerchi</h1>
+            <h1 style="text-align: center; font-size: 2.5rem; margin: 0;">{{ t('community.titolo') }}</h1>
         </div>
     </div>
     
@@ -1746,11 +1746,11 @@
     <div style="padding: 12px 0;">
         <div class="container" style="max-width: 1400px; display: flex; align-items: center; justify-content: center; gap: 16px; flex-wrap: wrap;">
             <div>
-                <h3 style="color: white; margin: 0 0 4px 0; font-size: 1.1rem;">✨ Diventa anche tu un Ispiramyer</h3>
-                <p style="opacity: 0.9; margin: 0; font-size: 0.9rem;">Aiuta gli altri e guadagna condividendo le tue competenze.</p>
+                <h3 style="color: white; margin: 0 0 4px 0; font-size: 1.1rem;">{{ t('community.diventa_titolo') }}</h3>
+                <p style="opacity: 0.9; margin: 0; font-size: 0.9rem;">{{ t('community.diventa_testo') }}</p>
             </div>
             <a href="/profile?edit=true" style="background: white; color: #43a047; padding: 10px 24px; text-align: center; border-radius: 8px; border: none; text-decoration: none; font-weight: 600; cursor: pointer; white-space: nowrap; flex-shrink: 0; display: inline-block;">
-                Vai al tuo Profilo →
+                {{ t('community.vai_profilo') }}
             </a>
         </div>
     </div>
@@ -1763,7 +1763,7 @@
         <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2">
             <line x1="3" y1="5" x2="17" y2="5"/><line x1="5" y1="10" x2="15" y2="10"/><line x1="7" y1="15" x2="13" y2="15"/>
         </svg>
-        Filtri Categorie
+        {{ t('community.filtri_categorie') }}
     </button>
 
     <div class="row" style="display: flex; gap: 0;">
@@ -1825,13 +1825,13 @@
             <div class="search-bar-community" style="margin-bottom: 20px;">
                 <input 
                     type="text" 
-                    placeholder="Cerca tra le domande..." 
+                    placeholder="{{ t('community.cerca_placeholder') }}" 
                     value="{{ search_query }}"
                     id="community-search"
                     onkeydown="if(event.key==='Enter'){event.preventDefault();searchCommunityPage()}"
                 >
                 <button onclick="searchCommunityPage()">
-                    <i class="fas fa-search"></i> Cerca
+                    <i class="fas fa-search"></i> {{ t('esperti.cerca') }}
                 </button>
             </div>
             
@@ -1874,15 +1874,15 @@
             <div class="sort-pills">
                 <a href="/community?sort=recent{% if selected_category %}&category={{ selected_category }}{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}{% if selected_status %}&status={{ selected_status }}{% endif %}" 
                    class="sort-pill {% if selected_sort == 'recent' %}active{% endif %}">
-                    <i class="fas fa-clock"></i> Più recenti
+                    <i class="fas fa-clock"></i> {{ t('community.recenti') }}
                 </a>
                 <a href="/community?sort=interactions{% if selected_category %}&category={{ selected_category }}{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}{% if selected_status %}&status={{ selected_status }}{% endif %}" 
                    class="sort-pill {% if selected_sort == 'interactions' %}active{% endif %}">
-                    <i class="fas fa-fire"></i> Più interazioni
+                    <i class="fas fa-fire"></i> {{ t('community.interazioni') }}
                 </a>
                 <a href="/community?sort=followed{% if selected_category %}&category={{ selected_category }}{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}{% if selected_status %}&status={{ selected_status }}{% endif %}" 
                    class="sort-pill {% if selected_sort == 'followed' %}active{% endif %}">
-                    <i class="fas fa-bell"></i> Più seguite
+                    <i class="fas fa-bell"></i> {{ t('community.seguite') }}
                 </a>
             </div>
             
@@ -1939,7 +1939,7 @@
                             <p class="question-description" id="desc-{{ item.question.id }}">
                                 {{ item.question.description }}
                             </p>
-                            <span class="desc-toggle" id="toggle-{{ item.question.id }}" onclick="toggleDesc({{ item.question.id }})">Leggi tutto</span>
+                            <span class="desc-toggle" id="toggle-{{ item.question.id }}" onclick="toggleDesc({{ item.question.id }})">{{ t('community.leggi_tutto') }}</span>
                         </div>
                         <div class="question-images-wrap" data-images="{{ item.question.images }}">
                             <div class="question-images-main">
@@ -1958,7 +1958,7 @@
                     <p class="question-description" id="desc-{{ item.question.id }}">
                         {{ item.question.description }}
                     </p>
-                    <span class="desc-toggle" id="toggle-{{ item.question.id }}" onclick="toggleDesc({{ item.question.id }})">Leggi tutto</span>
+                    <span class="desc-toggle" id="toggle-{{ item.question.id }}" onclick="toggleDesc({{ item.question.id }})">{{ t('community.leggi_tutto') }}</span>
                     {% endif %}
                     
                     <!-- Follow Counter - Cliccabile per consulenti -->
@@ -2178,11 +2178,11 @@
 <div style="background: linear-gradient(135deg, #43a047 0%, #2e7d32 100%); color: white; padding: 20px 0; margin-top: 40px;">
     <div class="container" style="max-width: 1400px; display: flex; align-items: center; justify-content: center; gap: 20px; flex-wrap: wrap;">
         <div>
-            <h3 style="color: white; margin: 0 0 8px 0; font-size: 1.3rem;">✨ Diventa anche tu un Ispiramyer</h3>
-            <p style="opacity: 0.9; margin: 0; font-size: 1rem;">Aiuta gli altri e guadagna condividendo le tue competenze.</p>
+            <h3 style="color: white; margin: 0 0 8px 0; font-size: 1.3rem;">{{ t('community.diventa_titolo') }}</h3>
+            <p style="opacity: 0.9; margin: 0; font-size: 1rem;">{{ t('community.diventa_testo') }}</p>
         </div>
         <a href="/profile?edit=true" style="background: white; color: #43a047; padding: 12px 28px; text-align: center; border-radius: 8px; border: none; text-decoration: none; font-weight: 600; cursor: pointer; white-space: nowrap; flex-shrink: 0; font-size: 1rem; display: inline-block;">
-            Vai al tuo Profilo →
+            {{ t('community.vai_profilo') }}
         </a>
     </div>
 </div>
@@ -2192,7 +2192,7 @@
 <div class="modal" id="askModal">
     <div class="modal-content">
         <div class="modal-header">
-            <h2 class="modal-title">Crea una Richiesta</h2>
+            <h2 class="modal-title">{{ t('community.crea') }}</h2>
             <button class="modal-close" onclick="closeAskModal()">&times;</button>
         </div>
         
@@ -2443,7 +2443,7 @@ function toggleDesc(id) {
     const toggle = document.getElementById('toggle-' + id);
     if (desc.classList.contains('expanded')) {
         desc.classList.remove('expanded');
-        toggle.textContent = 'Leggi tutto';
+        toggle.textContent = '{{ t('community.leggi_tutto') }}';
     } else {
         desc.classList.add('expanded');
         toggle.textContent = 'Mostra meno';
@@ -2810,8 +2810,8 @@ function toggleCommunityFilters() {
     sidebar.classList.toggle('mobile-open');
     btn.classList.toggle('active');
     btn.innerHTML = sidebar.classList.contains('mobile-open')
-        ? '<svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="5" x2="15" y2="15"/><line x1="15" y1="5" x2="5" y2="15"/></svg> Chiudi Filtri'
-        : '<svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="5" x2="17" y2="5"/><line x1="5" y1="10" x2="15" y2="10"/><line x1="7" y1="15" x2="13" y2="15"/></svg> Filtri Categorie';
+        ? '<svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="5" x2="15" y2="15"/><line x1="15" y1="5" x2="5" y2="15"/></svg> {{ t('community.chiudi_filtri') }}'
+        : '<svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="5" x2="17" y2="5"/><line x1="5" y1="10" x2="15" y2="10"/><line x1="7" y1="15" x2="13" y2="15"/></svg> {{ t('community.filtri_categorie') }}';
 }
 
 // Collapsible section title on mobile
@@ -3287,7 +3287,7 @@ document.addEventListener('DOMContentLoaded', function() {
 <!-- Pulsante Fisso in Basso -->
 {% if user and can_create_question %}
 <button class="ask-button-sticky-bottom" onclick="openAskModal()">
-    <i class="fas fa-plus-circle"></i> Crea una Richiesta
+    <i class="fas fa-plus-circle"></i> {{ t('community.crea') }}
 </button>
 {% elif user and not can_create_question %}
 <div class="ask-button-sticky-bottom" style="background: #ccc; cursor: not-allowed; display: flex; align-items: center; justify-content: center; gap: 8px;">
