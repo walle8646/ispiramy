@@ -871,10 +871,14 @@
                         <input type="hidden" id="tagsInput" name="tags" value='{{ user.tags or "" }}'>
 
                         <div class="form-section">
-                            <div class="form-section-title">🌐 Lingue Parlate</div>
+                            <div class="form-section-title">🌐 Lingue Parlate *</div>
+                            <p style="margin: -6px 0 10px; font-size: .86em; color: #6b7a85;">
+                                In che lingue puoi fare una consulenza. È il primo filtro di chi
+                                cerca: senza, chi non parla italiano non ti trova.
+                            </p>
                             <div class="languages-grid" style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px;">
                                 <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; padding: 8px; border-radius: 8px; border: 1px solid #e5e7eb; transition: all .2s;">
-                                    <input type="checkbox" name="lang_it" value="it" {% if user_languages and 'it' in user_languages %}checked{% endif %} style="width: 18px; height: 18px; accent-color: #2e7d32;">
+                                    <input type="checkbox" name="lang_it" value="it" {% if 'it' in user_languages or not user_languages %}checked{% endif %} style="width: 18px; height: 18px; accent-color: #2e7d32;">
                                     🇮🇹 Italiano
                                 </label>
                                 <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; padding: 8px; border-radius: 8px; border: 1px solid #e5e7eb; transition: all .2s;">
@@ -1477,6 +1481,14 @@
             if (cb && cb.checked) langCodes.push(code);
         });
         const otherLang = profileForm.querySelector('input[name="other_language"]')?.value || '';
+
+        // Almeno una lingua: senza, il profilo non compare in nessun filtro
+        if (langCodes.length === 0) {
+            errorDiv.textContent = 'Scegli almeno una lingua in cui puoi fare consulenze.';
+            errorDiv.style.display = 'block';
+            document.querySelector('input[name="lang_it"]')?.scrollIntoView({ block: 'center', behavior: 'smooth' });
+            return;
+        }
         formData.delete('lang_it'); formData.delete('lang_en'); formData.delete('lang_fr');
         formData.delete('lang_es'); formData.delete('lang_de'); formData.delete('lang_other');
         formData.delete('other_language');

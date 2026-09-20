@@ -110,3 +110,18 @@ def test_l_ipotesi_non_finisce_sulla_scheda():
     pezzo = rotta[rotta.index("'lingue': ["):rotta.index("'category': None")]
     assert "lingue_parlate(user)" in pezzo
     assert "lingue_per_la_ricerca" not in pezzo
+
+
+def test_il_consulente_deve_dire_in_che_lingua_lavora():
+    """Senza lingua dichiarata il profilo non compare in nessun filtro: il
+    controllo sta nel modulo e anche nella rotta, perche' il primo si aggira."""
+    modulo = _file("app", "templates", "profile.html")
+    assert "Lingue Parlate *" in modulo
+    assert "Scegli almeno una lingua" in modulo, "manca il blocco prima di inviare"
+    # a chi non ha mai scelto, l'italiano arriva gia' spuntato
+    assert "{% if 'it' in user_languages or not user_languages %}checked{% endif %}" in modulo
+
+    rotta = _file("app", "routes", "user_profile.py")
+    assert "Scegli almeno una lingua" in rotta, "il controllo deve esserci anche sul server"
+    pezzo = rotta[rotta.index("Le lingue sono obbligatorie"):]
+    assert "user_type_id >= 2" in pezzo[:400], "vale per chi offre consulenze"

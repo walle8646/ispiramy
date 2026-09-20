@@ -308,6 +308,20 @@ async def update_profile(
             if not db_user:
                 return JSONResponse({"error": "Utente non trovato"}, status_code=404)
             
+            # Le lingue sono obbligatorie per chi offre consulenze: sono il
+            # primo filtro di chi cerca, e un profilo senza non si trova.
+            # Il controllo sta anche qui perche' quello nel modulo si aggira.
+            if languages is not None and db_user.user_type_id >= 2:
+                try:
+                    codici = (json.loads(languages) or {}).get("codes") or []
+                except (json.JSONDecodeError, TypeError, AttributeError):
+                    codici = []
+                if not codici:
+                    return JSONResponse(
+                        {"error": "Scegli almeno una lingua in cui puoi fare consulenze."},
+                        status_code=400,
+                    )
+
             # Check if user was already verified before update
             was_verified_before = db_user.is_verified
             descrizione_originale = (db_user.descrizione or "").strip()
