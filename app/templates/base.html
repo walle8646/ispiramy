@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="it">
+<html lang="{{ lingua_ui }}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
@@ -899,34 +899,43 @@
             {# Sul telefono il campo di ricerca in barra resta largo 56px e non
                ci si scrive niente: qui diventa un'icona che porta alla ricerca
                vera, quella della pagina Esperti. #}
-            <a href="/consultants" class="icona-cerca-telefono" aria-label="Cerca">
+            <a href="/consultants" class="icona-cerca-telefono" aria-label="{{ t('nav.cerca') }}">
                 <i class="fas fa-magnifying-glass"></i>
             </a>
+
+            {# Scelta della lingua: sta in alto perche' e' la prima cosa che
+               cerca chi arriva e non capisce la pagina. #}
+            <div class="scelta-lingua" role="group" aria-label="{{ t('menu.lingua') }}">
+                {% for codice, nome, bandiera in lingue_ui %}
+                <a href="/lingua/{{ codice }}" class="{% if lingua_ui == codice %}scelta{% endif %}"
+                   title="{{ nome }}" hreflang="{{ codice }}">{{ codice|upper }}</a>
+                {% endfor %}
+            </div>
             <!-- Trova Consulenti (le categorie sono nella striscia sotto la navbar) -->
             <a href="/consultants" class="navbar-link">
-                <span class="navbar-link-text">Trova Consulenti</span>
+                <span class="navbar-link-text">{{ t('nav.consulenti') }}</span>
             </a>
 
             <!-- Community -->
             <a href="/community" class="navbar-link">
-                <span class="navbar-link-text">Community</span>
+                <span class="navbar-link-text">{{ t('nav.community') }}</span>
             </a>
 
             <!-- Come funziona -->
             <a href="/come-funziona" class="navbar-link">
-                <span class="navbar-link-text">Come funziona</span>
+                <span class="navbar-link-text">{{ t('nav.come_funziona') }}</span>
             </a>
 
             <!-- Sul telefono il menu del profilo e' un cassetto dentro un altro
                  cassetto: qui la voce sta in chiaro, appena aperto il menu -->
             <a href="#" class="navbar-link voce-installa-telefono voce-installa-nascosta" id="voceInstallaTelefono">
                 <i class="fas fa-mobile-alt"></i>
-                <span class="navbar-link-text">Installa l&#39;app</span>
+                <span class="navbar-link-text">{{ t('nav.installa') }}</span>
             </a>
             
             {% if current_user %}
                 <!-- Icona Notifiche con testo Chat sotto -->
-                <div class="notifications-icon" id="notificationsIcon" onclick="toggleNotifications()" title="Notifiche">
+                <div class="notifications-icon" id="notificationsIcon" onclick="toggleNotifications()" title="{{ t('menu.notifiche') }}">
                     <i class="fas fa-bell"></i>
                     <span class="notifications-badge" id="notificationsBadge" style="display: none;">0</span>
                 </div>
@@ -973,11 +982,11 @@
                 </div>
             {% else %}
                 <!-- Accedi -->
-                <a href="/login" class="navbar-link">Accedi</a>
+                <a href="/login" class="navbar-link">{{ t('nav.accedi') }}</a>
                 
                 <!-- Registrati -->
                 <a href="/register" class="register-btn">
-                    Registrati Gratis
+                    {{ t('nav.registrati') }}
                 </a>
             {% endif %}
         </div>
@@ -986,7 +995,7 @@
     <!-- Dropdown Notifiche -->
     <div class="notifications-dropdown" id="notificationsDropdown">
         <div class="notifications-header">
-            <h3><i class="fas fa-bell"></i> Notifiche</h3>
+            <h3><i class="fas fa-bell"></i> {{ t('menu.notifiche') }}</h3>
             <button class="mark-all-read-btn" onclick="markAllAsRead()">
                 <i class="fas fa-check-double"></i> Segna tutte lette
             </button>
@@ -1077,31 +1086,31 @@
     <nav class="schede" id="schede" aria-label="Navigazione principale">
         <a href="/" class="scheda {% if request.url.path == '/' %}attiva{% endif %}">
             <i class="fas fa-house"></i>
-            <span>Home</span>
+            <span>{{ t('schede.home') }}</span>
         </a>
         <a href="/consultants" class="scheda {% if request.url.path.startswith('/consultants') or request.url.path.startswith('/user/') %}attiva{% endif %}">
             <i class="fas fa-user-tie"></i>
-            <span>Esperti</span>
+            <span>{{ t('schede.esperti') }}</span>
         </a>
         <a href="/community" class="scheda {% if request.url.path.startswith('/community') %}attiva{% endif %}">
             <i class="fas fa-comments"></i>
-            <span>Community</span>
+            <span>{{ t('schede.community') }}</span>
         </a>
         {% if current_user %}
         <a href="/messaggi" class="scheda {% if request.url.path.startswith('/messaggi') %}attiva{% endif %}">
             <i class="fas fa-paper-plane"></i>
-            <span>Messaggi</span>
+            <span>{{ t('schede.messaggi') }}</span>
             <span class="scheda-pallino" id="schedaMessaggiPallino"></span>
         </a>
         {% else %}
         <a href="/login" class="scheda {% if request.url.path.startswith('/login') %}attiva{% endif %}">
             <i class="fas fa-right-to-bracket"></i>
-            <span>Accedi</span>
+            <span>{{ t('schede.accedi') }}</span>
         </a>
         {% endif %}
         <button type="button" class="scheda" id="schedaMenu" onclick="apriMenuTelefono()">
             <i class="fas fa-bars"></i>
-            <span>Menu</span>
+            <span>{{ t('schede.menu') }}</span>
             <span class="scheda-pallino" id="schedaMenuPallino"></span>
         </button>
     </nav>
@@ -1116,32 +1125,41 @@
                  alt="" onerror="this.src='{{ current_user|default_avatar }}'">
             <div>
                 <strong>{{ current_user.nome or 'Il tuo profilo' }} {{ current_user.cognome or '' }}</strong>
-                <span>Vedi il tuo profilo</span>
+                <span>{{ t('menu.profilo') }}</span>
             </div>
         </a>
         {% else %}
         <div class="foglio-ospite">
-            <a href="/login" class="foglio-bottone secondario">Accedi</a>
-            <a href="/register" class="foglio-bottone">Registrati</a>
+            <a href="/login" class="foglio-bottone secondario">{{ t('nav.accedi') }}</a>
+            <a href="/register" class="foglio-bottone">{{ t('nav.registrati') }}</a>
         </div>
         {% endif %}
 
         <div class="foglio-voci">
-            <a href="/come-funziona"><i class="fas fa-circle-question"></i> Come funziona</a>
+            <div class="foglio-lingua">
+                <span>{{ t('menu.lingua') }}</span>
+                <span class="foglio-lingua-scelte">
+                    {% for codice, nome, bandiera in lingue_ui %}
+                    <a href="/lingua/{{ codice }}" class="{% if lingua_ui == codice %}scelta{% endif %}">{{ bandiera }} {{ nome }}</a>
+                    {% endfor %}
+                </span>
+            </div>
+
+            <a href="/come-funziona"><i class="fas fa-circle-question"></i> {{ t('nav.come_funziona') }}</a>
             {% if current_user %}
             <button type="button" onclick="chiudiMenuTelefono(); toggleNotifications();">
-                <i class="fas fa-bell"></i> Notifiche
+                <i class="fas fa-bell"></i> {{ t('menu.notifiche') }}
                 <span class="foglio-pallino" id="foglioNotifichePallino"></span>
             </button>
             {% endif %}
-            <a href="#" class="voce-installa-nascosta" id="voceInstallaFoglio"><i class="fas fa-mobile-alt"></i> Installa l&#39;app</a>
-            <a href="/faq"><i class="fas fa-lightbulb"></i> Domande frequenti</a>
-            <a href="/contact"><i class="fas fa-envelope"></i> Contattaci</a>
+            <a href="#" class="voce-installa-nascosta" id="voceInstallaFoglio"><i class="fas fa-mobile-alt"></i> {{ t('nav.installa') }}</a>
+            <a href="/faq"><i class="fas fa-lightbulb"></i> {{ t('menu.faq') }}</a>
+            <a href="/contact"><i class="fas fa-envelope"></i> {{ t('menu.contatti') }}</a>
             {% if current_user and current_user.user_type_id >= 2 %}
-            <a href="/admin"><i class="fas fa-shield-halved"></i> Amministrazione</a>
+            <a href="/admin"><i class="fas fa-shield-halved"></i> {{ t('menu.admin') }}</a>
             {% endif %}
             {% if current_user %}
-            <a href="/logout" class="foglio-uscita"><i class="fas fa-arrow-right-from-bracket"></i> Esci</a>
+            <a href="/logout" class="foglio-uscita"><i class="fas fa-arrow-right-from-bracket"></i> {{ t('menu.esci') }}</a>
             {% endif %}
         </div>
     </div>
@@ -1877,6 +1895,68 @@
         /* Le voci "installa" si spengono con questa classe e non con lo stile in
            riga: le aree toccabili impongono display: inline-flex !important e
            un display: none scritto sull'elemento perdeva il confronto. */
+        /* Selettore della lingua: due sigle, non una bandiera sola (la
+           bandiera dice il paese, non la lingua, e non e' la stessa cosa) */
+        .scelta-lingua {
+            display: inline-flex;
+            align-items: center;
+            gap: 2px;
+            padding: 2px;
+            border-radius: 14px;
+            background: rgba(255, 255, 255, 0.55);
+        }
+
+        .scelta-lingua a {
+            min-width: 30px;
+            padding: 4px 7px;
+            border-radius: 12px;
+            color: #2e7d32;
+            font-size: 12px;
+            font-weight: 700;
+            text-align: center;
+            text-decoration: none;
+        }
+
+        .scelta-lingua a.scelta {
+            background: #2e7d32;
+            color: white;
+        }
+
+        .foglio-lingua {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            padding: 6px 6px 14px;
+            border-bottom: 1px solid #eef2ef;
+            font-size: .82rem;
+            color: #78909c;
+        }
+
+        .foglio-lingua-scelte {
+            display: flex;
+            gap: 8px;
+        }
+
+        .foglio-lingua-scelte a {
+            flex: 1;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 42px;
+            border-radius: 21px;
+            border: 1px solid #dfe8e1;
+            color: #33404a;
+            font-size: .92rem;
+            font-weight: 600;
+            text-decoration: none;
+        }
+
+        .foglio-lingua-scelte a.scelta {
+            background: #e8f5e9;
+            border-color: #43a047;
+            color: #1b5e20;
+        }
+
         .voce-installa-nascosta,
         .voce-push-nascosta {
             display: none !important;

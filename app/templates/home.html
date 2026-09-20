@@ -976,20 +976,20 @@
    e cosa c'e' di nuovo nella community. La presentazione resta per chi arriva
    la prima volta, e sul computer resta per tutti. #}
 <section class="mia-home" id="miaHome">
-    <h1 class="mia-saluto">Ciao {{ current_user.nome or '' }}</h1>
+    <h1 class="mia-saluto">{{ t('home.saluto') }} {{ current_user.nome or '' }}</h1>
 
     <div id="mieCose" class="mie-cose">
         <div class="mia-attesa">Sto guardando le tue cose…</div>
     </div>
 
     <div class="mie-scorciatoie">
-        <a href="/consultants"><i class="fas fa-magnifying-glass"></i><span>Trova un esperto</span></a>
-        <a href="/community"><i class="fas fa-circle-question"></i><span>Fai una domanda</span></a>
-        <a href="/profile"><i class="fas fa-calendar-check"></i><span>Le tue prenotazioni</span></a>
+        <a href="/consultants"><i class="fas fa-magnifying-glass"></i><span>{{ t('home.trova_esperto') }}</span></a>
+        <a href="/community"><i class="fas fa-circle-question"></i><span>{{ t('home.fai_domanda') }}</span></a>
+        <a href="/profile"><i class="fas fa-calendar-check"></i><span>{{ t('home.tue_prenotazioni') }}</span></a>
     </div>
 
     {% if domande_recenti %}
-    <h2 class="mia-sezione">Dalla community</h2>
+    <h2 class="mia-sezione">{{ t('home.dalla_community') }}</h2>
     <div class="mie-domande">
         {% for domanda in domande_recenti %}
         <a href="/community?question={{ domanda.id }}" class="mia-domanda">
@@ -998,7 +998,7 @@
         </a>
         {% endfor %}
     </div>
-    <a href="/community" class="mia-tutte">Vedi tutte le domande →</a>
+    <a href="/community" class="mia-tutte">{{ t('home.vedi_tutte') }}</a>
     {% endif %}
 </section>
 {% endif %}
@@ -1212,8 +1212,7 @@
                     .concat((dati.bookings || []).map(scheda));
                 contenitore.innerHTML = pezzi.length
                     ? pezzi.join('')
-                    : `<div class="mia-vuota">Non hai consulenze in programma.
-                       Quando ne prenoti una la trovi qui, col pulsante per entrare.</div>`;
+                    : `<div class="mia-vuota">{{ t('home.nessuna_consulenza') }}</div>`;
             })
             .catch(function () { contenitore.innerHTML = ''; });
     })();

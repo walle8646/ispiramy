@@ -91,11 +91,11 @@
         <!-- Sidebar Filtri -->
         <aside class="filters-sidebar" id="filtersSidebar">
             <!-- 🔥 FILTRO RECENSIONI -->
-            <h3>Valutazione Minima</h3>
+            <h3>{{ t('filtri.valutazione') }}</h3>
             <div class="rating-filter">
                 <a href="/consultants{% if selected_category %}?category={{ selected_category }}{% endif %}{% if search_query %}{% if selected_category %}&{% else %}?{% endif %}search={{ search_query }}{% endif %}{% if min_price %}{% if selected_category or search_query %}&{% else %}?{% endif %}min_price={{ min_price }}{% endif %}{% if max_price %}&max_price={{ max_price }}{% endif %}" 
                    class="rating-option {% if not min_rating %}active{% endif %}">
-                    Tutte
+                    {{ t('filtri.tutte') }}
                 </a>
                 {% for stars in [3, 3.5, 4, 4.5] %}
                 <a href="/consultants?min_rating={{ stars }}{% if selected_category %}&category={{ selected_category }}{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}{% if min_price %}&min_price={{ min_price }}{% endif %}{% if max_price %}&max_price={{ max_price }}{% endif %}" 
@@ -108,25 +108,25 @@
             {# Chi cerca aiuto in un'altra lingua ha bisogno di qualcuno che
                quella lingua la parli: senza questo filtro, una ricerca in
                inglese porta consulenti che rispondono solo in italiano. #}
-            <h3>Lingua parlata</h3>
+            <h3>{{ t('filtri.lingua') }}</h3>
             <div class="rating-filter">
                 <a href="{{ con_parametro(request, 'lingua') }}"
                    class="rating-option {% if not lingua_scelta %}active{% endif %}">
-                    Tutte
+                    {{ t('filtri.tutte') }}
                 </a>
                 {% for codice, nome, bandiera in lingue_disponibili %}
                 <a href="{{ con_parametro(request, 'lingua', codice) }}"
                    class="rating-option {% if lingua_scelta == codice %}active{% endif %}">
-                    {{ bandiera }} {{ nome }}
+                    {{ bandiera }} {{ t('lingua.' ~ codice) }}
                 </a>
                 {% endfor %}
             </div>
 
-            <h3>Categorie</h3>
+            <h3>{{ t('filtri.categorie') }}</h3>
             <ul class="category-filters">
                 <li>
                     <a href="/consultants{% if search_query %}?search={{ search_query }}{% endif %}{% if min_price or max_price %}{% if search_query %}&{% else %}?{% endif %}min_price={{ min_price }}&max_price={{ max_price }}{% endif %}{% if min_rating %}{% if search_query or min_price or max_price %}&{% else %}?{% endif %}min_rating={{ min_rating }}{% endif %}" class="{% if not selected_category %}active{% endif %}">
-                        Tutte le categorie
+                        {{ t('filtri.tutte_categorie') }}
                     </a>
                 </li>
                 {% for item in categories_with_children %}
@@ -166,7 +166,7 @@
 
             <!-- 🔥 FILTRO RANGE PREZZO -->
             <div class="additional-filters">
-                <h4>Range Prezzo (€/ora)</h4>
+                <h4>{{ t('filtri.prezzo') }}</h4>
                 <form id="priceFilterForm" class="price-filter-form">
                     <div class="price-inputs-vertical">
                         <div class="price-input-wrapper">
@@ -211,7 +211,7 @@
         <!-- Griglia Consulenti -->
         <main class="consultants-main">
             <div class="results-header">
-                <p>{{ total_count }} consulenti trovati</p>
+                <p>{{ total_count }} {{ t('risultati.consulenti') if total_count != 1 else t('risultati.consulente') }}</p>
             </div>
 
             <div class="consultants-grid">
@@ -247,7 +247,7 @@
                                sapere a chi non parla italiano. #}
                             {% if item.lingue %}
                             <p class="consultant-lingue" title="Lingue parlate">
-                                {% for codice, nome, bandiera in item.lingue %}<span>{{ bandiera }} {{ nome }}</span>{% endfor %}
+                                {% for codice, nome, bandiera in item.lingue %}<span>{{ bandiera }} {{ t('lingua.' ~ codice) }}</span>{% endfor %}
                             </p>
                             {% endif %}
                             

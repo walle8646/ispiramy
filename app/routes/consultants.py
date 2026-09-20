@@ -330,6 +330,16 @@ async def consultants_page(
                 all_results = all_results[:MAX_CANDIDATI]
             
             # ========== FILTRO PER LINGUA ==========
+            # Chi ha messo il sito in inglese sta cercando in inglese: il
+            # filtro parte da li', ma resta una preferenza, non una gabbia
+            # (basta toccare "Tutte" per vedere gli altri).
+            if lingua is None:
+                from app.utils.lingue_ui import lingua_di
+
+                scelta_interfaccia = lingua_di(request)
+                if scelta_interfaccia != "it" and scelta_interfaccia in CODICI_LINGUA:
+                    lingua = scelta_interfaccia
+
             # Si fa qui e non in SQL: "non ha dichiarato niente" sono tre casi
             # diversi nel database (colonna vuota, JSON senza codici, lista
             # vuota) e in Python si leggono tutti con la stessa funzione.

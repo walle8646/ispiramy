@@ -206,8 +206,21 @@ def _utente_in_ogni_pagina(request: Request) -> dict:
     return {"current_user": ricordato}
 
 
+def _lingua_in_ogni_pagina(request: Request) -> dict:
+    # La lingua scelta e la funzione per tradurre, in tutte le pagine.
+    from app.utils.lingue_ui import LINGUE_UI, lingua_di, traduci
+
+    lingua = lingua_di(request)
+    return {
+        "lingua_ui": lingua,
+        "lingue_ui": LINGUE_UI,
+        "t": lambda chiave: traduci(chiave, lingua),
+    }
+
+
 templates = Jinja2Templates(directory="app/templates",
-                            context_processors=[_utente_in_ogni_pagina])
+                            context_processors=[_utente_in_ogni_pagina,
+                                                _lingua_in_ogni_pagina])
 # Aggiungi filtro personalizzato per nomi utenti
 templates.env.filters['display_name'] = get_display_name
 templates.env.filters['default_avatar'] = get_default_avatar
