@@ -291,11 +291,16 @@ def release_booking_payment(booking_id: int):
             
             if open_disputes:
                 logger.info(f"⚠️ Booking {booking_id}: contestazione aperta, rilascio bloccato")
+                # Una volta sola: questa funzione viene richiamata a ogni
+                # riavvio del server da recover_stuck_bookings(), e finche'
+                # la contestazione resta aperta si ferma sempre qui.
                 send_notification(
                     user_id=booking.consultant_user_id,
                     type_key="payment_hold",
                     title="Pagamento in attesa",
-                    message=f"Il pagamento per la consulenza #{booking_id} è in attesa per una contestazione in corso."
+                    message=f"Il pagamento per la consulenza #{booking_id} è in attesa per una contestazione in corso.",
+                    related_booking_id=booking_id,
+                    solo_una_volta=True
                 )
                 return
             

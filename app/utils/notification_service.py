@@ -20,7 +20,8 @@ def send_notification(
     template_data: Optional[Dict[str, str]] = None,
     related_booking_id: Optional[int] = None,
     related_user_id: Optional[int] = None,
-    action_url: Optional[str] = None
+    action_url: Optional[str] = None,
+    solo_una_volta: bool = False
 ) -> bool:
     """
     Invia una notifica controllando la configurazione in notification_types.
@@ -39,6 +40,7 @@ def send_notification(
         related_booking_id: ID prenotazione correlata (opzionale)
         related_user_id: ID utente che ha generato la notifica (opzionale)
         action_url: URL di azione (opzionale)
+        solo_una_volta: se una notifica uguale esiste gia', non la rimanda
     
     Returns:
         bool: True se almeno una notifica è stata inviata con successo
@@ -63,6 +65,26 @@ def send_notification(
                 logger.error(f"Utente {user_id} non trovato o senza email")
                 return False
             
+            # Certe notifiche nascono da un controllo che si ripete: il
+            # rilascio del pagamento, per esempio, viene ritentato a ogni
+            # riavvio finche' la contestazione resta aperta. Senza questo il
+            # consulente si ritrova la stessa identica notifica decine di
+            # volte, una per ogni deploy.
+            if solo_una_volta:
+                condizioni = [Notification.user_id == user_id,
+                              Notification.type == type_key]
+                if related_booking_id is not None:
+                    condizioni.append(Notification.related_booking_id == related_booking_id)
+                else:
+                    condizioni.append(Notification.message == message)
+                gia_inviata = session.exec(select(Notification).where(*condizioni)).first()
+                if gia_inviata:
+                    logger.info(
+                        f"⏭️ Notifica '{type_key}' gia' inviata a user {user_id}, "
+                        f"non la ripeto"
+                    )
+                    return False
+
             success = False
             
             # 1. Notifica in-app (nel database)
