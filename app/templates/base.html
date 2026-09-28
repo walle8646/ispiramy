@@ -884,11 +884,11 @@
                 <div class="search-dropdown" id="searchDropdown">
                     <div class="search-option" onclick="searchConsultants()">
                         <i class="fas fa-user-tie"></i>
-                        <span>Cerca tra i Consulenti</span>
+                        <span>{{ t('nav.cerca_consulenti') }}</span>
                     </div>
                     <div class="search-option" onclick="searchCommunity()">
                         <i class="fas fa-comments"></i>
-                        <span>Cerca nella Community</span>
+                        <span>{{ t('nav.cerca_community') }}</span>
                     </div>
                 </div>
             </div>
@@ -965,7 +965,7 @@
                     <div class="user-menu-dropdown" id="userMenuDropdown">
                         <a href="/profile" class="user-menu-item">
                             <i class="fas fa-user"></i>
-                            <span>Profilo</span>
+                            <span>{{ t('menu.profilo_breve') }}</span>
                         </a>
                         {% if current_user.user_type_id >= 2 %}
                         <a href="/admin" class="user-menu-item">
@@ -1004,7 +1004,7 @@
         <div class="notifications-header">
             <h3><i class="fas fa-bell"></i> {{ t('menu.notifiche') }}</h3>
             <button class="mark-all-read-btn" onclick="markAllAsRead()">
-                <i class="fas fa-check-double"></i> Segna tutte lette
+                <i class="fas fa-check-double"></i> {{ t('notifiche.segna_tutte') }}
             </button>
         </div>
         <div class="notifications-list" id="notificationsList">
@@ -1028,30 +1028,30 @@
                     Ispiramy
                 </h3>
                 <p style="color: rgba(255,255,255,0.7); line-height: 1.6;">
-                    La piattaforma che connette persone in cerca di aiuto con esperti che hanno già affrontato le stesse sfide.
+                    {{ t('piede.descrizione') }}
                 </p>
             </div>
             
             <!-- Sezione Link Utili -->
             <div class="footer-section">
-                <h3>Link Utili</h3>
+                <h3>{{ t('piede.link_utili') }}</h3>
                 <ul>
-                    <li><a href="/">Home</a></li>
-                    <li><a href="/consultants">Trova Consulenti</a></li>
-                    <li><a href="/register">Diventa Consulente</a></li>
-                    <li><a href="/about">Chi Siamo</a></li>
+                    <li><a href="/">{{ t('piede.home') }}</a></li>
+                    <li><a href="/consultants">{{ t('nav.consulenti') }}</a></li>
+                    <li><a href="/register">{{ t('piede.diventa_consulente') }}</a></li>
+                    <li><a href="/about">{{ t('piede.chi_siamo') }}</a></li>
                 </ul>
             </div>
             
             <!-- Sezione Supporto -->
             <div class="footer-section">
-                <h3>Supporto</h3>
+                <h3>{{ t('piede.supporto') }}</h3>
                 <ul>
-                    <li><a href="/come-funziona">Come funziona</a></li>
-                    <li><a href="/faq">FAQ</a></li>
-                    <li><a href="/contact">Contattaci</a></li>
-                    <li><a href="/privacy">Privacy Policy</a></li>
-                    <li><a href="/terms">Termini di Servizio</a></li>
+                    <li><a href="/come-funziona">{{ t('nav.come_funziona') }}</a></li>
+                    <li><a href="/faq">{{ t('piede.faq') }}</a></li>
+                    <li><a href="/contact">{{ t('menu.contatti') }}</a></li>
+                    <li><a href="/privacy">{{ t('piede.privacy') }}</a></li>
+                    <li><a href="/terms">{{ t('piede.termini') }}</a></li>
                 </ul>
             </div>
             
@@ -1077,12 +1077,12 @@
         
         <div class="footer-bottom">
             <div style="margin-bottom:14px;display:flex;gap:22px;justify-content:center;flex-wrap:wrap;color:rgba(255,255,255,0.85);font-size:13px;font-weight:600;">
-                <span>🔒 Pagamenti sicuri</span>
-                <span>✓ Consulenti verificati</span>
-                <span>📹 Videoconsulenze integrate</span>
-                <span>💬 Supporto dedicato</span>
+                <span>🔒 {{ t('piede.pagamenti') }}</span>
+                <span>✓ {{ t('piede.verificati') }}</span>
+                <span>📹 {{ t('piede.video') }}</span>
+                <span>💬 {{ t('piede.supporto_dedicato') }}</span>
             </div>
-            © {{ current_year or 2026 }} Ispiramy. Tutti i diritti riservati. Made with ❤️ in Italy
+            © {{ current_year or 2026 }} Ispiramy. {{ t('piede.diritti') }} Made with ❤️ in Italy
         </div>
     </footer>
 
@@ -2041,11 +2041,11 @@
         }
     </style>
 
-    <div class="invito-app" id="invitoApp" role="dialog" aria-label="Installa Ispiramy">
+    <div class="invito-app" id="invitoApp" role="dialog" aria-label="{{ t('app.installa_titolo') }}">
         <img src="{{ statico('icone/icona-192.png') }}" alt="">
-        <div class="invito-testo" id="invitoTesto"><strong>Installa Ispiramy</strong>Si apre come un'app.</div>
-        <button type="button" id="invitoInstalla">Installa</button>
-        <button type="button" class="invito-chiudi" id="invitoChiudi" aria-label="Non ora">&times;</button>
+        <div class="invito-testo" id="invitoTesto"><strong>{{ t('app.installa_titolo') }}</strong>{{ t('app.installa_testo') }}</div>
+        <button type="button" id="invitoInstalla">{{ t('app.installa_pulsante') }}</button>
+        <button type="button" class="invito-chiudi" id="invitoChiudi" aria-label="{{ t('app.installa_non_ora') }}">&times;</button>
     </div>
 
     <script>
@@ -2234,28 +2234,42 @@
 
         /* Dove sta la voce "installa" in questo browser. utile=false significa
            che da qui non si installa proprio niente. */
+        /* Le frasi arrivano dal catalogo: |tojson le trasforma in stringhe
+           javascript gia' virgolettate, cosi' un apostrofo non spacca lo
+           script (era gia' successo con "un'app"). */
+        const FRASI = {
+            titolo: {{ t('app.installa_titolo')|tojson }},
+            testo: {{ t('app.installa_testo')|tojson }},
+            iphoneAltro: {{ t('app.istruzioni_iphone_altro')|tojson }},
+            safari: {{ t('app.istruzioni_safari')|tojson }},
+            android: {{ t('app.istruzioni_android')|tojson }},
+            niente: {{ t('app.istruzioni_niente')|tojson }},
+            edge: {{ t('app.istruzioni_edge')|tojson }},
+            chrome: {{ t('app.istruzioni_chrome')|tojson }}
+        };
+
         function istruzioni() {
             const ua = navigator.userAgent;
             const suApple = /iPad|iPhone|iPod/.test(ua) && !window.MSStream;
             if (suApple) {
                 if (!/Safari/.test(ua) || /CriOS|FxiOS|EdgiOS/.test(ua)) {
-                    return { utile: false, frase: "Su iPhone si installa solo da Safari: apri Ispiramy li&#39;." };
+                    return { utile: false, frase: FRASI.iphoneAltro };
                 }
-                return { utile: true, frase: 'Tocca <strong>Condividi</strong>, poi "Aggiungi alla schermata Home".' };
+                return { utile: true, frase: FRASI.safari };
             }
             if (/Android/.test(ua)) {
-                return { utile: true, frase: 'Apri il menu <strong>&#8942;</strong> del browser e tocca "Installa app".' };
+                return { utile: true, frase: FRASI.android };
             }
             if (/Firefox/.test(ua)) {
-                return { utile: false, frase: "Questo browser non installa i siti come app: usa Chrome o Edge." };
+                return { utile: false, frase: FRASI.niente };
             }
             if (/Edg\//.test(ua)) {
-                return { utile: true, frase: 'Menu <strong>&#8230;</strong> del browser, poi "App" e "Installa questo sito".' };
+                return { utile: true, frase: FRASI.edge };
             }
             if (/Chrome/.test(ua)) {
-                return { utile: true, frase: "Nella barra degli indirizzi tocca l&#39;icona di installazione, a destra." };
+                return { utile: true, frase: FRASI.chrome };
             }
-            return { utile: false, frase: "Questo browser non installa i siti come app: usa Chrome o Edge." };
+            return { utile: false, frase: FRASI.niente };
         }
 
         /* forzato = l'ha chiesto la persona dal menu, quindi si mostra comunque:
@@ -2263,12 +2277,12 @@
         function mostra(forzato) {
             if (!invito) { return; }
             if (richiesta) {
-                testo.innerHTML = "<strong>Installa Ispiramy</strong>Si apre come un'app.";
+                testo.innerHTML = "<strong>" + FRASI.titolo + "</strong>" + FRASI.testo;
                 bottone.style.display = '';
             } else {
                 const dove = istruzioni();
                 if (!dove.utile && !forzato) { return; }
-                testo.innerHTML = '<strong>Installa Ispiramy</strong>' + dove.frase;
+                testo.innerHTML = "<strong>" + FRASI.titolo + "</strong>" + dove.frase;
                 bottone.style.display = 'none';
             }
             invito.classList.add('visibile');

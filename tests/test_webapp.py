@@ -113,8 +113,13 @@ def test_l_invito_compare_anche_senza_l_evento_del_browser():
     invito = _blocco_invito()
     assert "beforeinstallprompt" in invito
     assert "setTimeout" in invito, "manca il ripiego quando l'evento non arriva"
-    assert "Installa app" in invito, "su Android va detto dove sta la voce nel menu"
-    assert "Condividi" in invito, "su iPhone si installa solo da lì"
+    # le frasi ora stanno nel catalogo, perche' vanno dette anche in inglese
+    assert "FRASI.android" in invito and "FRASI.safari" in invito
+    italiano = json.loads(_file("app", "traduzioni", "it.json"))
+    assert "Installa app" in italiano["app.istruzioni_android"],         "su Android va detto dove sta la voce nel menu"
+    assert "Condividi" in italiano["app.istruzioni_safari"],         "su iPhone si installa solo da li'"
+    inglese = json.loads(_file("app", "traduzioni", "en.json"))
+    assert "Install app" in inglese["app.istruzioni_android"]
 
 
 def test_le_frasi_dell_invito_non_spezzano_il_javascript():

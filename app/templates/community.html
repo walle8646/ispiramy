@@ -2164,8 +2164,8 @@
             {% else %}
                 <div style="text-align: center; padding: 60px 20px; background: white; border-radius: 12px;">
                     <i class="fas fa-inbox" style="font-size: 4rem; color: #ddd; margin-bottom: 20px;"></i>
-                    <h3>Nessuna domanda trovata</h3>
-                    <p style="color: #666;">Sii il primo a fare una domanda!</p>
+                    <h3>{{ t('community.nessuna_domanda') }}</h3>
+                    <p style="color: #666;">{{ t('community.sii_il_primo') }}</p>
                 </div>
             {% endif %}
         </div>
@@ -2232,42 +2232,42 @@
         
         <form id="askForm" onsubmit="submitQuestion(event)">
             <div class="form-group">
-                <label class="form-label">Titolo della domanda</label>
+                <label class="form-label">{{ t('community.titolo_domanda') }}</label>
                 <input 
                     type="text" 
                     class="form-input" 
                     name="title" 
-                    placeholder="Es: Come creare un logo professionale?"
+                    placeholder="{{ t('community.titolo_esempio') }}"
                     required
                     minlength="10"
                 >
             </div>
             
             <div class="form-group">
-                <label class="form-label">Descrizione dettagliata</label>
+                <label class="form-label">{{ t('community.descrizione') }}</label>
                 <textarea 
                     class="form-textarea" 
                     id="descriptionTextarea"
                     name="description" 
-                    placeholder="Spiega in dettaglio di cosa hai bisogno..."
+                    placeholder="{{ t('community.descrizione_esempio') }}"
                     required
                     minlength="150"
                 ></textarea>
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 8px;">
-                    <small style="color:#888;">Minimo 150 caratteri</small>
+                    <small style="color:#888;">{{ t('community.minimo_caratteri') }}</small>
                     <small style="color:#666; font-weight: 500;">
                         <span id="charCount">0</span>/150
                     </small>
                 </div>
                 <div id="charError" style="color: #dc3545; font-size: 0.875rem; margin-top: 6px; display: none;">
-                    ⚠️ La descrizione deve avere almeno 150 caratteri
+                    ⚠️ {{ t('community.errore_caratteri') }}
                 </div>
             </div>
             
             <div class="form-group">
-                <label class="form-label">Categoria Principale</label>
+                <label class="form-label">{{ t('community.categoria_principale') }}</label>
                 <select class="form-select" id="primaryCategorySelect" name="primary_category_id" required>
-                    <option value="">Seleziona una categoria...</option>
+                    <option value="">{{ t('community.scegli_categoria') }}</option>
                     {% for category in categories %}
                     {% if category.is_principal %}
                     <option value="{{ category.id }}">{{ category.icon }} {{ nc(category.name) }}</option>
@@ -2277,19 +2277,19 @@
             </div>
             
             <div class="form-group">
-                <label class="form-label">Sottocategoria</label>
+                <label class="form-label">{{ t('community.sottocategoria') }}</label>
                 <select class="form-select" id="subcategorySelect" name="category_id">
-                    <option value="">Seleziona una sottocategoria...</option>
+                    <option value="">{{ t('community.scegli_sottocategoria') }}</option>
                 </select>
-                <small id="subcategoryHint" style="color:#888; margin-top:4px; display:block;">Seleziona prima una categoria principale</small>
+                <small id="subcategoryHint" style="color:#888; margin-top:4px; display:block;">{{ t('community.prima_la_categoria') }}</small>
             </div>
             
             <div class="form-group">
                 <div style="display:flex;justify-content:space-between;align-items:center;">
-                    <label class="form-label" style="margin-bottom:0;">Tag (separati da virgola)</label>
+                    <label class="form-label" style="margin-bottom:0;">{{ t('community.tag') }}</label>
                     <button type="button" id="generateQuestionTagsBtn" 
                             style="background: linear-gradient(135deg, #43a047 0%, #2e7d32 100%); color: white; border: none; padding: 6px 14px; border-radius: 8px; font-size: 0.8em; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; transition: all 0.3s; box-shadow: 0 2px 8px rgba(46,125,50,.3);">
-                        🤖 Genera tag con AI
+                        🤖 {{ t('community.genera_tag') }}
                     </button>
                 </div>
                 <input 
@@ -2297,20 +2297,20 @@
                     class="form-input" 
                     id="questionTagsInput"
                     name="tags" 
-                    placeholder="Es: design, logo, branding"
+                    placeholder="{{ t('community.tag_esempio') }}"
                 >
-                <small style="color:#888; margin-top:4px; display:block;">Separati da virgola</small>
+                <small style="color:#888; margin-top:4px; display:block;">{{ t('community.separati_virgola') }}</small>
                 <div id="generateQuestionTagsStatus" style="display: none; margin-top: 8px; padding: 10px 14px; border-radius: 8px; font-size: 0.9em;"></div>
             </div>
             
             <!-- ========== UPLOAD IMMAGINI ========== -->
             <div class="form-group">
-                <label class="form-label">Immagini (opzionale, max 2)</label>
+                <label class="form-label">{{ t('community.immagini_2') }}</label>
                 <div class="image-upload-area" id="imageUploadArea" onclick="document.getElementById('imageFileInput').click()">
                     <div class="image-upload-icon">📷</div>
                     <div class="image-upload-text">
-                        <strong>Clicca</strong> o <strong>trascina</strong> per caricare immagini<br>
-                        <small>JPG, PNG o WebP • Max 5MB ciascuna • Max 5 immagini</small>
+                        <strong>{{ t('community.clicca') }}</strong> {{ t('community.oppure') }} <strong>{{ t('community.trascina') }}</strong> {{ t('community.per_caricare') }}<br>
+                        <small>{{ t('community.formati') }}</small>
                     </div>
                 </div>
                 <input type="file" id="imageFileInput" accept="image/jpeg,image/png,image/webp" multiple style="display:none;" onchange="handleImageSelect(this.files)">
@@ -2320,7 +2320,7 @@
             </div>
             
             <button type="submit" class="submit-button">
-                Pubblica Domanda
+                {{ t('community.pubblica') }}
             </button>
         </form>
     </div>
@@ -2331,7 +2331,7 @@
 <div class="modal" id="editQuestionModal">
     <div class="modal-content" style="max-width: 600px;">
         <div class="modal-header">
-            <h2 class="modal-title"><i class="fas fa-edit" style="color:#ff9800;"></i> Modifica domanda</h2>
+            <h2 class="modal-title"><i class="fas fa-edit" style="color:#ff9800;"></i> {{ t('community.modifica_domanda') }}</h2>
             <button class="modal-close" onclick="closeEditQuestionModal()">&times;</button>
         </div>
         
@@ -2339,19 +2339,19 @@
             <input type="hidden" id="editQuestionId" value="">
             
             <div class="form-group">
-                <label class="form-label">Titolo della domanda</label>
+                <label class="form-label">{{ t('community.titolo_domanda') }}</label>
                 <input type="text" class="form-input" id="editQuestionTitle" maxlength="200" required minlength="10">
             </div>
             
             <div class="form-group">
-                <label class="form-label">Descrizione dettagliata</label>
+                <label class="form-label">{{ t('community.descrizione') }}</label>
                 <textarea class="form-textarea" id="editQuestionDesc" maxlength="5000" required minlength="150" style="min-height:150px;"></textarea>
             </div>
             
             <div class="form-group">
-                <label class="form-label">Categoria Principale</label>
+                <label class="form-label">{{ t('community.categoria_principale') }}</label>
                 <select class="form-select" id="editPrimaryCategorySelect" required>
-                    <option value="">Seleziona una categoria...</option>
+                    <option value="">{{ t('community.scegli_categoria') }}</option>
                     {% for category in categories %}
                     {% if category.is_principal %}
                     <option value="{{ category.id }}">{{ category.icon }} {{ nc(category.name) }}</option>
@@ -2361,32 +2361,32 @@
             </div>
             
             <div class="form-group">
-                <label class="form-label">Sottocategoria</label>
+                <label class="form-label">{{ t('community.sottocategoria') }}</label>
                 <select class="form-select" id="editSubcategorySelect">
-                    <option value="">Seleziona una sottocategoria...</option>
+                    <option value="">{{ t('community.scegli_sottocategoria') }}</option>
                 </select>
-                <small id="editSubcategoryHint" style="color:#888; margin-top:4px; display:block;">Seleziona prima una categoria principale</small>
+                <small id="editSubcategoryHint" style="color:#888; margin-top:4px; display:block;">{{ t('community.prima_la_categoria') }}</small>
             </div>
             
             <div class="form-group">
                 <div style="display:flex;justify-content:space-between;align-items:center;">
-                    <label class="form-label" style="margin-bottom:0;">Tag (separati da virgola)</label>
+                    <label class="form-label" style="margin-bottom:0;">{{ t('community.tag') }}</label>
                     <button type="button" id="editGenTagsBtn" 
                             style="background: linear-gradient(135deg, #43a047 0%, #2e7d32 100%); color: white; border: none; padding: 6px 14px; border-radius: 8px; font-size: 0.8em; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; transition: all 0.3s; box-shadow: 0 2px 8px rgba(46,125,50,.3);">
-                        🤖 Genera tag con AI
+                        🤖 {{ t('community.genera_tag') }}
                     </button>
                 </div>
-                <input type="text" class="form-input" id="editQuestionTags" placeholder="Es: design, logo, branding">
-                <small style="color:#888; margin-top:4px; display:block;">Separati da virgola</small>
+                <input type="text" class="form-input" id="editQuestionTags" placeholder="{{ t('community.tag_esempio') }}">
+                <small style="color:#888; margin-top:4px; display:block;">{{ t('community.separati_virgola') }}</small>
                 <div id="editTagsStatus" style="display: none; margin-top: 8px; padding: 10px 14px; border-radius: 8px; font-size: 0.9em;"></div>
             </div>
             
             <div class="form-group">
-                <label class="form-label">Immagini (opzionale, max 5)</label>
+                <label class="form-label">{{ t('community.immagini_5') }}</label>
                 <div id="editImagePreviews" style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:8px;"></div>
                 <div id="editImageUploadArea" onclick="document.getElementById('editImageFileInput').click()" style="border:2px dashed #ddd;border-radius:8px;padding:16px;text-align:center;cursor:pointer;background:#fafafa;transition:border-color 0.2s;">
                     <span style="font-size:1.2rem;">📷</span>
-                    <span style="color:#666;font-size:0.85rem;margin-left:6px;">Clicca per caricare immagini (JPG, PNG, WebP — Max 5MB)</span>
+                    <span style="color:#666;font-size:0.85rem;margin-left:6px;">{{ t('community.clicca_per_caricare') }}</span>
                 </div>
                 <input type="file" id="editImageFileInput" accept="image/jpeg,image/png,image/webp" multiple style="display:none;" onchange="handleEditImageSelectCommunity(this.files)">
                 <div id="editImageError" style="color:#dc3545;font-size:0.85rem;margin-top:4px;display:none;"></div>
@@ -2394,10 +2394,10 @@
             
             <div style="display:flex;gap:8px;margin-top:16px;">
                 <button type="submit" id="editQuestionSaveBtn" style="flex:1;padding:10px 20px;background:#43a047;color:white;border:none;border-radius:8px;cursor:pointer;font-size:0.95rem;font-weight:600;display:inline-flex;align-items:center;justify-content:center;gap:6px;">
-                    <i class="fas fa-save"></i> Salva modifiche
+                    <i class="fas fa-save"></i> {{ t('community.salva_modifiche') }}
                 </button>
                 <button type="button" onclick="closeEditQuestionModal()" style="padding:10px 20px;background:#eee;color:#333;border:none;border-radius:8px;cursor:pointer;font-size:0.95rem;">
-                    Annulla
+                    {{ t('community.annulla') }}
                 </button>
             </div>
         </form>
@@ -2407,20 +2407,20 @@
 <div class="modal" id="anonymousConfirmModal">
     <div class="modal-content" style="max-width: 450px;">
         <div class="modal-header">
-            <h2 class="modal-title">🔒 Modalità Anonima</h2>
+            <h2 class="modal-title">🔒 {{ t('community.anonima_titolo') }}</h2>
             <button class="modal-close" onclick="closeAnonymousModal()">&times;</button>
         </div>
         
         <div style="padding: 20px;">
             <p style="margin: 0 0 16px 0; color: #333; font-size: 0.95rem;">
-                Desideri pubblicare questa domanda in <strong>modalità anonima</strong>?
+                {{ t('community.anonima_domanda') }} <strong>{{ t('community.anonima_modalita') }}</strong>?
             </p>
             
             <div style="background: #f8f9fa; border-left: 4px solid #43a047; padding: 12px; margin: 16px 0; border-radius: 4px;">
                 <p style="margin: 0; font-size: 0.9rem; color: #555;">
-                    ✓ Il tuo nome <strong>non sarà visibile</strong> agli altri utenti<br>
-                    ✓ Apparirai come <strong>"Utente #{{ user.id }}"</strong><br>
-                    × <strong>Non potrai fare o ricevere consultazioni</strong> mentre sei in modalità anonima
+                    ✓ {{ t('community.anonima_nome') }}<br>
+                    ✓ {{ t('community.anonima_apparirai') }} <strong>"Utente #{{ user.id }}"</strong><br>
+                    × {{ t('community.anonima_niente_consulenze') }}
                 </p>
             </div>
             
@@ -2431,7 +2431,7 @@
                     style="width: 18px; height: 18px; cursor: pointer; margin-right: 10px;"
                 >
                 <span style="color: #333; font-size: 0.95rem;">
-                    Sì, voglio pubblicare in modalità anonima
+                    {{ t('community.anonima_si') }}
                 </span>
             </label>
             
@@ -2441,14 +2441,14 @@
                     style="flex: 1; margin: 0; background: #6c757d;"
                     onclick="closeAnonymousModal()"
                 >
-                    Annulla
+                    {{ t('community.annulla') }}
                 </button>
                 <button 
                     class="submit-button" 
                     style="flex: 1; margin: 0;"
                     onclick="confirmAnonymousSubmit()"
                 >
-                    Conferma
+                    {{ t('community.conferma') }}
                 </button>
             </div>
         </div>
@@ -2569,7 +2569,7 @@ async function restoreDraft() {
             const response = await fetch(`/api/profile/subcategories/${draft.primary_category_id}`);
             const data = await response.json();
             if (data.subcategories && data.subcategories.length > 0) {
-                subcategorySelect.innerHTML = '<option value="">Seleziona una sottocategoria...</option>' +
+                subcategorySelect.innerHTML = '<option value="">{{ t('community.scegli_sottocategoria') }}</option>' +
                     data.subcategories.map(sub =>
                         `<option value="${sub.id}">${sub.icon} ${sub.name}</option>`
                     ).join('') +
@@ -2617,8 +2617,8 @@ async function openAskModal() {
         document.querySelector('#askForm input[name="title"]').value = '';
         document.getElementById('primaryCategorySelect').value = '';
         document.getElementById('subcategorySelect').value = '';
-        document.getElementById('subcategorySelect').innerHTML = '<option value="">Seleziona una sottocategoria...</option>';
-        document.getElementById('subcategoryHint').innerHTML = 'Seleziona prima una categoria principale';
+        document.getElementById('subcategorySelect').innerHTML = '<option value="">{{ t('community.scegli_sottocategoria') }}</option>';
+        document.getElementById('subcategoryHint').innerHTML = '{{ t('community.prima_la_categoria') }}';
         document.getElementById('descriptionTextarea').value = '';
         document.getElementById('charCount').textContent = '0';
         document.getElementById('charError').style.display = 'none';
@@ -2772,8 +2772,8 @@ document.getElementById('primaryCategorySelect')?.addEventListener('change', asy
     const subcategoryHint = document.getElementById('subcategoryHint');
     
     if (!categoryId) {
-        subcategorySelect.innerHTML = '<option value="">Seleziona una sottocategoria...</option>';
-        subcategoryHint.innerHTML = 'Seleziona prima una categoria principale';
+        subcategorySelect.innerHTML = '<option value="">{{ t('community.scegli_sottocategoria') }}</option>';
+        subcategoryHint.innerHTML = '{{ t('community.prima_la_categoria') }}';
         return;
     }
     
@@ -2782,7 +2782,7 @@ document.getElementById('primaryCategorySelect')?.addEventListener('change', asy
         const data = await response.json();
         
         if (data.subcategories && data.subcategories.length > 0) {
-            subcategorySelect.innerHTML = '<option value="">Seleziona una sottocategoria...</option>' + 
+            subcategorySelect.innerHTML = '<option value="">{{ t('community.scegli_sottocategoria') }}</option>' + 
                 data.subcategories.map(sub => 
                     `<option value="${sub.id}">${sub.icon} ${sub.name}</option>`
                 ).join('') +
@@ -3765,8 +3765,8 @@ async function loadEditSubcategoriesCommunity(preselectedCategoryId) {
     const categoryId = primaryCatSelect.value;
     
     if (!categoryId) {
-        subcatSelect.innerHTML = '<option value="">Seleziona una sottocategoria...</option>';
-        hint.textContent = 'Seleziona prima una categoria principale';
+        subcatSelect.innerHTML = '<option value="">{{ t('community.scegli_sottocategoria') }}</option>';
+        hint.textContent = '{{ t('community.prima_la_categoria') }}';
         return;
     }
     
@@ -3775,7 +3775,7 @@ async function loadEditSubcategoriesCommunity(preselectedCategoryId) {
         const data = await response.json();
         
         if (data.subcategories && data.subcategories.length > 0) {
-            subcatSelect.innerHTML = '<option value="">Seleziona una sottocategoria...</option>' +
+            subcatSelect.innerHTML = '<option value="">{{ t('community.scegli_sottocategoria') }}</option>' +
                 data.subcategories.map(sub =>
                     `<option value="${sub.id}" ${sub.id === preselectedCategoryId ? 'selected' : ''}>${sub.icon} ${sub.name}</option>`
                 ).join('') +
@@ -3935,7 +3935,7 @@ document.getElementById('editGenTagsBtn')?.addEventListener('click', async funct
         statusDiv.textContent = '❌ Errore di connessione. Riprova.';
     } finally {
         btn.disabled = false;
-        btn.innerHTML = '🤖 Genera tag con AI';
+        btn.innerHTML = '🤖 {{ t('community.genera_tag') }}';
     }
 });
 

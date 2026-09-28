@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Ispiramy - Connetti con Esperti{% endblock %}
+{% block title %}{{ t('titolo.home') }}{% endblock %}
 
 {% block extra_css %}
 <style>
@@ -979,7 +979,7 @@
     <h1 class="mia-saluto">{{ t('home.saluto') }} {{ current_user.nome or '' }}</h1>
 
     <div id="mieCose" class="mie-cose">
-        <div class="mia-attesa">Sto guardando le tue cose…</div>
+        <div class="mia-attesa">{{ t('home.attesa') }}</div>
     </div>
 
     <div class="mie-scorciatoie">
@@ -1140,7 +1140,7 @@
             </div>
             {% endif %}
 
-            <span class="consultant-view-profile">Vedi profilo →</span>
+            <span class="consultant-view-profile">{{ t('home.vedi_profilo') }}</span>
         </a>
         {% endfor %}
     </div>
