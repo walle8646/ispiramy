@@ -894,6 +894,17 @@
             </div>
         </div>
         
+{% macro selettore_lingua(lingue, attuale, etichetta) %}
+{# Scelta della lingua: in fondo alla barra, accanto all'accesso, dove si
+   cercano le cose che riguardano "me" e non il contenuto del sito. #}
+<div class="scelta-lingua" role="group" aria-label="{{ etichetta }}">
+    {% for codice, nome, bandiera in lingue %}
+    <a href="/lingua/{{ codice }}" class="{% if attuale == codice %}scelta{% endif %}"
+       title="{{ nome }}" hreflang="{{ codice }}">{{ codice|upper }}</a>
+    {% endfor %}
+</div>
+{% endmacro %}
+
         <!-- Right: Link semplici in fila -->
         <div class="navbar-links">
             {# Sul telefono il campo di ricerca in barra resta largo 56px e non
@@ -903,14 +914,6 @@
                 <i class="fas fa-magnifying-glass"></i>
             </a>
 
-            {# Scelta della lingua: sta in alto perche' e' la prima cosa che
-               cerca chi arriva e non capisce la pagina. #}
-            <div class="scelta-lingua" role="group" aria-label="{{ t('menu.lingua') }}">
-                {% for codice, nome, bandiera in lingue_ui %}
-                <a href="/lingua/{{ codice }}" class="{% if lingua_ui == codice %}scelta{% endif %}"
-                   title="{{ nome }}" hreflang="{{ codice }}">{{ codice|upper }}</a>
-                {% endfor %}
-            </div>
             <!-- Trova Consulenti (le categorie sono nella striscia sotto la navbar) -->
             <a href="/consultants" class="navbar-link">
                 <span class="navbar-link-text">{{ t('nav.consulenti') }}</span>
@@ -980,10 +983,14 @@
                         </a>
                     </div>
                 </div>
+
+                {{ selettore_lingua(lingue_ui, lingua_ui, t('menu.lingua')) }}
             {% else %}
                 <!-- Accedi -->
                 <a href="/login" class="navbar-link">{{ t('nav.accedi') }}</a>
-                
+
+                {{ selettore_lingua(lingue_ui, lingua_ui, t('menu.lingua')) }}
+
                 <!-- Registrati -->
                 <a href="/register" class="register-btn">
                     {{ t('nav.registrati') }}

@@ -88,7 +88,9 @@ def test_la_community_sta_nello_schermo():
     larghezza: la pagina scorreva di lato di 45px, anche sul desktop."""
     html = _file("app", "templates", "community.html")
     assert '.row > [class^="col-md-"]' in html and "box-sizing: border-box;" in html
-    assert "@media (min-width: 769px) and (max-width: 1024px)" in html
+    # il limite di sopra e' salito a 1199: sotto quella misura tre colonne
+    # lasciano ai Top Ispiramyers meno di 200px (vedi test_community_larghezza)
+    assert "@media (min-width: 769px) and (max-width: 1199px)" in html
 
 
 def test_i_suggerimenti_al_passaggio_del_mouse_spariscono_al_tocco():

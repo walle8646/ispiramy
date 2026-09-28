@@ -1012,7 +1012,12 @@
             <p class="hero-subtitle">
                 {{ t('home.hero_testo') }}
             </p>
+            {# Questa ricerca guarda solo i tag del profilo dei consulenti:
+               chi arriva dalla home scrive il problema, non il nome di una
+               categoria, e i tag sono la fotografia di cosa tratta davvero
+               il consulente. #}
             <form class="hero-search" method="GET" action="/consultants">
+                <input type="hidden" name="solo_tag" value="1">
                 <input type="text" name="search" class="hero-search-input"
                        placeholder="{{ t('home.hero_placeholder') }}">
                 <button type="submit" class="hero-search-btn">{{ t('home.hero_pulsante') }}</button>

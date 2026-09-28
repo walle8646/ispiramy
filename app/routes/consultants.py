@@ -151,7 +151,7 @@ def testo_competenze(user: User, nome_categoria: str = "") -> str:
 
 
 def calculate_relevance_score(user: User, keywords: list[str], expanded_keywords: list[str],
-                              nome_categoria: str = "") -> float:
+                              nome_categoria: str = "", solo_tag: bool = False) -> float:
     """
     Calcola uno score di rilevanza per l'utente.
 
@@ -166,6 +166,12 @@ def calculate_relevance_score(user: User, keywords: list[str], expanded_keywords
     dichiarate = (user.aree_interesse or '').lower()
     categoria = (nome_categoria or '').lower()
     dedotti = (user.tags or '').lower()
+
+    # La ricerca del banner in home guarda solo i tag del profilo: qui si
+    # spengono le altre due fonti invece di scrivere un secondo calcolo.
+    if solo_tag:
+        dichiarate = ''
+        categoria = ''
 
     for keyword in keywords:
         if keyword in dichiarate:
@@ -198,6 +204,7 @@ async def consultants_page(
     max_price: Optional[float] = Query(None),
     min_rating: Optional[float] = Query(None),
     lingua: Optional[str] = Query(None),
+    solo_tag: bool = Query(False),
     page: int = Query(1, ge=1)
 ):
     """Pagina consulenti con filtri avanzati e ricerca intelligente"""
@@ -290,6 +297,17 @@ async def consultants_page(
                     for keyword in expanded_keywords:
                         keyword_pattern = f"%{keyword}%"
                         
+                        if solo_tag:
+                            # La ricerca del banner in home: contano solo i tag
+                            # del profilo del consulente, niente altro.
+                            search_conditions.append(
+                                and_(
+                                    User.tags.isnot(None),
+                                    User.tags.ilike(keyword_pattern)
+                                )
+                            )
+                            continue
+
                         # Solo competenze dichiarate: aree di interesse e tag
                         search_conditions.append(
                             or_(
@@ -306,8 +324,8 @@ async def consultants_page(
 
                     # E la categoria: "lavoro" deve portare ai consulenti di
                     # "Lavoro & Carriera" anche quando nelle loro aree c'e'
-                    # scritto altro.
-                    categorie_in_tema = [
+                    # scritto altro. Non nella ricerca per soli tag.
+                    categorie_in_tema = [] if solo_tag else [
                         cid for cid, nome in nomi_categorie.items()
                         if any(k in nome.lower() for k in expanded_keywords)
                     ]
@@ -364,7 +382,8 @@ async def consultants_page(
                 # Calcola score per ogni risultato
                 scored_results = [
                     (user, calculate_relevance_score(
-                        user, keywords, expanded_keywords, nomi_categorie.get(user.category_id, "")))
+                        user, keywords, expanded_keywords,
+                        nomi_categorie.get(user.category_id, ""), solo_tag))
                     for user in all_results
                 ]
                 
@@ -478,6 +497,7 @@ async def consultants_page(
                     "child_to_parent_map": child_to_parent_map,
                     "selected_category": category,
                     "search_query": search or '',
+                    "solo_tag": solo_tag,
                     "min_price": min_price,
                     "max_price": max_price,
                     "min_rating": min_rating,

@@ -82,3 +82,33 @@ def test_c_e_come_rifare_i_tag_gia_salvati():
     script = _file("scripts", "rigenera_tag_consulenti.py")
     assert "genera_tags" in script
     assert "--prova" in script, "serve poter guardare prima di scrivere"
+
+
+def test_dal_banner_in_home_contano_solo_i_tag():
+    """Chi scrive nel banner della home cerca il suo problema: la risposta
+    sono i tag del profilo, non la categoria in cui il consulente si e'
+    messo ne' le aree che ha dichiarato."""
+    consulente = _consulente(aree_interesse="Mutui e finanziamenti",
+                             tags='["cuccioli", "addestramento"]')
+
+    # come sempre: le aree dichiarate contano
+    assert calculate_relevance_score(consulente, ["mutui"], ["mutui"], "Casa") > 0
+    # dal banner in home no: li' parlano solo i tag
+    assert calculate_relevance_score(consulente, ["mutui"], ["mutui"], "Casa",
+                                     solo_tag=True) == 0
+    assert calculate_relevance_score(consulente, ["casa"], ["casa"], "Casa",
+                                     solo_tag=True) == 0
+    assert calculate_relevance_score(consulente, ["cuccioli"], ["cuccioli"], "Casa",
+                                     solo_tag=True) > 0
+
+
+def test_il_banner_in_home_chiede_la_ricerca_per_tag():
+    """Il modulo deve mandare il segnale, se no la pagina cerca come sempre."""
+    home = _file("app", "templates", "home.html")
+    pezzo = home[home.index('class="hero-search"') - 400:home.index('class="hero-search"') + 400]
+    assert 'name="solo_tag" value="1"' in pezzo
+
+    rotta = _file("app", "routes", "consultants.py")
+    assert "solo_tag: bool = Query(False)" in rotta
+    # e il segnale non si perde cambiando pagina o filtro
+    assert "{% if solo_tag %}&solo_tag=1{% endif %}" in _file("app", "templates", "consultants.html")

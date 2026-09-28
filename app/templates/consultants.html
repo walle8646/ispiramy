@@ -98,7 +98,7 @@
                     {{ t('filtri.tutte') }}
                 </a>
                 {% for stars in [3, 3.5, 4, 4.5] %}
-                <a href="/consultants?min_rating={{ stars }}{% if selected_category %}&category={{ selected_category }}{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}{% if min_price %}&min_price={{ min_price }}{% endif %}{% if max_price %}&max_price={{ max_price }}{% endif %}" 
+                <a href="/consultants?min_rating={{ stars }}{% if selected_category %}&category={{ selected_category }}{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}{% if solo_tag %}&solo_tag=1{% endif %}{% if min_price %}&min_price={{ min_price }}{% endif %}{% if max_price %}&max_price={{ max_price }}{% endif %}" 
                    class="rating-option {% if min_rating == stars %}active{% endif %}">
                     ⭐ {{ stars }}+ 
                 </a>
@@ -133,7 +133,7 @@
                     <!-- Categoria Principale -->
                     <li>
                         <div class="category-parent-wrapper">
-                            <a href="/consultants?category={{ item.parent.id }}{% if min_price %}&min_price={{ min_price }}{% endif %}{% if max_price %}&max_price={{ max_price }}{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}{% if min_rating %}&min_rating={{ min_rating }}{% endif %}" 
+                            <a href="/consultants?category={{ item.parent.id }}{% if min_price %}&min_price={{ min_price }}{% endif %}{% if max_price %}&max_price={{ max_price }}{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}{% if solo_tag %}&solo_tag=1{% endif %}{% if min_rating %}&min_rating={{ min_rating }}{% endif %}" 
                                class="category-parent {% if selected_category == item.parent.id %}active{% endif %}"
                                style="border-left: 4px solid {{ item.parent.color }};">
                                 <span class="category-icon">{{ item.parent.icon }}</span>
@@ -150,7 +150,7 @@
                         <ul class="subcategory-filters" data-parent-id="{{ item.parent.id }}" data-expanded="{% if selected_category == item.parent.id or selected_child_parent == item.parent.id %}true{% else %}false{% endif %}">
                             {% for child in item.children %}
                             <li>
-                                <a href="/consultants?category={{ child.id }}{% if min_price %}&min_price={{ min_price }}{% endif %}{% if max_price %}&max_price={{ max_price }}{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}{% if min_rating %}&min_rating={{ min_rating }}{% endif %}" 
+                                <a href="/consultants?category={{ child.id }}{% if min_price %}&min_price={{ min_price }}{% endif %}{% if max_price %}&max_price={{ max_price }}{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}{% if solo_tag %}&solo_tag=1{% endif %}{% if min_rating %}&min_rating={{ min_rating }}{% endif %}" 
                                    class="{% if selected_category == child.id %}active{% endif %}"
                                    style="border-left: 4px solid {{ child.color }};">
                                     <span class="category-icon">{{ child.icon }}</span>
@@ -201,9 +201,9 @@
                 </form>
                 
                 <div class="price-suggestions">
-                    <a href="/consultants?min_price=10&max_price=50{% if selected_category %}&category={{ selected_category }}{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}{% if min_rating %}&min_rating={{ min_rating }}{% endif %}" class="price-tag">€ 10-50</a>
-                    <a href="/consultants?min_price=50&max_price=100{% if selected_category %}&category={{ selected_category }}{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}{% if min_rating %}&min_rating={{ min_rating }}{% endif %}" class="price-tag">€€ 50-100</a>
-                    <a href="/consultants?min_price=100{% if selected_category %}&category={{ selected_category }}{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}{% if min_rating %}&min_rating={{ min_rating }}{% endif %}" class="price-tag">€€€ 100+</a>
+                    <a href="/consultants?min_price=10&max_price=50{% if selected_category %}&category={{ selected_category }}{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}{% if solo_tag %}&solo_tag=1{% endif %}{% if min_rating %}&min_rating={{ min_rating }}{% endif %}" class="price-tag">€ 10-50</a>
+                    <a href="/consultants?min_price=50&max_price=100{% if selected_category %}&category={{ selected_category }}{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}{% if solo_tag %}&solo_tag=1{% endif %}{% if min_rating %}&min_rating={{ min_rating }}{% endif %}" class="price-tag">€€ 50-100</a>
+                    <a href="/consultants?min_price=100{% if selected_category %}&category={{ selected_category }}{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}{% if solo_tag %}&solo_tag=1{% endif %}{% if min_rating %}&min_rating={{ min_rating }}{% endif %}" class="price-tag">€€€ 100+</a>
                 </div>
             </div>
         </aside>
@@ -305,19 +305,19 @@
             {% if total_pages > 1 %}
             <div class="pagination">
                 {% if current_page > 1 %}
-                <a href="/consultants?page={{ current_page - 1 }}{% if selected_category %}&category={{ selected_category }}{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}{% if min_price %}&min_price={{ min_price }}{% endif %}{% if max_price %}&max_price={{ max_price }}{% endif %}{% if min_rating %}&min_rating={{ min_rating }}{% endif %}" class="page-btn">← Precedente</a>
+                <a href="/consultants?page={{ current_page - 1 }}{% if selected_category %}&category={{ selected_category }}{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}{% if solo_tag %}&solo_tag=1{% endif %}{% if min_price %}&min_price={{ min_price }}{% endif %}{% if max_price %}&max_price={{ max_price }}{% endif %}{% if min_rating %}&min_rating={{ min_rating }}{% endif %}" class="page-btn">← Precedente</a>
                 {% endif %}
 
                 {% for p in range(1, total_pages + 1) %}
                     {% if p == current_page %}
                     <span class="page-number active">{{ p }}</span>
                     {% else %}
-                    <a href="/consultants?page={{ p }}{% if selected_category %}&category={{ selected_category }}{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}{% if min_price %}&min_price={{ min_price }}{% endif %}{% if max_price %}&max_price={{ max_price }}{% endif %}{% if min_rating %}&min_rating={{ min_rating }}{% endif %}" class="page-number">{{ p }}</a>
+                    <a href="/consultants?page={{ p }}{% if selected_category %}&category={{ selected_category }}{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}{% if solo_tag %}&solo_tag=1{% endif %}{% if min_price %}&min_price={{ min_price }}{% endif %}{% if max_price %}&max_price={{ max_price }}{% endif %}{% if min_rating %}&min_rating={{ min_rating }}{% endif %}" class="page-number">{{ p }}</a>
                     {% endif %}
                 {% endfor %}
 
                 {% if current_page < total_pages %}
-                <a href="/consultants?page={{ current_page + 1 }}{% if selected_category %}&category={{ selected_category }}{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}{% if min_price %}&min_price={{ min_price }}{% endif %}{% if max_price %}&max_price={{ max_price }}{% endif %}{% if min_rating %}&min_rating={{ min_rating }}{% endif %}" class="page-btn">Successiva →</a>
+                <a href="/consultants?page={{ current_page + 1 }}{% if selected_category %}&category={{ selected_category }}{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}{% if solo_tag %}&solo_tag=1{% endif %}{% if min_price %}&min_price={{ min_price }}{% endif %}{% if max_price %}&max_price={{ max_price }}{% endif %}{% if min_rating %}&min_rating={{ min_rating }}{% endif %}" class="page-btn">Successiva →</a>
                 {% endif %}
             </div>
             {% endif %}

@@ -492,6 +492,17 @@
         box-shadow: none !important;
     }
 
+    /* Sul monitor grande la scelta della lingua sta accanto all'accesso, in
+       fondo alla barra, e nel codice e' scritta li'. In alto sul telefono
+       l'accesso non c'e': la lingua torna accanto alla lente, dov'era. */
+    .navbar .icona-cerca-telefono {
+        order: -2 !important;
+    }
+
+    .navbar .scelta-lingua {
+        order: -1 !important;
+    }
+
     /* Il piede di pagina e' una cosa da sito: i suoi collegamenti stanno nel
        foglio del menu, dove si cercano davvero */
     .footer {

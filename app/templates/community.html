@@ -1113,6 +1113,40 @@
         box-sizing: border-box;
     }
 
+    /* ========== LARGHEZZA: LA PAGINA SEGUE IL MONITOR ==========
+       Le tre colonne avevano percentuali fisse dentro un contenitore fermo a
+       1400px: su un monitor da 1920 restavano 500px di bianco ai lati, su uno
+       da 2560 piu' di mille, e a 1100px la colonna dei Top Ispiramyers si
+       riduceva a 184px, troppo stretta per quello che ci sta dentro.
+
+       Ora le due colonne laterali si misurano in pixel, con un minimo e un
+       massimo, e lo spazio che avanza va alle domande. Anche quelle pero' si
+       fermano: una riga di testo larga quanto un monitor non si legge, l'occhio
+       perde il capo della riga dopo. Sotto i 1200 le colonne restano due e i
+       Top Ispiramyers passano sotto le domande, dove hanno spazio. */
+    .contenitore-community {
+        max-width: 1600px;
+    }
+
+    .griglia-community {
+        display: flex;
+        gap: 0;
+    }
+
+    @media (min-width: 1200px) {
+        .griglia-community {
+            display: grid;
+            grid-template-columns: clamp(200px, 18%, 280px) minmax(0, 1fr) clamp(200px, 19%, 320px);
+            gap: 28px;
+            align-items: start;
+        }
+
+        .griglia-community > [class^="col-md-"] {
+            max-width: none;
+            padding: 0;
+        }
+    }
+
     /* Instant Tooltip */
     [data-tip] {
         position: relative;
@@ -1522,7 +1556,7 @@
     /* TABLET (769-1024): le tre colonne hanno padding fuori dal conteggio
        delle percentuali e sforano di 45px. Restano categorie + domande, i
        Top Ispiramyers passano sotto in fila. */
-    @media (min-width: 769px) and (max-width: 1024px) {
+    @media (min-width: 769px) and (max-width: 1199px) {
         .container > .row {
             flex-wrap: wrap !important;
         }
@@ -1744,7 +1778,7 @@
     <!-- Diventa Ispiramyer - Visibile solo se loggato e non verificato -->
     {% if current_user and not current_user.is_verified %}
     <div style="padding: 12px 0;">
-        <div class="container" style="max-width: 1400px; display: flex; align-items: center; justify-content: center; gap: 16px; flex-wrap: wrap;">
+        <div class="container contenitore-community" style="display: flex; align-items: center; justify-content: center; gap: 16px; flex-wrap: wrap;">
             <div>
                 <h3 style="color: white; margin: 0 0 4px 0; font-size: 1.1rem;">{{ t('community.diventa_titolo') }}</h3>
                 <p style="opacity: 0.9; margin: 0; font-size: 0.9rem;">{{ t('community.diventa_testo') }}</p>
@@ -1757,7 +1791,7 @@
     {% endif %}
 </div>
 
-<div class="container" style="max-width: 1400px; margin-top: 16px; margin-bottom: 40px;">
+<div class="container contenitore-community" style="margin-top: 16px; margin-bottom: 40px;">
     <!-- Mobile Filter Toggle (visible only on mobile) -->
     <button class="community-mobile-filter-toggle" id="communityFilterToggle" onclick="toggleCommunityFilters()">
         <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2">
@@ -1766,9 +1800,9 @@
         {{ t('community.filtri_categorie') }}
     </button>
 
-    <div class="row" style="display: flex; gap: 0;">
+    <div class="row griglia-community">
         <!-- SIDEBAR SINISTRA (20%) - Categorie -->
-        <div class="col-md-2" id="communitySidebar" style="flex: 0 0 20%; max-width: 20%; padding-right: 15px;">
+        <div class="col-md-2" id="communitySidebar">
             <div class="sidebar-left">
                 
                 <!-- Categorie -->
@@ -1820,7 +1854,7 @@
         </div>
         
         <!-- CONTENUTO PRINCIPALE CENTRO (63%) - Domande -->
-        <div class="col-md-6" style="flex: 0 0 63%; max-width: 63%; padding: 0 15px;">
+        <div class="col-md-6">
             <!-- Search Bar sopra il titolo -->
             <div class="search-bar-community" style="margin-bottom: 20px;">
                 <input 
@@ -2138,7 +2172,7 @@
         <!-- FINE CONTENUTO PRINCIPALE -->
         
         <!-- SIDEBAR DESTRA (17%) - Top Ispiramyers -->
-        <div class="col-md-3" style="flex: 0 0 17%; max-width: 17%; padding-left: 15px;">
+        <div class="col-md-3">
             <div class="sidebar-right">
                 <h3 class="sidebar-section-title" style="margin-bottom: 20px;">
                     <i class="fas fa-trophy" style="color: #ffa000;"></i> Top Ispiramyers
@@ -2176,7 +2210,7 @@
 <!-- Banner Diventa Ispiramyer (In fondo) - Visibile solo se loggato e non verificato -->
 {% if current_user and not current_user.is_verified %}
 <div style="background: linear-gradient(135deg, #43a047 0%, #2e7d32 100%); color: white; padding: 20px 0; margin-top: 40px;">
-    <div class="container" style="max-width: 1400px; display: flex; align-items: center; justify-content: center; gap: 20px; flex-wrap: wrap;">
+    <div class="container contenitore-community" style="display: flex; align-items: center; justify-content: center; gap: 20px; flex-wrap: wrap;">
         <div>
             <h3 style="color: white; margin: 0 0 8px 0; font-size: 1.3rem;">{{ t('community.diventa_titolo') }}</h3>
             <p style="opacity: 0.9; margin: 0; font-size: 1rem;">{{ t('community.diventa_testo') }}</p>
