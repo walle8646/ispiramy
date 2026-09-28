@@ -267,7 +267,7 @@
                             <div class="consultant-stats">
                                 {% if item.review_count > 0 %}
                                 <span class="rating">⭐ {{ item.review_avg }}/5</span>
-                                <span class="reviews">({{ item.review_count }} recension{{ 'e' if item.review_count == 1 else 'i' }})</span>
+                                <span class="reviews">({{ item.review_count }} {{ t('risultati.recensione') if item.review_count == 1 else t('risultati.recensioni') }})</span>
                                 {% else %}
                                 <span class="reviews">{{ t('esperti.nessuna_recensione') }}</span>
                                 {% endif %}

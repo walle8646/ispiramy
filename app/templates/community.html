@@ -1955,9 +1955,9 @@
                         </button>
                         {% endif %}
                         <span class="question-status status-{{ item.question.status }}">
-                            {% if item.question.status == 'open' %}Aperta
-                            {% elif item.question.status == 'in_progress' %}In corso
-                            {% else %}Chiusa
+                            {% if item.question.status == 'open' %}{{ t('community.stato_aperta') }}
+                            {% elif item.question.status == 'in_progress' %}{{ t('community.stato_in_corso') }}
+                            {% else %}{{ t('community.stato_chiusa') }}
                             {% endif %}
                         </span>
                     </div>
@@ -1997,7 +1997,7 @@
                     
                     <!-- Follow Counter - Cliccabile per consulenti -->
                     <div class="follow-counter" id="follow-counter-{{ item.question.id }}" style="display: none; color: #43a047; font-size: 0.85rem; margin: 8px 0; font-weight: 500; cursor: pointer;" onclick="{% if user and user.is_verified %}openFollowersModal({{ item.question.id }}){% endif %}">
-                        <i class="fas fa-heart"></i> <span class="follow-count">0</span> persone sono interessate a questa domanda
+                        <i class="fas fa-heart"></i> <span class="follow-count">0</span> {{ t('community.interessate') }}
                     </div>
                     
                     <!-- Footer -->
@@ -2196,7 +2196,7 @@
                         <div class="top-ispiramyer-info">
                             <div class="top-ispiramyer-name">{{ consultant.nome }}</div>
                             <div class="top-ispiramyer-rating">
-                                <span class="consulenze-badge">⭐ {{ consultant.review_avg }}/5 ({{ consultant.review_count }} recension{{ 'e' if consultant.review_count == 1 else 'i' }})</span>
+                                <span class="consulenze-badge">⭐ {{ consultant.review_avg }}/5 ({{ consultant.review_count }} {{ t('risultati.recensione') if consultant.review_count == 1 else t('risultati.recensioni') }})</span>
                             </div>
                         </div>
                     </a>
@@ -3326,11 +3326,11 @@ document.addEventListener('DOMContentLoaded', function() {
 {% elif user and not can_create_question %}
 <div class="ask-button-sticky-bottom" style="background: #ccc; cursor: not-allowed; display: flex; align-items: center; justify-content: center; gap: 8px;">
     <i class="fas fa-exclamation-circle"></i>
-    <span>Hai raggiunto il limite di 5 richieste al giorno ({{ user_questions_count }}/5)</span>
+    <span>{{ t('community.limite_richieste') }} ({{ user_questions_count }}/5)</span>
 </div>
 {% else %}
 <a href="/login" class="ask-button-sticky-bottom">
-    <i class="fas fa-sign-in-alt"></i> Accedi per Chiedere
+    <i class="fas fa-sign-in-alt"></i> {{ t('community.accedi_per_chiedere') }}
 </a>
 {% endif %}
 
@@ -3371,11 +3371,11 @@ document.addEventListener('DOMContentLoaded', function() {
 <div id="followersModal" class="modal-overlay">
     <div class="modal-content" style="max-width: 500px;">
         <div class="modal-header">
-            <h3>Persone interessate a questa domanda</h3>
+            <h3>{{ t('community.interessate_titolo') }}</h3>
             <button class="close-btn" onclick="closeFollowersModal()">✕</button>
         </div>
         <div class="modal-body" id="followersListContainer" style="max-height: 400px; overflow-y: auto;">
-            <p style="text-align: center; color: #888;">Caricamento...</p>
+            <p style="text-align: center; color: #888;">{{ t('community.caricamento') }}</p>
         </div>
     </div>
 </div>

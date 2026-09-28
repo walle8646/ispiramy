@@ -169,3 +169,25 @@ def test_i_filtri_delle_categorie_passano_dalla_traduzione():
                         "{{ item.parent.name }}", "{{ item.category.name }}"):
             assert scritta not in testo, f"{percorso}: {scritta} senza nc()"
         assert "nc(" in testo
+
+
+def test_le_scritte_fisse_segnalate_sono_sparite():
+    """Ogni giro di traduzione lascia indietro qualche scritta, e si scopre
+    guardando il sito in inglese. Queste sono quelle segnalate: se tornano
+    fisse nel marcatore, il test se ne accorge prima della prossima
+    schermata."""
+    home = _file("app", "templates", "home.html")
+    community = _file("app", "templates", "community.html")
+    consultants = _file("app", "templates", "consultants.html")
+
+    for scritta in ("Come Funziona Ispiramy", "Ricevi Supporto Personalizzato",
+                    "Pronto? Trova il tuo consulente"):
+        assert scritta not in home, f"home: '{scritta}' e' fissa in italiano"
+
+    for scritta in ("Accedi per Chiedere", "persone sono interessate a questa domanda",
+                    "%}Aperta", "%}Chiusa"):
+        assert scritta not in community, f"community: '{scritta}' e' fissa in italiano"
+
+    # il numero di recensioni: singolare e plurale passano dal catalogo
+    for percorso, testo in (("community", community), ("consultants", consultants)):
+        assert "recension{{" not in testo, f"{percorso}: plurale scritto a mano"
