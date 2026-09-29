@@ -689,9 +689,51 @@
 }
 
 /* L'icona della lente esiste solo sul telefono: sul computer c'e' il campo */
-@media (min-width: 769px) {
+@media (min-width: 1201px) {
     .icona-cerca-telefono {
         display: none !important;
+    }
+}
+
+/* ==========================================================================
+   LA BARRA IN ALTO SUI MONITOR PICCOLI (portatili da 13-14 pollici)
+
+   Le voci del menu in italiano sono lunghe: marchio, campo di ricerca e sei
+   voci non ci stanno in 1280px. Il campo finiva sopra "Trova Consulenti".
+   Prima si stringono le distanze fra le voci, poi - quando resterebbe un
+   campo in cui non si scrive niente - il campo lascia il posto alla lente,
+   che porta alla ricerca vera nella pagina Esperti.
+   ========================================================================== */
+@media (min-width: 769px) and (max-width: 1500px) {
+    .navbar {
+        padding-left: 24px !important;
+        padding-right: 24px !important;
+    }
+
+    .navbar-links {
+        gap: 10px !important;
+    }
+
+    .navbar-link {
+        padding: 8px 8px !important;
+        font-size: 15px !important;
+    }
+}
+
+@media (min-width: 769px) and (max-width: 1200px) {
+    .navbar .search-wrapper {
+        display: none !important;
+    }
+
+    .navbar .icona-cerca-telefono {
+        display: inline-flex !important;
+        align-items: center;
+        justify-content: center;
+        width: 36px;
+        height: 36px;
+        color: #1b5e20;
+        font-size: 19px;
+        text-decoration: none;
     }
 }
 

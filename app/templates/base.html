@@ -39,6 +39,8 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
+            /* marchio, ricerca e voci non devono mai toccarsi */
+            gap: 16px;
             padding: 8px 48px;
             background: linear-gradient(135deg, #e8f5e9 0%, #66bb6a 50%, #43a047 100%);
             box-shadow: 0 2px 8px rgba(0,0,0,0.1);
@@ -78,19 +80,30 @@
         }
         
         /* === SEARCH BAR === */
+        /* Il campo di ricerca finiva sopra le voci del menu: l'imbottitura
+           (16 a destra, 36 a sinistra per la lente) si sommava al 100% di
+           larghezza, cosi' il campo era sempre 52px piu' largo del posto che
+           aveva. Con box-sizing l'imbottitura sta dentro, e il contenitore si
+           stringe prima delle voci invece di lasciarle schiacciare. */
         .search-wrapper {
-            flex: 1;
+            flex: 1 1 auto;
+            min-width: 0;
             display: flex;
             justify-content: center;
             max-width: 400px;
         }
-        
+
+        .navbar-links {
+            flex: 0 0 auto;
+        }
+
         .search-container {
             position: relative;
             width: 100%;
         }
         
         .search-input {
+            box-sizing: border-box;
             width: 100%;
             padding: 8px 16px 8px 36px;
             border: none;
