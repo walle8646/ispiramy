@@ -5,6 +5,7 @@ e la pagina resta ferma, il test si accorge che stiamo promettendo un'altra cosa
 """
 import io
 import os
+import re
 
 RADICE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
@@ -29,7 +30,7 @@ def test_le_cifre_sono_quelle_del_codice(client):
     from app.utils.orari import ORE_LIMITE_ANNULLAMENTO, ORE_PREAVVISO_PRENOTAZIONE
     from app.utils.prezzi import PREZZO_ORARIO_MINIMO, SPESE_SERVIZIO
 
-    testo = client.get("/terms").text
+    testo = re.sub(r"\s+", " ", client.get("/terms").text)
     spese = f"{float(SPESE_SERVIZIO):.2f}".replace(".", ",")
     assert f"{spese} €" in testo
     assert f"almeno {PREZZO_ORARIO_MINIMO} €" in testo
