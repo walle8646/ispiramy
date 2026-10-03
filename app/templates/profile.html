@@ -628,6 +628,122 @@
     .form-section { padding: 12px; }
 }
 
+/* Sul telefono l'intestazione (avatar grande, pillola, nuvola di competenze
+   e pulsante a tutta larghezza) occupava quasi tutto lo schermo: i prossimi
+   appuntamenti restavano sotto la piega. I dati restano nel markup — si
+   comprimono solo sotto i 768px. Sopra, il blocco grande non cambia. */
+@media (max-width: 768px) {
+    .pub-hero {
+        margin-bottom: 0;
+        padding: 0;
+    }
+
+    .pub-hero-inner {
+        flex-direction: row;
+        align-items: center;
+        text-align: left;
+        gap: 10px;
+        padding: 8px 12px;
+    }
+
+    .pub-hero img {
+        width: 44px !important;
+        height: 44px !important;
+        max-width: 44px !important;
+        min-width: 44px;
+        border-radius: 10px;
+        border-width: 2px;
+        top: 0;
+        margin: 0;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, .18);
+    }
+
+    .pub-edit-avatar {
+        width: 18px;
+        height: 18px;
+        bottom: -3px;
+        right: -3px;
+        font-size: 9px;
+        border-width: 1px;
+        line-height: 1;
+    }
+
+    .pub-hero-text {
+        display: flex;
+        flex-direction: row;
+        flex-wrap: wrap;
+        align-items: center;
+        column-gap: 8px;
+        row-gap: 0;
+        text-align: left;
+        min-width: 0;
+    }
+
+    .pub-hero-text h1 {
+        order: 1;
+        flex: 1 1 auto;
+        min-width: 0;
+        margin: 0;
+        font-size: 1rem;
+        line-height: 1.2;
+        letter-spacing: 0;
+        text-align: left;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .pub-hero-text .pub-role {
+        order: 3;
+        flex: 1 0 100%;
+        margin: 0;
+        font-size: .78rem;
+        line-height: 1.2;
+        text-align: left;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    /* Categoria e competenze restano nel DOM (e nel form di modifica):
+       non occupano più righe sotto il nome. */
+    .pub-hero-text .pub-cat-pill,
+    .pub-hero-skills {
+        display: none !important;
+    }
+
+    .pub-hero-text .btn-edit {
+        order: 2;
+        display: inline-block;
+        margin: 0;
+        padding: 5px 10px;
+        font-size: .75rem;
+        line-height: 1.2;
+        border-radius: 8px;
+        white-space: nowrap;
+        flex: 0 0 auto;
+    }
+
+    #mobileBecomeCta {
+        order: 4;
+        margin-top: 6px !important;
+    }
+
+    .pub-hero-text > p:not(.pub-role) {
+        order: 5;
+        flex: 1 0 100%;
+        margin: 6px 0 0 !important;
+        font-size: .75rem !important;
+        text-align: left;
+        padding: 6px 8px !important;
+    }
+
+    .pub-layout {
+        padding: 12px 14px 28px;
+        gap: 16px;
+    }
+}
+
 /* ===== REVIEWS ===== */
 .pub-reviews-summary { margin-bottom: 16px; }
 .pub-avg-rating { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
