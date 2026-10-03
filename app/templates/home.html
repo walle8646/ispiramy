@@ -952,10 +952,262 @@
         transform: translateY(-3px);
         box-shadow: 0 6px 20px rgba(76, 175, 80, 0.3);
     }
+
+    .featured-head {
+        max-width: 1200px;
+        margin: 0 auto 12px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        flex-wrap: wrap;
+    }
+
+    .featured-head .featured-title {
+        margin: 0;
+        text-align: left;
+    }
+
+    .featured-head .view-all-btn {
+        margin-top: 0;
+    }
+
+    /* ========== UN SOLO SCHERMO (portatile) ==========
+       Il titolo dell'hero dice gia' tutto. Il passo-passo e le rassicurazioni
+       lo ripetevano, e il piede di pagina riapriva lo stesso discorso: via
+       quelli, le schede dei consulenti stanno in una riga e la pagina chiude
+       dentro il monitor, footer compreso. Sul telefono non si applica. */
+    @media (min-width: 969px) {
+        body:has(.home-schermo) {
+            box-sizing: border-box;
+            min-height: 100dvh;
+            display: flex;
+            flex-direction: column;
+            padding-top: 64px;
+        }
+
+        .home-schermo {
+            flex: 1 1 auto;
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            min-width: 0;
+        }
+
+        .home-schermo .categories-nav {
+            padding: 6px 0;
+            overflow-x: auto;
+        }
+
+        .home-schermo .categories-nav-content {
+            flex-wrap: nowrap;
+            width: max-content;
+            min-width: 100%;
+            justify-content: center;
+            gap: 6px;
+            box-sizing: border-box;
+        }
+
+        .home-schermo .category-btn {
+            padding: 4px 10px;
+        }
+
+        .home-schermo .hero-main {
+            flex: 1 1 auto;
+            display: flex;
+            align-items: center;
+            padding: 10px 20px;
+            min-height: 0;
+        }
+
+        .home-schermo .hero-container {
+            gap: 24px;
+        }
+
+        .home-schermo .hero-title {
+            font-size: 36px;
+            line-height: 1.15;
+            margin-bottom: 8px;
+        }
+
+        .home-schermo .hero-subtitle {
+            font-size: 15px;
+            line-height: 1.4;
+            margin-bottom: 12px;
+        }
+
+        .home-schermo .hero-search {
+            margin-bottom: 0;
+        }
+
+        .home-schermo .hero-search-input,
+        .home-schermo .hero-search-btn {
+            padding: 10px 16px;
+        }
+
+        .home-schermo .hero-video-container {
+            max-width: 460px;
+            height: 200px;
+        }
+
+        .home-schermo .hero-video-container video {
+            height: 200px;
+            object-fit: cover;
+        }
+
+        .home-schermo .hero-spiegazione {
+            min-height: 36px;
+            margin-top: 8px;
+            padding: 0 16px;
+            font-size: 14px;
+        }
+
+        .home-schermo .video-play-overlay {
+            width: 56px;
+            height: 56px;
+            font-size: 22px;
+        }
+
+        .home-schermo .featured {
+            flex: 0 0 auto;
+            padding: 6px 20px 10px;
+        }
+
+        .home-schermo .featured-title {
+            font-size: 18px;
+        }
+
+        .home-schermo .featured-head {
+            margin-bottom: 8px;
+        }
+
+        .home-schermo .consultant-grid {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 8px;
+        }
+
+        /* style.css impone la scheda alta (foto da 280px) con !important:
+           qui si torna a una riga, e solo in home. */
+        .home-schermo .consultant-card {
+            flex-direction: row !important;
+            align-items: center !important;
+            text-align: left !important;
+            gap: 8px;
+            padding: 6px 10px !important;
+            border-radius: 10px !important;
+            min-width: 0;
+            background: #fff !important;
+            color: #1a1a1a !important;
+            border: 1px solid #e6efe7 !important;
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06) !important;
+        }
+
+        .home-schermo .consultant-avatar {
+            width: 36px !important;
+            height: 36px !important;
+            margin: 0 !important;
+            border-radius: 50% !important;
+            border: 2px solid #e6efe7 !important;
+            object-fit: cover !important;
+            flex: 0 0 auto;
+        }
+
+        .home-schermo .consultant-card h3 {
+            margin: 0 !important;
+            font-size: 14px !important;
+            color: #1a1a1a !important;
+            min-width: 0;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .home-schermo .consultant-profession {
+            margin: 0 !important;
+            flex: 1 1 auto;
+            min-width: 0;
+            font-size: 12px !important;
+            color: #607d70 !important;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .home-schermo .consultant-category,
+        .home-schermo .consultant-stats,
+        .home-schermo .consultant-view-profile {
+            display: none !important;
+        }
+
+        .home-schermo .consultant-price {
+            margin: 0 0 0 auto !important;
+            font-size: 14px !important;
+            white-space: nowrap;
+            flex: 0 0 auto;
+        }
+
+        .home-schermo .view-all-btn {
+            padding: 6px 14px;
+            font-size: 13px;
+        }
+
+        body:has(.home-schermo) .footer {
+            flex: 0 0 auto;
+            margin-top: 0;
+            padding: 8px 28px 10px;
+        }
+
+        body:has(.home-schermo) .footer-content {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-items: center;
+            gap: 4px 18px;
+            margin-bottom: 0;
+        }
+
+        /* Il testo di presentazione e i social finti ripetono o non portano da nessuna parte */
+        body:has(.home-schermo) .footer-content .footer-section:nth-of-type(1),
+        body:has(.home-schermo) .footer-content .footer-section:nth-of-type(4) {
+            display: none;
+        }
+
+        body:has(.home-schermo) .footer-section h3 {
+            display: none;
+        }
+
+        body:has(.home-schermo) .footer-section ul {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 4px 14px;
+        }
+
+        body:has(.home-schermo) .footer-section li {
+            margin: 0;
+        }
+
+        body:has(.home-schermo) .footer-bottom {
+            padding-top: 4px;
+            border-top: none;
+            font-size: 12px;
+        }
+
+        /* Stesse tre promesse gia' dette nel titolo: non meritano un'altra riga.
+           Il div le porta in linea, quindi serve !important. */
+        body:has(.home-schermo) .footer-bottom > div {
+            display: none !important;
+        }
+    }
 </style>
 {% endblock %}
 
 {% block content %}
+
+{# Il passo-passo e le rassicurazioni ripetevano il titolo: trova un esperto
+   verificato e prenota la videocall. Restano ricerca, video e il collegamento
+   alla pagina che lo spiega per intero. #}
+<div class="home-schermo">
 
 <!-- ========== CATEGORIES NAVIGATION ========== -->
 <section class="categories-nav">
@@ -1022,11 +1274,6 @@
                        placeholder="{{ t('home.hero_placeholder') }}">
                 <button type="submit" class="hero-search-btn">{{ t('home.hero_pulsante') }}</button>
             </form>
-            <div class="hero-trust">
-                <span>{{ t('home.fiducia_verificati') }}</span>
-                <span>{{ t('home.fiducia_pagamenti') }}</span>
-                <span>{{ t('home.fiducia_video') }}</span>
-            </div>
         </div>
         
         <div class="hero-right">
@@ -1045,69 +1292,14 @@
     </div>
 </section>
 
-<!-- ========== CTA CARDS ========== -->
-<section class="cta-section">
-    <div class="cta-container">
-        <!-- Trova Consulenti (azione principale) -->
-        <a href="/consultants" class="cta-card cta-card-primary">
-            <h3 class="cta-card-title">{{ t('home.cta_consulenti') }}</h3>
-            <p class="cta-card-desc">
-                {{ t('home.cta_consulenti_testo') }}
-            </p>
-            <span class="cta-btn">{{ t('home.cta_consulenti_pulsante') }}</span>
-        </a>
-
-        <!-- Community Q&A -->
-        <a href="/community" class="cta-card">
-            <h3 class="cta-card-title">Community Q&A</h3>
-            <p class="cta-card-desc">
-                Pubblica la tua domanda e ricevi risposte dagli esperti della community,
-                gratis.
-            </p>
-            <span class="cta-btn cta-btn-secondary">{{ t('home.cta_community_pulsante') }}</span>
-        </a>
-    </div>
-</section>
-
-<!-- ========== HOW IT WORKS ========== -->
-<section class="how-section">
-    <h2 class="how-title">{{ t('home.passi_titolo') }}</h2>
-    
-    <div class="how-grid">
-        <div class="how-item">
-            <div class="how-icon"><i class="fas fa-magnifying-glass"></i></div>
-            <h3 class="how-item-title">{{ t('home.passo1_titolo') }}</h3>
-            <p class="how-item-desc">
-                {{ t('home.passo1_testo') }}
-            </p>
-        </div>
-        
-        <div class="how-item">
-            <div class="how-icon"><i class="fas fa-pen-to-square"></i></div>
-            <h3 class="how-item-title">{{ t('home.passo2_titolo') }}</h3>
-            <p class="how-item-desc">
-                {{ t('home.passo2_testo') }}
-            </p>
-        </div>
-        
-        <div class="how-item">
-            <div class="how-icon"><i class="fas fa-handshake"></i></div>
-            <h3 class="how-item-title">{{ t('home.passo3_titolo') }}</h3>
-            <p class="how-item-desc">
-                {{ t('home.passo3_testo') }}
-            </p>
-        </div>
-    </div>
-    <div style="text-align:center;margin-top:36px;">
-        <a href="/consultants" class="cta-btn" style="padding:14px 34px;font-size:15px;">
-            {{ t('home.passi_pulsante') }}
-        </a>
-    </div>
-</section>
-
 <!-- ========== FEATURED CONSULTANTS ========== -->
 <section class="featured">
-    <h2 class="featured-title">{{ t('home.top_consulenti') }}</h2>
+    <div class="featured-head">
+        <h2 class="featured-title">{{ t('home.top_consulenti') }}</h2>
+        {% if consultants %}
+        <a href="/consultants" class="view-all-btn">{{ t('home.vedi_tutti_consulenti') }}</a>
+        {% endif %}
+    </div>
     
     {% if consultants %}
     <div class="consultant-grid">
@@ -1144,16 +1336,14 @@
         </a>
         {% endfor %}
     </div>
-    
-    <div style="text-align: center; margin-top: 50px;">
-        <a href="/consultants" class="view-all-btn">{{ t('home.vedi_tutti_consulenti') }}</a>
-    </div>
     {% else %}
     <p style="text-align: center; color: #666; font-size: 18px;">
         Nessun consulente disponibile al momento.
     </p>
     {% endif %}
 </section>
+
+</div>
 
 <script>
 (function() {

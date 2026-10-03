@@ -20,12 +20,12 @@ async def home(request: Request):
     
     with get_session() as session:
         try:
-            # Carica consulenti featured
+            # Tre schede basse: il blocco resta, ma non deve aprire una seconda schermata
             featured_consultants_query = (
                 select(User)
                 .where(User.consulenze_vendute > 0)
                 .order_by(User.consulenze_vendute.desc())
-                .limit(4)
+                .limit(3)
             )
             # Chi ha fatto accesso non si vede fra i consulenti in evidenza
             if current_user:
