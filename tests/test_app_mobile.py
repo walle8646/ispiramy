@@ -199,6 +199,40 @@ def test_le_etichette_stanno_anche_sui_telefoni_piccoli():
     assert "@media (max-width: 360px)" in css
 
 
+def _blocco_media(css, inizio):
+    """Il contenuto della media query che inizia all'indice dato."""
+    i = css.index("{", inizio)
+    profondita = 0
+    for j in range(i, len(css)):
+        if css[j] == "{":
+            profondita += 1
+        elif css[j] == "}":
+            profondita -= 1
+            if profondita == 0:
+                return css[i:j + 1]
+    raise AssertionError("media query senza chiusura")
+
+
+def test_il_profilo_sul_telefono_non_mangia_lo_schermo():
+    """Avatar, pillola e nuvola di tag occupavano il telefono e i prossimi
+    appuntamenti restavano sotto. I dati restano in pagina: si nascondono
+    solo sotto i 768px, e il pulsante per modificarli resta raggiungibile."""
+    pagina = _file("app", "templates", "profile.html")
+    assert "pub-hero-skills" in pagina
+    assert 'class="btn-edit"' in pagina
+    assert "width: 280px" in pagina, "sul desktop l'avatar grande resta"
+
+    inizio = pagina.index("comprimono solo sotto i 768px")
+    blocco = _blocco_media(pagina, pagina.index("@media (max-width: 768px)", inizio))
+    assert ".pub-hero-skills" in blocco and "display: none" in blocco
+    assert ".pub-cat-pill" in blocco
+    assert "width: 44px" in blocco, "l'avatar sul telefono deve restare piccolo"
+    assert ".btn-edit" in blocco and "display: inline-block" in blocco
+    # la regola dei 44px non deve uscire dalla media query del telefono
+    prima = pagina[:inizio]
+    assert "width: 44px !important" not in prima
+
+
 def test_la_chat_copre_tutto_da_qualunque_porta_si_entri():
     """La finestra si apre da tre punti nel widget e da uno in base.html
     (il pulsante in alto): quello era rimasto indietro e l'elenco delle
