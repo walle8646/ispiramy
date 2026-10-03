@@ -67,6 +67,29 @@ def test_la_lamentela_arriva_all_amministrazione(csrf_client, monkeypatch):
     assert "Scrivi una lamentela" in pagina
 
 
+def test_il_modulo_html_parte_senza_header(client, monkeypatch):
+    """Il modulo e' un form normale: il token sta nel campo, non nell'header
+    che il sito aggiunge solo alle chiamate fetch."""
+    monkeypatch.setattr("app.routes.pages.send_email", lambda *a, **k: True)
+    reset_rate_limit()
+    pagina = client.get("/contact")
+    marker = 'name="csrf_token" value="'
+    token = pagina.text.split(marker, 1)[1].split('"', 1)[0]
+    risposta = client.post(
+        "/contact",
+        data={
+            "csrf_token": token,
+            "nome": "Visitatore",
+            "email": f"visita-{secrets.token_hex(3)}@example.com",
+            "tipo": "lamentela",
+            "messaggio": "Vorrei segnalare un problema con una consulenza gia' conclusa.",
+        },
+        headers={"X-CSRF-Token": ""},
+        follow_redirects=False,
+    )
+    assert risposta.status_code == 303
+
+
 def test_un_messaggio_troppo_corto_non_parte(csrf_client, monkeypatch):
     monkeypatch.setattr("app.routes.pages.send_email", lambda *a, **k: True)
     reset_rate_limit()

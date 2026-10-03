@@ -64,11 +64,11 @@ class CSRFMiddleware(BaseHTTPMiddleware):
                     content_type = request.headers.get("content-type", "")
                     if "application/x-www-form-urlencoded" in content_type or "multipart/form-data" in content_type:
                         from starlette.datastructures import UploadFile
+                        # request.body() tiene una copia: il form della route
+                        # la rilegge da li'. Non si rimette il body sul canale,
+                        # perche' la risposta poi aspetta la chiusura del client
+                        # e un altro http.request la fa cadere con un 500.
                         body = await request.body()
-                        # Ripristina il body per i middleware successivi
-                        async def receive():
-                            return {"type": "http.request", "body": body}
-                        request._receive = receive
                         from urllib.parse import parse_qs
                         if "application/x-www-form-urlencoded" in content_type:
                             form_data = parse_qs(body.decode("utf-8"))

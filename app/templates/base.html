@@ -1313,6 +1313,9 @@
             const intervallo = a ? `${da.ora} – ${a.ora}` : da.ora;
             return `${intervallo} (ora italiana ${italiano})`;
         };
+
+        const notaFuso = document.getElementById('nomeFusoPrenotazione');
+        if (notaFuso) notaFuso.textContent = fusoDiChiGuarda;
     })();
     </script>
 
