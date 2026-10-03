@@ -1601,6 +1601,52 @@
             font-size: 1.4rem;
             padding: 8px 16px;
         }
+
+        /* Il titolo verde e' una frase lunga a 2.5rem: insieme a ricerca,
+           filtri e ordinamento copriva la prima domanda. Resta, a capo e
+           basso. Le pillole di ordine stanno su una riga che puo' scorrere. */
+        .community-banner {
+            margin-bottom: 8px !important;
+        }
+
+        .community-banner h1 {
+            font-size: 1.05rem !important;
+            line-height: 1.25 !important;
+            padding: 6px 12px !important;
+            overflow-wrap: break-word;
+            white-space: normal !important;
+        }
+
+        .community-banner .community-diventa {
+            padding: 8px 0 !important;
+        }
+
+        .community-banner .community-diventa h3,
+        .community-banner .community-diventa p,
+        .community-banner .community-diventa a {
+            overflow-wrap: break-word;
+            white-space: normal;
+        }
+
+        .search-bar-community {
+            margin-bottom: 8px !important;
+        }
+
+        .search-bar-community input {
+            min-width: 0;
+        }
+
+        .sort-pills {
+            flex-wrap: nowrap;
+            overflow-x: auto;
+            max-width: 100%;
+            margin-bottom: 10px;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .sort-pill {
+            flex: 0 0 auto;
+        }
         
         .container > .row {
             flex-direction: column !important;
@@ -1675,7 +1721,9 @@
             justify-content: center;
             gap: 8px;
             width: 100%;
-            padding: 12px 20px;
+            min-height: 44px;
+            box-sizing: border-box;
+            padding: 8px 12px;
             background: white;
             color: #2e7d32;
             border: 2px solid #2e7d32;
@@ -1767,7 +1815,7 @@
 
 {% block content %}
 <!-- Header Community + Banner Diventa Ispiramyer (Unico Banner) -->
-<div style="background: linear-gradient(135deg, #43a047 0%, #2e7d32 100%); color: white; padding: 0; margin-bottom: 20px;">
+<div class="community-banner" style="background: linear-gradient(135deg, #43a047 0%, #2e7d32 100%); color: white; padding: 0; margin-bottom: 20px;">
     <!-- Community Title -->
     <div style="padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.2);">
         <div class="container">
@@ -1777,7 +1825,7 @@
     
     <!-- Diventa Ispiramyer - Visibile solo se loggato e non verificato -->
     {% if current_user and not current_user.is_verified %}
-    <div style="padding: 12px 0;">
+    <div class="community-diventa" style="padding: 12px 0;">
         <div class="container contenitore-community" style="display: flex; align-items: center; justify-content: center; gap: 16px; flex-wrap: wrap;">
             <div>
                 <h3 style="color: white; margin: 0 0 4px 0; font-size: 1.1rem;">{{ t('community.diventa_titolo') }}</h3>

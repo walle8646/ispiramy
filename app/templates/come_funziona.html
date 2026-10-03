@@ -200,10 +200,19 @@
     }
 
     @media (max-width: 768px) {
-        .cf-apertura { padding-top: 24px; }
-        .cf-apertura h1 { font-size: 1.6em; }
-        .cf h2 { margin-top: 36px; font-size: 1.25em; }
-        .cf-passi { grid-template-columns: minmax(0, 1fr); }
+        .cf { margin-bottom: 28px; padding: 0 16px; }
+        .cf-apertura { padding: 8px 0 4px; }
+        .cf-apertura h1 {
+            font-size: 1.35em;
+            margin-bottom: 6px;
+            overflow-wrap: break-word;
+        }
+        .cf-apertura p { font-size: .95em; overflow-wrap: break-word; }
+        .cf h2 { margin-top: 16px; font-size: 1.2em; overflow-wrap: break-word; }
+        .cf-passi { grid-template-columns: minmax(0, 1fr); gap: 14px; }
+        .cf-passo { padding: 16px 14px 14px; min-width: 0; }
+        .cf-passo svg { max-width: 110px; margin-bottom: 8px; }
+        .cf-passo h3, .cf-passo p { overflow-wrap: break-word; }
     }
 </style>
 

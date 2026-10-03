@@ -833,8 +833,19 @@
         height: 40px !important;
     }
 
+    .chat-header-info {
+        min-width: 0;
+    }
+
     .chat-header-info h2 {
         font-size: 17px !important;
+        overflow-wrap: break-word;
+        white-space: normal !important;
+    }
+
+    .chat-header-info p {
+        overflow-wrap: break-word;
+        white-space: normal !important;
     }
 
     .messages-area {
@@ -849,5 +860,59 @@
         border-radius: 0 !important;
         padding: 10px 12px calc(10px + env(safe-area-inset-bottom)) !important;
         border-top: 1px solid #e6eae7 !important;
+    }
+
+    /* Da loggati la barra va su due righe e il calcolo fisso (65px) lasciava
+       la casella sotto le schede. La conversazione riempie lo spazio che
+       resta, qualunque sia l'altezza della barra. Chi non conosce :has()
+       tiene il calcolo qui sopra. */
+    body:has(.chat-container) {
+        display: flex;
+        flex-direction: column;
+        height: 100vh;
+        height: 100dvh;
+        overflow: hidden;
+        padding-bottom: 0 !important;
+    }
+
+    body:has(.chat-container) .chat-container {
+        flex: 1 1 auto;
+        height: auto !important;
+        min-height: 0;
+        margin-bottom: 62px;
+        margin-bottom: calc(62px + env(safe-area-inset-bottom));
+    }
+}
+
+/* Accesso, registrazione e reset: il riquadro nasce con 80px di margine e
+   48px di imbottitura, pensati per la barra fissa del monitor. Sul telefono
+   la barra sta nel flusso, e quel vuoto spinge il pulsante sotto la piega. */
+@media (max-width: 768px) {
+    .pannello-accesso {
+        margin: 12px !important;
+        padding: 16px 14px !important;
+        max-width: none !important;
+        width: auto !important;
+        box-sizing: border-box;
+        min-width: 0;
+    }
+
+    .pannello-accesso h1,
+    .pannello-accesso p,
+    .pannello-accesso label,
+    .pannello-accesso a {
+        overflow-wrap: break-word;
+    }
+
+    .pannello-accesso h1 {
+        font-size: 1.25rem !important;
+        margin-bottom: 12px !important;
+    }
+
+    .pannello-accesso input,
+    .pannello-accesso button,
+    .pannello-accesso a {
+        max-width: 100%;
+        box-sizing: border-box;
     }
 }

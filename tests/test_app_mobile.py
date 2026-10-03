@@ -246,3 +246,54 @@ def test_la_chat_copre_tutto_da_qualunque_porta_si_entri():
     aperture = widget.count("chatWindow.classList.add('open')")
     segnali = widget.count("classList.add('chat-aperta')")
     assert segnali == aperture, "ogni apertura deve segnalare lo schermo intero"
+
+
+def test_le_altre_pagine_sul_telefono_stringono_l_apertura():
+    """Ricerca, profilo pubblico, prenotazione e messaggi aprivano con un
+    blocco alto e la parte utile restava sotto. Le regole stanno sotto i
+    768px: sul monitor la foto grande e le competenze restano."""
+    def dentro(testo, ago):
+        """La media query che contiene il segno, anche se il segno sta nel
+        commento subito sopra."""
+        indice = testo.index(ago)
+        prima = testo.rfind("@media", 0, indice)
+        if prima != -1 and testo[prima:indice].count("{") > testo[prima:indice].count("}"):
+            return _blocco_media(testo, prima)
+        return _blocco_media(testo, testo.index("@media (max-width: 768px)", indice))
+
+    esperti = _file("app", "static", "consultants.css")
+    blocco = dentro(esperti, "spingevano l'elenco sotto la")
+    assert ".consultant-description" in blocco and "display: none" in blocco
+    assert "44px" in blocco
+    assert "width: 160px !important;" in esperti, "sul monitor la foto della scheda resta grande"
+
+    profilo = _file("app", "templates", "user_profile.html")
+    blocco = dentro(profilo, "spingevano \"Prenota\" sotto la piega")
+    assert ".pub-hero-skills" in blocco and "display: none" in blocco
+    assert "order: -1" in blocco
+    assert "width: 280px;" in profilo, "sul monitor la foto del profilo resta grande"
+    prima = profilo[:profilo.index("spingevano \"Prenota\" sotto la piega")]
+    assert "order: -1" not in prima
+
+    prenota = _file("app", "templates", "booking.html")
+    blocco = dentro(prenota, "coprivano durata e")
+    assert ".consultant-skills" in blocco and "display: none" in blocco
+    assert "width: 160px !important;" in prenota
+
+    messaggi = _file("app", "templates", "messages_inbox.html")
+    blocco = dentro(messaggi, "prima conversazione")
+    assert ".inbox-header p" in blocco and "display: none" in blocco
+
+    community = _file("app", "templates", "community.html")
+    blocco = dentro(community, "copriva la prima domanda")
+    assert ".community-banner h1" in blocco
+    assert "font-size: 2.5rem" in community, "sul monitor il titolo resta quello di prima"
+
+    offerta = _file("app", "templates", "book_consultation_offer.html")
+    blocco = dentro(offerta, "il primo giorno resta in vista")
+    assert ".consultant-skills" in blocco and "display: none" in blocco
+    assert ".calendar-section" in blocco and "order: 2;" in blocco
+    assert ".detail-creata" in blocco and "display: none" in blocco
+    assert "Creata il" in offerta, "la data di creazione resta nel markup"
+    prima = offerta[:offerta.index("il primo giorno resta in vista")]
+    assert "order: 2;" not in prima

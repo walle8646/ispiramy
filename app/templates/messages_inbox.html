@@ -100,6 +100,66 @@
         font-size: 64px;
         margin-bottom: 16px;
     }
+
+    /* Il margine da 80px e il sottotitolo ("Le tue conversazioni") ripetevano
+       il titolo e spingevano la prima conversazione in basso. */
+    @media (max-width: 768px) {
+        .inbox-container {
+            margin: 8px auto 12px;
+            padding: 0 12px;
+            max-width: 100%;
+            min-width: 0;
+            box-sizing: border-box;
+        }
+
+        .inbox-header {
+            margin-bottom: 8px;
+        }
+
+        .inbox-header h1 {
+            font-size: 1.15rem;
+            margin: 0;
+            overflow-wrap: break-word;
+        }
+
+        .inbox-header p {
+            display: none;
+        }
+
+        .conversation-list {
+            gap: 8px;
+        }
+
+        .conversation-item {
+            padding: 10px 12px;
+            gap: 10px;
+            min-width: 0;
+        }
+
+        .conversation-avatar img {
+            width: 40px;
+            height: 40px;
+        }
+
+        .conversation-info {
+            min-width: 0;
+        }
+
+        .conversation-name,
+        .conversation-preview {
+            overflow-wrap: break-word;
+            white-space: normal;
+        }
+
+        .conversation-preview {
+            text-overflow: unset;
+            overflow: visible;
+        }
+
+        .conversation-name {
+            font-size: 16px;
+        }
+    }
 </style>
 
 <div class="inbox-container">

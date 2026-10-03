@@ -503,47 +503,118 @@
     @media (max-width: 768px) {
         
         .weekly-slots-grid {
-            grid-template-columns: repeat(3, 1fr);
+            grid-template-columns: repeat(3, minmax(0, 1fr));
         }
         
+        /* Intestazione in una riga: la foto da 120px, la categoria e la
+           nuvola di competenze ripetevano il profilo e coprivano durata e
+           calendario. Le competenze restano nel markup. */
+        .booking-container {
+            margin: 8px auto;
+            padding: 8px 12px;
+            max-width: 100%;
+            min-width: 0;
+        }
+
         .consultant-header {
-            flex-direction: column;
+            flex-direction: row;
             align-items: center;
-            text-align: center;
-            padding: 20px 16px;
-            gap: 16px;
+            text-align: left;
+            padding: 8px 12px;
+            gap: 10px;
+            margin-bottom: 10px;
+            overflow: visible;
         }
 
         .consultant-avatar {
-            width: 120px !important;
-            min-width: 120px;
-            max-width: 120px;
+            width: 44px !important;
+            height: 44px !important;
+            min-width: 44px !important;
+            max-width: 44px !important;
+            min-height: 44px !important;
+            border-radius: 10px !important;
+            align-self: center;
+        }
+
+        .consultant-info {
+            min-width: 0;
         }
         
         .consultant-name-row {
-            justify-content: center;
+            justify-content: flex-start;
+            gap: 8px;
         }
         
+        .consultant-info h1,
+        .consultant-info .consultant-role,
+        .price-badge,
+        .consultant-cat-pill {
+            overflow-wrap: break-word;
+            white-space: normal;
+        }
+
         .consultant-info h1 {
-            font-size: 1.3rem;
+            font-size: 1rem;
         }
-        
+
+        .consultant-info .consultant-role {
+            font-size: .85rem;
+        }
+
+        .price-badge {
+            font-size: .85rem;
+            padding: 3px 10px;
+        }
+
         .consultant-skills {
-            justify-content: center;
+            display: none !important;
         }
-        
-        .booking-container {
-            padding: 16px 12px;
+
+        .top-row,
+        .bottom-row {
+            gap: 10px;
+        }
+
+        .booking-section {
+            padding: 12px;
+        }
+
+        .booking-section h3 {
+            font-size: 1rem;
+            overflow-wrap: break-word;
+        }
+
+        .duration-selector {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 8px;
+            margin-bottom: 0;
+        }
+
+        .duration-option {
+            padding: 8px 4px;
+            min-height: 44px;
+            box-sizing: border-box;
+        }
+
+        .duration-time,
+        .duration-label {
+            overflow-wrap: break-word;
+            white-space: normal;
+        }
+
+        .duration-label {
+            font-size: .78rem;
+            line-height: 1.2;
+        }
+
+        .weekly-slots-section {
+            margin: 10px 0;
         }
     }
     
     @media (max-width: 480px) {
         .weekly-slots-grid {
             grid-template-columns: repeat(2, 1fr);
-        }
-
-        .duration-selector {
-            grid-template-columns: 1fr;
         }
 
         /* Il calendario ha sette colonne: su uno schermo da 375px ci sta solo
