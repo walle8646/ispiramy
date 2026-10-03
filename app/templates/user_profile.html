@@ -488,6 +488,142 @@
     }
 }
 
+/* Sul telefono l'intestazione (foto da 110px, pillola, nuvola di competenze)
+   e la biografia spingevano "Prenota" sotto la piega. Stessa idea del profilo
+   loggato: riga bassa, competenze nel markup ma non disegnate, e la scheda
+   per prenotare sale sopra il testo. Sopra i 768px l'ordine e la foto grande
+   restano quelli di prima. */
+@media (max-width: 768px) {
+    .pub-hero {
+        margin-bottom: 0;
+        padding: 0;
+    }
+
+    .pub-hero-inner {
+        flex-direction: row;
+        align-items: center;
+        text-align: left;
+        gap: 10px;
+        padding: 8px 12px;
+    }
+
+    .pub-hero img {
+        width: 44px;
+        height: 44px;
+        top: 0;
+        position: relative;
+        margin: 0;
+        border-radius: 10px;
+        border-width: 2px;
+    }
+
+    .pub-hero-text {
+        min-width: 0;
+        overflow: visible;
+        text-align: left;
+    }
+
+    .pub-hero-text > div:first-child {
+        justify-content: flex-start;
+        flex-wrap: wrap;
+        gap: 6px;
+        min-width: 0;
+    }
+
+    .pub-hero-text h1 {
+        font-size: 1rem;
+        line-height: 1.25;
+        margin: 0;
+        overflow-wrap: break-word;
+        white-space: normal;
+        min-width: 0;
+    }
+
+    .pub-hero-text .pub-role {
+        margin: 0;
+        font-size: .8rem;
+        line-height: 1.3;
+        overflow-wrap: break-word;
+        white-space: normal;
+    }
+
+    .pub-hero-text .pub-cat-pill,
+    .pub-hero-skills {
+        display: none !important;
+    }
+
+    .fav-heart-btn {
+        position: static;
+    }
+
+    .last-seen-badge {
+        position: relative !important;
+        top: auto !important;
+        left: auto !important;
+        transform: none !important;
+        margin: 4px 0 0;
+        white-space: normal;
+        max-width: 100%;
+        overflow-wrap: break-word;
+    }
+
+    .pub-layout {
+        display: flex;
+        flex-direction: column;
+        padding: 8px 12px 28px;
+        gap: 12px;
+    }
+
+    .pub-sidebar {
+        order: -1;
+        position: static;
+        width: 100%;
+        min-width: 0;
+    }
+
+    .pub-sidebar-card {
+        padding: 12px 14px;
+    }
+
+    .pub-sidebar-card h3,
+    .pub-sidebar-card .pub-sidebar-sub,
+    .pub-sidebar-card .pub-sidebar-btn,
+    .pub-sidebar-card .pub-sidebar-msg {
+        overflow-wrap: break-word;
+        white-space: normal;
+    }
+
+    .pub-sidebar-card .pub-sidebar-price {
+        font-size: 1.4em;
+    }
+
+    .pub-sidebar-card .pub-sidebar-sub {
+        margin-bottom: 8px;
+    }
+
+    .pub-sidebar-card .pub-sidebar-btn {
+        margin-top: 8px;
+        min-height: 44px;
+        box-sizing: border-box;
+    }
+
+    .pub-narrative,
+    .pub-narrative-col,
+    .pub-desc {
+        min-width: 0;
+        overflow-wrap: break-word;
+    }
+
+    .pub-narrative .pub-section-label {
+        margin: 12px 0 8px;
+    }
+
+    .pub-languages {
+        margin-bottom: 10px;
+        padding-bottom: 10px;
+    }
+}
+
 /* Last Seen Badge */
 .last-seen-badge {
     position: absolute;

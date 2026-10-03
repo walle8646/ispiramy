@@ -118,6 +118,57 @@
         background: #43a047;
         color: white;
     }
+
+    @media (max-width: 768px) {
+        .success-container {
+            margin: 12px;
+            padding: 16px 14px;
+            max-width: none;
+            box-sizing: border-box;
+            min-width: 0;
+        }
+
+        .success-icon {
+            width: 56px;
+            height: 56px;
+            font-size: 28px;
+            margin-bottom: 12px;
+        }
+
+        .success-container h1 {
+            font-size: 1.35rem;
+            margin-bottom: 8px;
+            overflow-wrap: break-word;
+        }
+
+        .success-container p,
+        .detail-label,
+        .detail-value {
+            overflow-wrap: break-word;
+        }
+
+        .success-container p {
+            font-size: 1rem;
+            margin-bottom: 12px;
+        }
+
+        .booking-details {
+            margin: 12px 0;
+            padding: 12px;
+        }
+
+        .action-buttons {
+            flex-wrap: wrap;
+            margin-top: 12px;
+        }
+
+        .action-buttons .btn {
+            white-space: normal;
+            text-align: center;
+            min-height: 44px;
+            box-sizing: border-box;
+        }
+    }
 </style>
 {% endblock %}
 

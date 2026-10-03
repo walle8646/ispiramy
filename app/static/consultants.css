@@ -896,6 +896,179 @@ h3.consultant-name {
         flex-wrap: wrap;
         justify-content: center;
     }
+
+    /* L'apertura (titolo lungo, campo, ricerche popolari su piu' righe) e la
+       scheda con foto da 100px e descrizione spingevano l'elenco sotto la
+       piega. Il titolo resta, piu' basso; le ricerche popolari scorrono in
+       una riga, come le categorie in home. Descrizione e categoria restano
+       nel markup: si leggono aprendo il profilo. */
+    .search-hero,
+    .search-container,
+    .search-form,
+    .consultants-container,
+    .consultants-main {
+        width: 100%;
+        max-width: 100%;
+        min-width: 0;
+        box-sizing: border-box;
+    }
+
+    .search-hero {
+        padding: 8px 12px 10px;
+    }
+
+    .search-container h1 {
+        font-size: 1.05rem;
+        line-height: 1.25;
+        margin-bottom: 8px;
+        white-space: normal;
+        overflow-wrap: break-word;
+    }
+
+    .search-form {
+        gap: 8px;
+    }
+
+    .search-input,
+    .search-btn {
+        width: 100%;
+        min-width: 0;
+        box-sizing: border-box;
+        padding: 10px 14px;
+        font-size: 1rem;
+        white-space: normal;
+    }
+
+    .search-suggestions {
+        flex-wrap: nowrap;
+        justify-content: flex-start;
+        overflow-x: auto;
+        max-width: 100%;
+        margin-top: 8px;
+        gap: 8px;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .suggestion-label,
+    .search-tag {
+        flex: 0 0 auto;
+    }
+
+    .consultants-container {
+        gap: 8px;
+        margin: 8px auto 16px;
+        padding: 0 12px;
+    }
+
+    .mobile-filter-toggle {
+        padding: 8px 12px;
+        min-height: 44px;
+    }
+
+    .results-header {
+        margin-bottom: 4px;
+    }
+
+    .results-header p {
+        margin: 4px 0;
+        overflow-wrap: break-word;
+    }
+
+    .consultants-grid {
+        gap: 8px;
+    }
+
+    .card-content {
+        grid-template-columns: 44px minmax(0, 1fr) !important;
+        gap: 8px !important;
+        padding: 10px 12px 4px !important;
+        align-items: center !important;
+    }
+
+    .consultant-photo-section {
+        max-width: 44px !important;
+        gap: 0 !important;
+    }
+
+    .consultant-avatar,
+    .consultant-avatar-default {
+        width: 44px !important;
+        height: 44px !important;
+        border-radius: 50% !important;
+        font-size: 1rem !important;
+    }
+
+    .category-badge,
+    .consultant-description {
+        display: none !important;
+    }
+
+    .card-link {
+        min-width: 0 !important;
+    }
+
+    .consultant-name,
+    .profession,
+    .consultant-lingue,
+    .consultant-stats {
+        overflow-wrap: break-word;
+        white-space: normal !important;
+    }
+
+    .consultant-name {
+        font-size: 0.98rem !important;
+    }
+
+    .profession,
+    .consultant-lingue,
+    .consultant-stats {
+        font-size: 0.8rem !important;
+        margin: 0 !important;
+    }
+
+    .card-footer {
+        flex-direction: row !important;
+        align-items: center !important;
+        flex-wrap: wrap !important;
+        padding: 8px 12px !important;
+        gap: 8px !important;
+    }
+
+    .price-section {
+        min-width: 0;
+    }
+
+    .price-label,
+    .price-value {
+        overflow-wrap: break-word;
+        white-space: normal !important;
+    }
+
+    .price-value {
+        font-size: 1rem !important;
+    }
+
+    .footer-buttons {
+        flex-direction: row !important;
+        flex-wrap: wrap !important;
+        width: auto !important;
+        flex: 1 1 160px;
+        min-width: 0;
+        gap: 6px !important;
+    }
+
+    .btn-consult,
+    .btn-message-consultant {
+        width: auto !important;
+        flex: 1 1 120px;
+        min-width: 0;
+        min-height: 44px;
+        box-sizing: border-box;
+        padding: 8px 10px !important;
+        white-space: normal !important;
+        line-height: 1.2;
+        overflow-wrap: break-word;
+    }
 }
 
 

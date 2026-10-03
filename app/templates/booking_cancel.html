@@ -91,6 +91,44 @@
         background: #43a047;
         color: white;
     }
+
+    @media (max-width: 768px) {
+        .cancel-container {
+            margin: 12px;
+            padding: 16px 14px;
+            max-width: none;
+            box-sizing: border-box;
+            min-width: 0;
+        }
+
+        .cancel-icon {
+            width: 56px;
+            height: 56px;
+            font-size: 28px;
+            margin-bottom: 12px;
+        }
+
+        .cancel-container h1,
+        .cancel-container p,
+        .info-box {
+            overflow-wrap: break-word;
+        }
+
+        .cancel-container h1 {
+            font-size: 1.35rem;
+        }
+
+        .action-buttons {
+            margin-top: 12px;
+        }
+
+        .action-buttons .btn {
+            white-space: normal;
+            text-align: center;
+            min-height: 44px;
+            box-sizing: border-box;
+        }
+    }
 </style>
 {% endblock %}
 

@@ -468,6 +468,178 @@
             flex-direction: column !important;
         }
     }
+
+    /* Sotto i 768px la scheda del consulente (foto 160px e competenze) sta
+       sopra i giorni in cui si prenota. Foto piccola, competenze nel markup
+       ma non disegnate, così il primo giorno resta in vista. */
+    @media (max-width: 768px) {
+        .booking-consultation-container {
+            margin: 8px auto;
+            padding: 8px 12px;
+            max-width: 100%;
+            min-width: 0;
+            box-sizing: border-box;
+        }
+
+        .offer-header {
+            flex-direction: row;
+            align-items: center;
+            text-align: left;
+            padding: 8px 12px;
+            gap: 10px;
+            margin-bottom: 10px;
+            overflow: visible;
+        }
+
+        .offer-header .consultant-avatar-img,
+        .offer-header > div:first-child {
+            width: 44px !important;
+            min-width: 44px !important;
+            max-width: 44px !important;
+            height: 44px !important;
+            min-height: 44px !important;
+            align-self: center !important;
+            font-size: 1rem !important;
+            border-radius: 10px !important;
+        }
+
+        .offer-header .consultant-info,
+        .offer-header h1,
+        .offer-header .consultant-role,
+        .offer-header .price-badge {
+            min-width: 0;
+            overflow-wrap: break-word;
+            white-space: normal;
+        }
+
+        .offer-header h1 {
+            font-size: 1rem;
+        }
+
+        .offer-header .consultant-name-row {
+            justify-content: flex-start;
+            gap: 8px;
+        }
+
+        .offer-header .consultant-skills,
+        .offer-header .consultant-cat-pill {
+            display: none !important;
+        }
+
+        .offer-details {
+            padding: 12px;
+        }
+
+        .offer-details h3,
+        .detail-label,
+        .detail-value {
+            overflow-wrap: break-word;
+        }
+
+        .offer-details {
+            margin-bottom: 10px;
+        }
+
+        .offer-details h3 {
+            margin-bottom: 8px;
+            font-size: 1rem;
+            padding-bottom: 6px;
+        }
+
+        .detail-row {
+            padding: 2px 0;
+            gap: 8px;
+            min-width: 0;
+        }
+
+        .detail-label,
+        .detail-value {
+            min-width: 0;
+        }
+
+        /* Prezzo e scadenza restano sopra. Il giorno in cui prenotare sale
+           subito dopo: domanda della community, descrizione, registrazione e
+           pagamento restano in pagina, sotto. Il salto a una data ripete le
+           frecce della settimana. */
+        .booking-consultation-container {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .calendar-section {
+            order: 2;
+            margin-bottom: 12px;
+        }
+
+        .blocco-dopo {
+            order: 3;
+        }
+
+        .expires-warning {
+            margin-bottom: 4px;
+            padding: 4px 8px !important;
+            font-size: 0.85rem;
+            line-height: 1.3;
+            overflow-wrap: break-word;
+        }
+
+        /* La data di creazione non serve a scegliere il giorno. */
+        .detail-creata {
+            display: none;
+        }
+
+        .custom-message {
+            padding: 6px 8px;
+            margin-top: 4px;
+        }
+
+        .custom-message p {
+            overflow-wrap: break-word;
+        }
+
+        .calendar-section {
+            padding: 4px 10px 8px !important;
+        }
+
+        .calendar-section h3 {
+            margin: 0 0 4px;
+            font-size: 0.95rem;
+        }
+
+        .week-nav #prevWeekBtn,
+        .week-nav #nextWeekBtn {
+            padding: 8px 6px !important;
+            max-width: 96px;
+            white-space: normal !important;
+            line-height: 1.15;
+            font-size: 0.75rem !important;
+        }
+
+        .week-nav {
+            flex-direction: row !important;
+            flex-wrap: nowrap !important;
+            align-items: center;
+            margin-bottom: 2px !important;
+            padding: 4px !important;
+        }
+
+        .week-nav #weekRangeDisplay {
+            order: 0 !important;
+            flex: 1 1 auto !important;
+            font-size: 12px !important;
+            line-height: 1.2;
+            min-width: 0;
+            overflow-wrap: break-word;
+        }
+
+        .week-nav .week-nav-buttons {
+            display: contents;
+        }
+
+        .salta-data {
+            display: none;
+        }
+    }
 </style>
 {% endblock %}
 
@@ -537,7 +709,7 @@
             <span class="detail-value price-highlight">€{{ "%.2f"|format(offer.price + spese_servizio) }}</span>
         </div>
         
-        <div class="detail-row">
+        <div class="detail-row detail-creata">
             <span class="detail-label">Creata il</span>
             <span class="detail-value">{{ offer.created_at.strftime('%d/%m/%Y alle %H:%M') }}</span>
         </div>
@@ -557,7 +729,7 @@
     
     <!-- Associa Domanda Community (opzionale) -->
     {% if client_questions %}
-    <div style="background: white; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); padding: 25px; margin-bottom: 30px;">
+    <div class="blocco-dopo" style="background: white; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); padding: 25px; margin-bottom: 30px;">
         <h3 style="margin: 0 0 8px 0; font-size: 18px; color: #333;"><i class="fas fa-comments"></i> Associa una Domanda dalla Community</h3>
         <p style="color: #666; font-size: 0.9rem; margin-bottom: 1rem;">
             Se hai già pubblicato una domanda nella community, puoi associarla a questa consulenza. In questo caso la descrizione diventerà facoltativa.
@@ -618,7 +790,7 @@
     {% endif %}
 
     <!-- Descrizione Consulenza -->
-    <div id="descriptionSection" style="background: white; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); padding: 25px; margin-bottom: 30px;">
+    <div id="descriptionSection" class="blocco-dopo" style="background: white; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); padding: 25px; margin-bottom: 30px;">
         <h3 style="margin: 0 0 8px 0; font-size: 18px; color: #333;"><i class="fas fa-file-alt"></i> Descrizione della Consulenza <span id="descriptionRequired" style="color: #ff4757;">*</span></h3>
         <p style="color: #666; font-size: 0.9rem; margin-bottom: 1rem;">
             Descrivi in dettaglio quello che vuoi discutere durante la consulenza. Questo aiuta il consulente a prepararsi meglio.
@@ -657,9 +829,9 @@
         </div>
         
         <!-- Calendar picker (optional - per scegliere una settimana specifica) -->
-        <div style="margin-bottom: 20px;">
+        <div class="salta-data" style="margin-bottom: 20px;">
             <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #333;">
-                � Oppure salta a una data specifica:
+                Oppure salta a una data specifica:
             </label>
             <input type="date" id="dateJumpSelector" 
                    style="width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 8px; font-size: 16px;">
@@ -687,7 +859,7 @@
     </div>
     
     <!-- Scelta registrazione -->
-    <div class="recording-choice" style="margin-top: 18px; padding: 16px; background: #f8f9fa; border-radius: 10px; border: 1px solid #e0e0e0; margin-bottom: 16px;">
+    <div class="recording-choice blocco-dopo" style="margin-top: 18px; padding: 16px; background: #f8f9fa; border-radius: 10px; border: 1px solid #e0e0e0; margin-bottom: 16px;">
         <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
             <i class="fas fa-video" style="color: #2e7d32; font-size: 1.1em;"></i>
             <strong style="font-size: 0.95rem; color: #1a202c;">Registrazione della consulenza</strong>
@@ -712,7 +884,7 @@
     </div>
 
     <!-- Scelta metodo di pagamento -->
-    <div style="background: #f8f9fa; border-radius: 10px; padding: 14px 16px; margin-bottom: 16px; border: 1px solid #e0e0e0;">
+    <div class="blocco-dopo" style="background: #f8f9fa; border-radius: 10px; padding: 14px 16px; margin-bottom: 16px; border: 1px solid #e0e0e0;">
         <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
             <i class="fas fa-credit-card" style="color: #2e7d32;"></i>
             <strong style="font-size: 0.95rem; color: #1a202c;">Metodo di pagamento</strong>
@@ -733,12 +905,12 @@
         </div>
     </div>
     
-    <button class="btn-book" id="confirmBookingBtn" disabled>
+    <button class="btn-book blocco-dopo" id="confirmBookingBtn" disabled>
         <i class="fas fa-calendar-check"></i>
         Conferma Prenotazione
     </button>
     
-    <div style="margin-top: 30px; padding: 20px; background: #e3f2fd; border-radius: 8px; text-align: center; font-size: 14px; color: #1565c0;">
+    <div class="blocco-dopo" style="margin-top: 30px; padding: 20px; background: #e3f2fd; border-radius: 8px; text-align: center; font-size: 14px; color: #1565c0;">
         <i class="fas fa-info-circle"></i>
         <strong>Come funziona:</strong><br>
         Seleziona un orario disponibile del consulente, conferma la prenotazione e procedi al pagamento.
