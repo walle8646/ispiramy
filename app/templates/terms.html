@@ -1,62 +1,229 @@
 {% extends "static_page_base.html" %}
-{% block title %}Termini di Servizio - Ispiramy{% endblock %}
+{% block title %}Termini e condizioni - Ispiramy{% endblock %}
 {% block page_content %}
-<h1>Termini di Servizio</h1>
-<p class="updated">Ultimo aggiornamento: {{ current_year or 2026 }}</p>
+<style>
+    /* Solo su telefono: il titolo e i paragrafi restano larghi quanto lo schermo.
+       Sopra i 768px vale lo stile delle altre pagine statiche. */
+    @media (max-width: 768px) {
+        .static-page {
+            margin: 16px auto 28px;
+            padding: 0 16px;
+        }
+        .static-page h1 {
+            font-size: 1.55rem;
+            line-height: 1.25;
+            overflow-wrap: break-word;
+        }
+        .static-page h2 {
+            font-size: 1.15rem;
+            margin-top: 22px;
+            overflow-wrap: break-word;
+        }
+        .static-page p,
+        .static-page li {
+            font-size: 1rem;
+            overflow-wrap: break-word;
+        }
+    }
+</style>
+<h1>Termini e condizioni</h1>
+<p class="updated">Bozza del 3 ottobre 2026</p>
 
 <div class="draft-note">
-    ⚠️ <strong>Bozza da completare.</strong> Questo testo è un segnaposto. Prima della pubblicazione
-    ufficiale va rivisto da un consulente legale.
+    <strong>Bozza.</strong> Questo testo va letto da chi gestisce Ispiramy prima di considerarlo definitivo.
+    Non è il parere di un avvocato.
 </div>
 
 <p>
-    Utilizzando Ispiramy accetti i presenti Termini di Servizio. Ti invitiamo a leggerli con attenzione.
+    Questi termini valgono per chi usa Ispiramy: chi visita il sito, chi crea un account,
+    chi prenota una consulenza e chi la offre. Se ti registri, prenoti o pubblichi qualcosa,
+    accetti questo testo. Se non ti va bene, non usare il servizio.
 </p>
 
-<h2>1. Il servizio</h2>
+<h2>Cos'è Ispiramy</h2>
 <p>
-    Ispiramy è una piattaforma che mette in contatto utenti ("clienti") con professionisti
-    ("consulenti") per consulenze in videochiamata. Ispiramy agisce come intermediario e non è
-    parte del rapporto di consulenza tra cliente e consulente.
+    Ispiramy è un sito. Dopo l'accesso puoi cercare un consulente, prenotare una consulenza
+    a pagamento, pagarla, scrivergli in chat e pubblicare nella community.
+    Il prezzo e la durata li decide il consulente: con la tariffa oraria del profilo,
+    oppure con un'offerta in cui prezzo e durata sono già scritti.
 </p>
-
-<h2>2. Account</h2>
 <p>
-    Per usare il servizio devi registrarti fornendo dati veritieri. Sei responsabile della
-    riservatezza delle tue credenziali e delle attività svolte con il tuo account.
+    I consulenti non sono dipendenti di Ispiramy. La consulenza è un accordo tra chi prenota
+    e il consulente. Ispiramy non è parte di quell'accordo: mette a disposizione il sito,
+    il pagamento e la videochiamata.
 </p>
 
-<h2>3. Prenotazioni e pagamenti</h2>
-<ul>
-    <li>Le consulenze si prenotano e si pagano tramite la piattaforma (Stripe/PayPal).</li>
-    <li>Ispiramy trattiene una commissione sul valore della consulenza.</li>
-    <li>Il pagamento viene trasferito al consulente dopo lo svolgimento della consulenza.</li>
-</ul>
-
-<h2>4. Obblighi dei consulenti</h2>
+<h2>Solo maggiorenni</h2>
 <p>
-    I consulenti si impegnano a fornire consulenze professionali e a rispettare gli appuntamenti
-    presi. Le informazioni di profilo devono essere accurate.
+    Ispiramy è per chi ha compiuto 18 anni. Creando l'account confermi di essere maggiorenne.
 </p>
 
-<h2>5. Contestazioni e rimborsi</h2>
+<h2>Account e password</h2>
 <p>
-    In caso di problemi è possibile aprire una contestazione. Ispiramy valuterà il caso, anche
-    tramite la registrazione della consulenza, e deciderà su eventuali rimborsi.
+    Per prenotare, scrivere e usare la community serve un account. Puoi aprirlo con email
+    e password, oppure con Google. Se ti registri con l'email, ti mandiamo un codice per confermarla.
 </p>
-
-<h2>6. Condotta</h2>
 <p>
-    Non è consentito utilizzare la piattaforma per attività illecite, offensive o ingannevoli.
-    Ispiramy può sospendere gli account che violano questi termini.
+    I dati che inserisci devono essere veri. La password resta tua: non passarla a nessuno.
+    Quello che parte dal tuo account lo consideriamo fatto da te, finché non ci scrivi che
+    qualcun altro ci è entrato.
 </p>
-
-<h2>7. Limitazione di responsabilità</h2>
 <p>
-    Ispiramy non è responsabile della qualità o dell'esito delle consulenze fornite dai consulenti,
-    che agiscono in autonomia.
+    Ti avvisiamo di consulenze, messaggi e aggiornamenti del servizio per email e, se le attivi
+    sul telefono, con le notifiche push.
 </p>
 
-<h2>8. Contatti</h2>
-<p>Per domande sui presenti termini: <a href="mailto:info@ispiramy.com">info@ispiramy.com</a>.</p>
+<h2>Quello che pubblichi</h2>
+<p>
+    Profilo, domande in community, messaggi, recensioni e la descrizione della consulenza
+    li scrivi tu. Restano tuoi e ne rispondi tu. Ispiramy non li fa propri e non garantisce
+    che siano esatti. Il nome Ispiramy, il logo e il sito restano di Ispiramy.
+</p>
+<p>
+    Alcuni testi e alcune immagini vengono fermati in automatico se sembrano illeciti, offensivi,
+    violenti o sessuali. Non è un controllo su tutto: se il controllo tecnico non risponde,
+    un messaggio in chat può passare lo stesso.
+</p>
+
+<h2>Segnalare un contenuto illecito</h2>
+<p>
+    Se vedi un contenuto che ritieni illecito, scrivi a
+    <a href="mailto:admin@ispiramy.com">admin@ispiramy.com</a>.
+    Indica la pagina, o chi l'ha pubblicato, e spiega in poche righe perché lo segnali.
+    Leggiamo la mail e ti rispondiamo allo stesso indirizzo.
+</p>
+
+<h2>Come si usa il sito</h2>
+<p>
+    Non usare Ispiramy per attività illecite, truffe, molestie, minacce, incitamento all'odio
+    o contenuti sessuali che riguardano minori. Non spacciarti per un'altra persona.
+    Nella community le richieste sono domande di aiuto: niente pubblicità e niente testi
+    messi lì per caso.
+</p>
+
+<h2>Consulenze a pagamento</h2>
+<p>
+    Prima di pagare vedi l'importo. Nella prenotazione dal profilo del consulente il prezzo
+    è la sua tariffa oraria, almeno {{ prezzo_orario_minimo }} € l'ora, per 60, 90 o 120 minuti,
+    più {{ spese_servizio_euro }} € di spese di servizio. Il totale è la somma delle due cose.
+</p>
+<p>
+    Se accetti un'offerta, prezzo e durata sono quelli scritti sull'offerta. Anche lì, prima
+    del pagamento, vedi le spese di servizio e il totale.
+</p>
+<p>
+    Si prenota con almeno {{ ore_preavviso }} ore di anticipo, su un orario che il consulente
+    ha aperto. Gli orari sono in ora italiana.
+</p>
+
+<h2>Come si paga</h2>
+<p>
+    Paghi con carta, tramite Stripe, oppure con PayPal, se il consulente ha attivato quel metodo.
+    Ispiramy non conserva i numeri della carta: li gestiscono Stripe e PayPal.
+</p>
+<p>
+    Se il consulente conferma le prenotazioni in automatico, l'importo viene incassato al
+    pagamento e tenuto da Ispiramy fino a dopo la consulenza. Se invece conferma a mano,
+    l'importo viene solo bloccato. Ti viene addebitato quando accetta. Risponde entro
+    {{ ore_per_rispondere }} ore e, in ogni caso, almeno un'ora prima dell'inizio.
+    Se rifiuta o non risponde in tempo, il blocco si annulla e non paghi. La banca può
+    continuare a mostrare quel blocco per qualche giorno.
+</p>
+<p>
+    Se interrompi il pagamento, non ti viene addebitato nulla e la consulenza non risulta prenotata.
+</p>
+<p>
+    Sul prezzo della consulenza Ispiramy trattiene una commissione, di norma del {{ commissione_percentuale }}%.
+    Le spese di servizio restano a Ispiramy e non vanno al consulente. 48 ore dopo la fine,
+    se non c'è una contestazione aperta, Ispiramy avvia il trasferimento del compenso sul
+    conto Stripe o PayPal del consulente.
+</p>
+
+<h2>Annullare e farsi rimborsare</h2>
+<p>
+    Una consulenza già confermata si può annullare fino a {{ ore_limite_annullamento }} ore
+    prima dell'inizio. Può farlo chi ha prenotato e può farlo il consulente. Se l'importo era
+    solo bloccato, il blocco si annulla. Se era già stato incassato, chiediamo a Stripe o a
+    PayPal il rimborso di tutto quello che hai pagato, spese di servizio comprese.
+    L'email di annullamento dice che, se hai pagato, il rimborso arriva entro 5-10 giorni
+    lavorativi sullo stesso metodo di pagamento.
+</p>
+<p>
+    Una richiesta che il consulente non ha ancora accettato la puoi ritirare anche più vicino
+    all'orario: in quel caso non c'è stato un addebito.
+</p>
+<p>
+    Passate le {{ ore_limite_annullamento }} ore, o se la consulenza è già iniziata, dal sito
+    non si annulla più.
+</p>
+<p>
+    A orario finito, se il consulente non è entrato in chiamata e tu sì, il rimborso parte da solo.
+    Lo stesso succede se non entra nessuno. Se tu non entri e il consulente sì, il pagamento
+    va avanti e non c'è rimborso.
+</p>
+<p>
+    Dopo la consulenza, se la registrazione è attiva, chi ha prenotato può aprire una
+    contestazione entro 48 ore dalla fine dell'orario prenotato. Di base la registrazione
+    è attiva e si può disattivare prima della chiamata: senza registrazione la contestazione
+    non si apre. Se ne apre una sola per quella consulenza. Finché è aperta, il compenso
+    del consulente resta fermo. Chi gestisce Ispiramy la legge e può rimborsare per intero
+    o in parte, oppure chiuderla e far arrivare il pagamento al consulente. Se il rimborso
+    è parziale, la quota si calcola su tutto quello che hai pagato, spese di servizio comprese.
+</p>
+<p>
+    Annullamenti e rimborsi sono quelli descritti qui. Se sei un consumatore, questo testo
+    non toglie i diritti che la legge non permette di rinunciare.
+</p>
+
+<h2>La consulenza non la facciamo noi</h2>
+<p>
+    Il consulente parla per sé. Ispiramy non garantisce che la consulenza risolva il problema,
+    né che il consiglio sia adatto al caso. Un profilo può essere controllato prima di
+    comparire nella ricerca: quel controllo non è una garanzia sul risultato della chiamata.
+</p>
+
+<h2>Fino a dove rispondiamo</h2>
+<p>
+    Nei limiti in cui la legge italiana lo consente, Ispiramy non risponde di quello che viene
+    detto in consulenza, dei testi pubblicati dagli utenti e di un risultato che non arriva.
+    Non escludiamo la responsabilità che la legge non permette di escludere. Se sei un
+    consumatore, restano i diritti del Codice del consumo e delle norme europee che non si
+    possono rinunciare.
+</p>
+
+<h2>Privacy</h2>
+<p>
+    Come trattiamo i dati personali è scritto nell'<a href="/privacy">informativa privacy</a>.
+</p>
+
+<h2>Se cambiamo questi termini</h2>
+<p>
+    Possiamo aggiornare questa pagina. In cima c'è la data del testo. Se dopo un aggiornamento
+    continui a usare Ispiramy, vale il testo nuovo.
+</p>
+
+<h2>Cessione</h2>
+<p>
+    L'account è tuo e non lo puoi passare a un'altra persona. Se il servizio passa a qualcun
+    altro, questi termini passano insieme al servizio.
+</p>
+
+<h2>Se una frase non regge</h2>
+<p>
+    Se una parte di questi termini non è valida, il resto continua a valere.
+</p>
+
+<h2>Legge italiana</h2>
+<p>
+    Il contratto è regolato dalla legge italiana. Non indichiamo il tribunale di una città.
+    Se sei un consumatore, puoi rivolgerti al giudice che la legge italiana e quella
+    dell'Unione europea già ti riconoscono.
+</p>
+
+<h2>Prima ci scrivi</h2>
+<p>
+    Se qualcosa non va, scrivi prima a
+    <a href="mailto:admin@ispiramy.com">admin@ispiramy.com</a>
+    e proviamo a risolverla. Poi, se serve, resta il giudice.
+</p>
 {% endblock %}
