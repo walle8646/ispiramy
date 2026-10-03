@@ -865,6 +865,22 @@
     </style>
 </head>
 <body>
+    {% if current_user %}
+    {# Banner delle notifiche: scende dall'alto quando si apre il sito e non
+       sono ancora attive. Sul computer non c'e' (sta nel foglio di stile). #}
+    <div class="avviso-push" id="avvisoPush" role="region" aria-label="Attiva notifiche" aria-hidden="true">
+        <div class="avviso-push-interno">
+            <div class="avviso-push-riga">
+                <div class="avviso-push-testo">
+                    <strong>🔔 Attiva notifiche</strong>
+                    <span>Ti avvisiamo di messaggi e prenotazioni anche col sito chiuso.</span>
+                </div>
+                <button type="button" id="avvisoPushAttiva">Attiva</button>
+                <button type="button" class="avviso-push-chiudi" id="avvisoPushChiudi" aria-label="Non ora">&times;</button>
+            </div>
+        </div>
+    </div>
+    {% endif %}
 
     <!-- 🎯 HEADER GLOBALE -->
     <nav class="navbar">
@@ -1982,6 +1998,137 @@
             display: none !important;
         }
 
+        /* Il controllo in cima al profilo e alla home, e il banner, esistono
+           solo sul telefono. Qui restano spenti: le regole sotto i 768px li
+           accendono, e sopra i 768 il !important impedisce che lo script li
+           faccia comparire sul computer. */
+        .push-in-alto,
+        .avviso-push {
+            display: none;
+        }
+
+        @media (max-width: 768px) {
+            .push-in-alto {
+                display: block;
+                margin: 8px 12px 0;
+                padding: 8px 10px 10px;
+                background: #f0f8f0;
+                border: 1px solid #d7edd8;
+                border-radius: 12px;
+            }
+
+            .push-in-alto .interruttore-push {
+                display: block;
+                width: 100%;
+                box-sizing: border-box;
+                border: none;
+                cursor: pointer;
+                color: #2e7d32;
+                padding: 8px 12px;
+                background: white;
+                border-radius: 8px;
+                font-weight: 600;
+                font-size: .9rem;
+                font-family: inherit;
+                text-align: center;
+            }
+
+            .push-in-alto .interruttore-push:disabled {
+                opacity: .72;
+                cursor: not-allowed;
+            }
+
+            .push-in-alto .spiegazione-push {
+                margin: 6px 4px 0;
+                font-size: .78rem;
+                line-height: 1.35;
+                text-align: center;
+                color: #6b7280;
+            }
+
+            /* In fondo alla scheda Account, sul telefono, e' il doppione:
+               il controllo vero sta sopra gli appuntamenti. */
+            #interruttorePush,
+            #spiegazionePush {
+                display: none !important;
+            }
+
+            .avviso-push {
+                display: grid;
+                grid-template-rows: 0fr;
+                transition: grid-template-rows .4s ease;
+                background: #fff;
+                color: #1b5e20;
+            }
+
+            .avviso-push.visibile {
+                grid-template-rows: 1fr;
+                border-bottom: 1px solid #c8e6c9;
+                box-shadow: 0 8px 20px rgba(27, 94, 32, .08);
+            }
+
+            .avviso-push-interno {
+                overflow: hidden;
+            }
+
+            .avviso-push-riga {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                padding: 10px 12px;
+                transform: translateY(-110%);
+                transition: transform .4s ease;
+            }
+
+            .avviso-push.visibile .avviso-push-riga {
+                transform: translateY(0);
+            }
+
+            .avviso-push-testo {
+                flex: 1;
+                min-width: 0;
+                font-size: .82rem;
+                line-height: 1.3;
+                color: #374151;
+            }
+
+            .avviso-push-testo strong {
+                display: block;
+                color: #1b5e20;
+                font-size: .92rem;
+            }
+
+            #avvisoPushAttiva {
+                flex: 0 0 auto;
+                min-height: 40px;
+                padding: 0 14px;
+                border: none;
+                border-radius: 20px;
+                background: #43a047;
+                color: white;
+                font-weight: 600;
+                font-family: inherit;
+                cursor: pointer;
+            }
+
+            #avvisoPushAttiva:disabled {
+                opacity: .72;
+                cursor: not-allowed;
+            }
+
+            .avviso-push-chiudi {
+                flex: 0 0 auto;
+                min-width: 36px;
+                min-height: 40px;
+                padding: 0;
+                border: none;
+                background: none;
+                color: #78909c;
+                font-size: 1.3rem;
+                cursor: pointer;
+            }
+        }
+
         .invito-app {
             position: fixed;
             left: 12px;
@@ -2051,6 +2198,13 @@
                 left: auto;
                 width: 380px;
             }
+
+            /* Sul computer il controllo in alto e il banner non esistono:
+               l'interruttore resta nella scheda Account, dov'e' sempre stato. */
+            .push-in-alto,
+            .avviso-push {
+                display: none !important;
+            }
         }
     </style>
 
@@ -2062,24 +2216,40 @@
     </div>
 
     <script>
-    /* Notifiche push: l'interruttore nel profilo, se la persona ce l'ha davanti.
+    /* Notifiche push. L'interruttore sta nel profilo e, sul telefono, anche
+       in cima al profilo e alla home: in fondo alla scheda Account non lo
+       trovava nessuno. Il banner scende dall'alto su qualunque pagina, finche'
+       non sono attive.
        Perche' funzionino servono tre cose insieme - il permesso del browser, il
        service worker e le chiavi sul server - e se ne manca una l'interruttore
        resta nascosto invece di promettere qualcosa che non arrivera'. */
     (function () {
-        const bottone = document.getElementById('interruttorePush');
-        if (!bottone) { return; }
-        const spiegazione = document.getElementById('spiegazionePush');
+        const bottoni = Array.prototype.slice.call(document.querySelectorAll('.interruttore-push'));
+        const spiegazioni = Array.prototype.slice.call(document.querySelectorAll('.spiegazione-push'));
+        const avviso = document.getElementById('avvisoPush');
+        const avvisoAttiva = document.getElementById('avvisoPushAttiva');
         const supportato = 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
+        /* Quanto sta zitto il banner dopo la chiusura. Tre giorni, come
+           l'invito a installare: una sessione sola lo rifarebbe vedere a ogni
+           riapertura, per sempre diventerebbe molesto. */
+        const MEMORIA_PUSH = 'ispiramy-avviso-push';
+        const GIORNI_SENZA_AVVISO = 3;
+        const inChiamata = location.pathname.indexOf('/booking/call/') === 0;
         let chiave = '';
 
+        if (!bottoni.length && !avviso) { return; }
+
         function mostra(testo, nota) {
-            bottone.textContent = testo;
-            bottone.classList.remove('voce-push-nascosta');
-            if (spiegazione) {
+            bottoni.forEach(function (bottone) {
+                bottone.textContent = testo;
+                bottone.classList.remove('voce-push-nascosta');
+                const fascia = bottone.closest('.push-in-alto');
+                if (fascia) { fascia.classList.remove('voce-push-nascosta'); }
+            });
+            spiegazioni.forEach(function (spiegazione) {
                 spiegazione.textContent = nota || '';
                 spiegazione.classList.toggle('voce-push-nascosta', !nota);
-            }
+            });
         }
 
         /* La chiave del server arriva in base64 per gli indirizzi web, il
@@ -2091,13 +2261,41 @@
             return Uint8Array.from(grezzo, function (c) { return c.charCodeAt(0); });
         }
 
+        function rimandato() {
+            try {
+                const quando = parseInt(localStorage.getItem(MEMORIA_PUSH) || '0', 10);
+                return !!(quando && (Date.now() - quando) < GIORNI_SENZA_AVVISO * 86400000);
+            } catch (e) {
+                return false;
+            }
+        }
+
+        function apriAvviso() {
+            if (!avviso || rimandato() || inChiamata) { return; }
+            if (!window.matchMedia('(max-width: 768px)').matches) { return; }
+            avviso.classList.add('visibile');
+            avviso.setAttribute('aria-hidden', 'false');
+        }
+
+        function chiudiAvviso() {
+            if (!avviso) { return; }
+            avviso.classList.remove('visibile');
+            avviso.setAttribute('aria-hidden', 'true');
+            try { localStorage.setItem(MEMORIA_PUSH, String(Date.now())); } catch (e) { /* navigazione privata */ }
+        }
+
+        function blocca(si) {
+            bottoni.forEach(function (bottone) { bottone.disabled = si; });
+            if (avvisoAttiva) { avvisoAttiva.disabled = si; }
+        }
+
         async function iscrizioneCorrente() {
             const reg = await navigator.serviceWorker.ready;
             return reg.pushManager.getSubscription();
         }
 
         async function attiva() {
-            bottone.disabled = true;
+            blocca(true);
             try {
                 const permesso = await Notification.requestPermission();
                 if (permesso !== 'granted') {
@@ -2116,17 +2314,21 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ iscrizione: iscrizione.toJSON() }),
                 });
+                if (avviso) {
+                    avviso.classList.remove('visibile');
+                    avviso.setAttribute('aria-hidden', 'true');
+                }
                 mostra('🔕 Disattiva notifiche', 'Le riceverai su questo dispositivo.');
             } catch (errore) {
                 mostra('🔔 Attiva notifiche', 'Non ha funzionato: riprova fra poco.');
                 console.warn('Push non attivate:', errore);
             } finally {
-                bottone.disabled = false;
+                blocca(false);
             }
         }
 
         async function disattiva() {
-            bottone.disabled = true;
+            blocca(true);
             try {
                 const iscrizione = await iscrizioneCorrente();
                 if (iscrizione) {
@@ -2139,8 +2341,23 @@
                 }
                 mostra('🔔 Attiva notifiche', '');
             } finally {
-                bottone.disabled = false;
+                blocca(false);
             }
+        }
+
+        if (avviso) {
+            const chiudi = document.getElementById('avvisoPushChiudi');
+            if (chiudi) { chiudi.addEventListener('click', chiudiAvviso); }
+        }
+
+        function collega() {
+            bottoni.forEach(function (bottone) {
+                bottone.addEventListener('click', function () {
+                    if (bottone.textContent.indexOf('Disattiva') >= 0) { disattiva(); }
+                    else { attiva(); }
+                });
+            });
+            if (avvisoAttiva) { avvisoAttiva.addEventListener('click', attiva); }
         }
 
         (async function () {
@@ -2149,7 +2366,7 @@
                 const suApple = /iPad|iPhone|iPod/.test(navigator.userAgent);
                 if (suApple) {
                     mostra('🔔 Attiva notifiche', 'Su iPhone servono dopo aver aggiunto Ispiramy alla schermata Home.');
-                    bottone.disabled = true;
+                    bottoni.forEach(function (bottone) { bottone.disabled = true; });
                 }
                 return;
             }
@@ -2162,17 +2379,15 @@
             if (!stato.attivabile || !stato.chiave_pubblica) { return; }
             chiave = stato.chiave_pubblica;
 
-            const iscrizione = await iscrizioneCorrente();
+            let iscrizione = null;
+            try { iscrizione = await iscrizioneCorrente(); } catch (e) { iscrizione = null; }
+            collega();
             if (iscrizione && Notification.permission === 'granted') {
                 mostra('🔕 Disattiva notifiche', 'Le ricevi su questo dispositivo.');
-            } else {
-                mostra('🔔 Attiva notifiche', 'Ti avvisiamo di messaggi e prenotazioni anche col sito chiuso.');
+                return;
             }
-
-            bottone.addEventListener('click', function () {
-                if (bottone.textContent.indexOf('Disattiva') >= 0) { disattiva(); }
-                else { attiva(); }
-            });
+            mostra('🔔 Attiva notifiche', 'Ti avvisiamo di messaggi e prenotazioni anche col sito chiuso.');
+            apriAvviso();
         })();
     })();
     </script>

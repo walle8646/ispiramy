@@ -828,6 +828,14 @@
             </div>
         </div>
 
+        {# Sul telefono l'interruttore sta qui, sopra gli appuntamenti: in
+           fondo alla scheda Account non si trovava. Sul computer questo
+           blocco non occupa spazio (si accende solo sotto i 768px). #}
+        <div class="push-in-alto voce-push-nascosta" id="pushInAltoProfilo">
+            <button type="button" class="interruttore-push voce-push-nascosta">🔔 Attiva notifiche</button>
+            <p class="spiegazione-push voce-push-nascosta"></p>
+        </div>
+
         <!-- Banner metodo di pagamento mancante -->
         {% if user.is_verified and not has_payment_method %}
         <div style="background: linear-gradient(135deg, #e76f00 0%, #f59e0b 100%); color: #fff; padding: 14px 24px; display: flex; align-items: center; gap: 12px; border-radius: 0; font-size: 0.95rem; box-shadow: 0 2px 8px rgba(231,111,0,0.15);">
@@ -1262,10 +1270,10 @@
                             🔑 Cambia Password
                         </a>
                         {# Acceso da base.html: solo dove le push esistono davvero #}
-                        <button type="button" class="pub-sidebar-link voce-push-nascosta" id="interruttorePush" style="border: none; cursor: pointer; text-decoration: none; color: #2e7d32; padding: 10px 16px; background: #f0f8f0; border-radius: 8px; font-weight: 500; font-size: .9em; text-align: center; transition: all .2s; font-family: inherit;">
+                        <button type="button" class="pub-sidebar-link voce-push-nascosta interruttore-push" id="interruttorePush" style="border: none; cursor: pointer; text-decoration: none; color: #2e7d32; padding: 10px 16px; background: #f0f8f0; border-radius: 8px; font-weight: 500; font-size: .9em; text-align: center; transition: all .2s; font-family: inherit;">
                             🔔 Attiva notifiche
                         </button>
-                        <div id="spiegazionePush" class="voce-push-nascosta" style="font-size: .78em; color: #6b7280; line-height: 1.35; text-align: center;"></div>
+                        <div id="spiegazionePush" class="voce-push-nascosta spiegazione-push" style="font-size: .78em; color: #6b7280; line-height: 1.35; text-align: center;"></div>
 
                         {# Il collegamento e' acceso da base.html, che sa se l'app e' gia' installata #}
                         <a href="#" class="pub-sidebar-link voce-installa-nascosta" id="voceInstallaProfilo" style="color: #2e7d32; text-decoration: none; padding: 10px 16px; background: #f0f8f0; border-radius: 8px; font-weight: 500; font-size: .9em; text-align: center; transition: all .2s;">
