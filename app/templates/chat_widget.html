@@ -1906,8 +1906,15 @@
                         console.log(`📨 Conversazione con ${conv.other_user.nome}: msg_id=${msgId}, lastKnown=${chatWidget.lastKnownMessageId}, is_sender=${isSender}`);
                         console.log(`🆕 NUOVO MESSAGGIO rilevato! ID: ${msgId}`);
                         
-                        // Only show notification if we're not the sender
-                        if (!isSender) {
+                        // Only show notification if we're not the sender.
+                        // Un messaggio gia' vecchio non e' un evento nuovo: al
+                        // primo caricamento lastKnown e' spesso 0 e rifarebbe
+                        // il toast di tutta la conversazione.
+                        const creato = conv.last_message.created_at
+                            ? new Date(conv.last_message.created_at).getTime()
+                            : 0;
+                        const appenaArrivato = creato && (Date.now() - creato) <= 15 * 60 * 1000;
+                        if (!isSender && appenaArrivato) {
                             console.log(`📢 Mostro notifica da ${conv.other_user.nome}`);
                             
                             // ✅ RIAPRI IL WIDGET se era stato chiuso dall'utente
@@ -1926,7 +1933,7 @@
                                 conv.last_message.content,
                                 conv.last_message.created_at
                             );
-                        } else {
+                        } else if (isSender) {
                             console.log(`✋ Messaggio inviato da me, nessuna notifica`);
                         }
                         

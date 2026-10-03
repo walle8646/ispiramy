@@ -8,6 +8,7 @@ import re
 from app.database import get_session
 from app.models import User, Category, CategoryHierarchy, Review
 from app.routes.auth import verify_token
+from app.utils.verifica_categorie import id_categorie_verificate
 from loguru import logger
 
 router = APIRouter()
@@ -458,6 +459,7 @@ async def consultants_page(
             enriched_consultants = []
             for user in consultants:
                 stats = review_stats.get(user.id, {'count': 0, 'avg': 0})
+                verificate = id_categorie_verificate(user)
                 user_data = {
                     'id': user.id,
                     'nome': user.nome,
@@ -469,7 +471,8 @@ async def consultants_page(
                     'review_avg': stats['avg'],
                     'review_count': stats['count'],
                     'lingue': [voce for voce in LINGUE if voce[0] in lingue_parlate(user)],
-                    'category': None
+                    'category': None,
+                    'categoria_verificata': bool(user.category_id and user.category_id in verificate),
                 }
                 
                 if user.category_id:

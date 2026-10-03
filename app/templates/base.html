@@ -1274,12 +1274,23 @@
 
         /* "15:00" del giorno indicato, visto dal fuso di chi guarda. */
         window.oraNelTuoFuso = function (giorno, ora) {
+            const momento = window.momentoNelTuoFuso(giorno, ora);
+            return momento ? momento.ora : null;
+        };
+
+        /* Ora e giorno nel fuso del browser. Se il fuso e' quello del sito,
+           o se il browser non lo sa dire, non si inventa una citta'. */
+        window.momentoNelTuoFuso = function (giorno, ora) {
             if (!window.fusoDiverso || !giorno || !ora) { return null; }
             try {
-                const base = new Date(`${giorno}T${ora.length === 5 ? ora : ora.slice(0, 5)}:00`);
+                const hhmm = ora.length === 5 ? ora : ora.slice(0, 5);
+                const base = new Date(`${giorno}T${hhmm}:00`);
                 if (isNaN(base)) { return null; }
                 const spostata = new Date(base.getTime() + scarto(base));
-                return spostata.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
+                return {
+                    ora: spostata.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' }),
+                    giorno: spostata.toLocaleDateString('it-IT', { day: 'numeric', month: 'short' })
+                };
             } catch (e) {
                 return null;
             }
@@ -1290,6 +1301,17 @@
         window.etichettaFuso = function (giorno, ora) {
             const tua = window.oraNelTuoFuso(giorno, ora);
             return tua ? `ora italiana · da te le ${tua}` : 'ora italiana';
+        };
+
+        /* Fascia intera nel fuso di chi prenota. Gli orari inviati restano
+           quelli italiani: qui cambia solo quello che si legge. */
+        window.etichettaSlot = function (giorno, inizio, fine) {
+            const da = window.momentoNelTuoFuso(giorno, inizio);
+            const a = fine ? window.momentoNelTuoFuso(giorno, fine) : null;
+            const italiano = fine ? `${inizio} - ${fine}` : (inizio || '');
+            if (!da) { return italiano; }
+            const intervallo = a ? `${da.ora} – ${a.ora}` : da.ora;
+            return `${intervallo} (ora italiana ${italiano})`;
         };
     })();
     </script>
@@ -1482,6 +1504,7 @@
                 'booking': 'fa-calendar-check',
                 'message': 'fa-envelope',
                 'payment': 'fa-credit-card',
+                'payment_hold': 'fa-hourglass-half',
                 'cancellation': 'fa-times-circle',
                 'offer': 'fa-handshake'
             };

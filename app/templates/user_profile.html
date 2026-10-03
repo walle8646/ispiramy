@@ -813,7 +813,9 @@
                     </div>
                     <p class="pub-role">{{ user.professione or 'Professionista' }}</p>
                     {% if category %}
-                    <div class="pub-cat-pill">{{ category.icon }} {{ nc(category.name) }}</div>
+                    <div class="pub-cat-pill">{{ category.icon }} {{ nc(category.name) }}
+                        {% if category.id in categorie_verificate_ids %}<span class="badge-verificato-categoria">Verificato</span>{% endif %}
+                    </div>
                     {% endif %}
                     {% if aree_interesse_list %}
                     <div class="pub-hero-skills">

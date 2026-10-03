@@ -5,6 +5,7 @@ from app.database import get_session
 from app.logger_config import logger
 from app.utils.template_helpers import get_all_categories
 from app.utils_user import has_payment_method
+from app.utils.verifica_categorie import etichette_verificate, id_categorie_verificate
 from sqlmodel import select
 import json
 
@@ -134,6 +135,8 @@ def public_user_profile(request: Request, user_id: int):
             "reviews": reviews,
             "avg_rating": avg_rating,
             "consultant_has_payment": has_payment_method(user),
+            "categorie_verificate": etichette_verificate(session, user),
+            "categorie_verificate_ids": list(id_categorie_verificate(user)),
             "current_user_has_payment": has_payment_method(current_user) if current_user else False,
         })
 

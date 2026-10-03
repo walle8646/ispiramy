@@ -300,6 +300,7 @@ def release_booking_payment(booking_id: int):
                     title="Pagamento in attesa",
                     message=f"Il pagamento per la consulenza #{booking_id} è in attesa per una contestazione in corso.",
                     related_booking_id=booking_id,
+                    action_url=f"/profile#prenotazione-{booking_id}",
                     solo_una_volta=True
                 )
                 return

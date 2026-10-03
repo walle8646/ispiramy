@@ -804,7 +804,9 @@
                     <h1>{{ user|display_name }}</h1>
                     <p class="pub-role">{{ user.professione or 'Professione non impostata' }}</p>
                     {% if user_category %}
-                    <div class="pub-cat-pill">{{ user_category.icon }} {{ nc(user_category.name) }}</div>
+                    <div class="pub-cat-pill">{{ user_category.icon }} {{ nc(user_category.name) }}
+                        {% if user_category.id in categorie_verificate_ids %}<span class="badge-verificato-categoria">Verificato</span>{% endif %}
+                    </div>
                     {% endif %}
                     {% if aree_interesse_list %}
                     <div class="pub-hero-skills">
@@ -1085,8 +1087,8 @@
                                 <input type="checkbox" id="autoAcceptToggle" {% if user.auto_accept_bookings != false %}checked{% endif %}
                                        style="margin-right: 10px; width: 20px; height: 20px; flex-shrink: 0;">
                                 <span>
-                                    <strong>✅ Conferma automatica delle prenotazioni</strong><br>
-                                    <small style="color: #666;">Attiva: chi paga prenota subito. Disattiva: ogni prenotazione diventa una richiesta da accettare o rifiutare entro 24 ore, e comunque entro un'ora dall'inizio: se non rispondi in tempo la richiesta viene rifiutata da sola. Al cliente l'importo viene solo bloccato e addebitato quando accetti; se rifiuti o non rispondi il blocco si annulla.</small>
+                                    <strong>Le richieste di consulenza in arrivo si confermano da sole</strong><br>
+                                    <small style="color: #666;">Con questa impostazione attiva, ogni richiesta di consulenza che ti arriva viene confermata automaticamente, senza che tu debba accettarla. Se la spegni, la richiesta resta in sospeso finché non la accetti o la rifiuti: hai 24 ore, e comunque non oltre un'ora prima dell'inizio. Se non rispondi in tempo, la richiesta viene rifiutata da sola. L'importo del cliente resta solo bloccato e viene addebitato quando la richiesta è confermata; se rifiuti o non rispondi, il blocco si annulla.</small>
                                     <small id="autoAcceptStatus" style="display: block; margin-top: 4px;" aria-live="polite"></small>
                                 </span>
                             </label>
@@ -1198,13 +1200,12 @@
                     {% if user.prezzo_consulenza %}
                     <div class="pub-sidebar-price">€{{ user.prezzo_consulenza }} <span>/ ora</span></div>
                     {% endif %}
+                    {% if categorie_verificate %}
                     <p class="pub-sidebar-sub">
-                        {% if user.is_verified %}
-                        ✅ Consulente Verificato
-                        {% else %}
-                        ❌ Non ancora verificato
-                        {% endif %}
+                        Verificato in
+                        {% for cat in categorie_verificate %}{{ cat.icon }} {{ cat.name }}{% if not loop.last %}, {% endif %}{% endfor %}
                     </p>
+                    {% endif %}
 
                     <a href="/availability" class="pub-sidebar-btn">
                         📅 Gestisci Fasce Orarie
@@ -1534,8 +1535,8 @@
                 if (!resp.ok) throw new Error(resp.status);
                 stato.style.color = '#2e7d32';
                 stato.textContent = valore
-                    ? 'Salvato: le nuove prenotazioni saranno confermate subito.'
-                    : 'Salvato: le nuove prenotazioni arriveranno come richieste da accettare.';
+                    ? 'Salvato: le richieste in arrivo si confermano da sole.'
+                    : 'Salvato: le richieste in arrivo restano in sospeso finché non le accetti.';
             } catch (e) {
                 autoAcceptToggle.checked = !valore;
                 stato.style.color = '#d32f2f';
@@ -2186,6 +2187,19 @@
     let storicoAperto = false;
     let storicoVoci = null;   // null = mai caricato
 
+    function apriDettaglioPrenotazione(id, event) {
+        if (event && event.target && event.target.closest('a, button')) return;
+        const ancora = '#prenotazione-' + id;
+        if (location.hash !== ancora) {
+            history.replaceState(null, '', '/profile' + ancora);
+        }
+        const riga = document.getElementById('prenotazione-' + id)
+            || document.getElementById('appointment-' + id);
+        if (!riga) return;
+        riga.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        riga.style.boxShadow = 'inset 4px 0 0 #2e7d32';
+    }
+
     function storicoVoceHTML(b) {
         const otherUser = b.other_user;
         const roleLabel = b.role === 'client' ? 'Consulenza con' : 'Consulenza richiesta da';
@@ -2229,6 +2243,10 @@
             cancelHTML = `<div style="font-size:0.75rem;color:#dc3545;margin-top:2px;">${chi}${pagamento}</div>${motivo}`;
         }
 
+        const pagamentoInAttesa = b.payment_status === 'held'
+            ? `<div style="font-size:0.75rem;color:#b45309;margin-top:2px;">Pagamento in attesa</div>`
+            : '';
+
         // Review indicator/button
         let reviewHTML = '';
         if (b.has_review) {
@@ -2252,12 +2270,16 @@
         }
 
         return `
-            <div style="display:flex;flex-wrap:wrap;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid #f0f0f0;">
+            <div id="prenotazione-${b.id}" role="link" tabindex="0"
+                 onclick="apriDettaglioPrenotazione(${b.id}, event)"
+                 onkeydown="if (event.key === 'Enter') apriDettaglioPrenotazione(${b.id}, event)"
+                 style="display:flex;flex-wrap:wrap;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid #f0f0f0;cursor:pointer;">
                 ${avatarHTML}
                 <div style="flex:1;min-width:120px;">
                     <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">${nameLink} ${statusHTML}</div>
                     <div style="font-size:0.82rem;color:#6b7280;">${roleLabel}</div>
                     ${cancelHTML}
+                    ${pagamentoInAttesa}
                     <div style="display:flex;flex-wrap:wrap;gap:4px;align-items:center;">${reviewHTML}${disputeHTML}</div>
                 </div>
                 <div style="text-align:right;flex-shrink:0;font-size:0.82rem;">
@@ -3228,6 +3250,18 @@
 
     // Carica dati all'avvio
     loadUpcomingAppointments();
+    (async function apriPrenotazioneDaHash() {
+        const match = (location.hash || '').match(/^#prenotazione-(\d+)$/);
+        if (!match) return;
+        storicoAperto = true;
+        try {
+            await caricaStorico();
+        } catch (e) {
+            storicoVoci = [];
+        }
+        await loadUpcomingAppointments();
+        apriDettaglioPrenotazione(match[1]);
+    })();
     loadLikedQuestions();
     loadUserQuestions();
     loadFavoriteConsultants();

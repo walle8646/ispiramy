@@ -61,6 +61,9 @@ class User(SQLModel, table=True):
     # ma senza questa data il codice valeva per sempre.
     confirmation_code_created_at: Optional[datetime] = Field(default=None)
     is_verified: bool = Field(default=False, index=True)  # filtro principale della ricerca consulenti
+    # JSON di id categoria in cui il badge «Verificato» è visibile.
+    # None = non ancora distinto: vedi app.utils.verifica_categorie.
+    verified_category_ids: Optional[str] = Field(default=None)
     is_anonymous: bool = Field(default=False)  # Se True, mostra "Utente #ID" invece del nome
     genere: Optional[str] = Field(default=None)  # M=Maschio, F=Femmina, None=Non specificato
     notify_category_requests: bool = Field(default=True)  # 🔔 Ricevi notifiche per richieste in categoria

@@ -237,7 +237,7 @@
                             
                             <!-- Categoria sotto la foto -->
                             {% if item.category %}
-                            <span class="category-badge">{{ item.category.icon }} {{ nc(item.category.name) }}</span>
+                            <span class="category-badge">{{ item.category.icon }} {{ nc(item.category.name) }}{% if item.categoria_verificata %} <span class="badge-verificato-categoria">Verificato</span>{% endif %}</span>
                             {% endif %}
                         </div>
                         

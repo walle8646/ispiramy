@@ -15,6 +15,7 @@ from app.logger_config import logger
 from app.utils.stripe_config import create_checkout_session
 from app.utils.prezzi import centesimi, spese_servizio, totale_cliente, totale_pagato
 from app.utils_user import has_payment_method
+from app.utils.verifica_categorie import id_categorie_verificate
 from app.utils.orari import (
     ORE_LIMITE_ANNULLAMENTO, ORE_PREAVVISO_PRENOTAZIONE, con_fuso, data_consulenza,
     iso_ora_italiana, now_italy_naive,
@@ -338,6 +339,10 @@ async def booking_page(
             "current_user": current_user,  # Per la navbar
             "consultant": consultant,
             "consultant_category": consultant_category,
+            "categoria_verificata": bool(
+                consultant_category
+                and consultant_category.id in id_categorie_verificate(consultant)
+            ),
             "consultant_skills": consultant_skills,
             "debug_mode": DEBUG_MODE,
             "stripe_available": bool(getattr(consultant, 'stripe_onboarding_complete', False)),
