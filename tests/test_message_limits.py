@@ -310,7 +310,7 @@ class TestLimiteSessanta:
     def test_la_parola_si_accorda_col_numero(self):
         assert frase_messaggi(1) == "1 messaggio"
         assert frase_messaggi(60) == "60 messaggi"
-        assert "1 messaggi" not in frase_messaggi(1)
+        assert frase_messaggi(1) != "1 messaggi"
 
     def test_il_default_e_60(self):
         TestConfigurazione()._rimuovi(CONFIG_KEY_MAX_MESSAGES)
