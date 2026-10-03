@@ -967,7 +967,9 @@
         .categories-nav {
             padding: 6px 0 !important;
             overflow-x: auto;
+            width: 100%;
             max-width: 100%;
+            min-width: 0;
         }
 
         .categories-nav-content {
@@ -981,10 +983,29 @@
 
         .hero-main {
             padding: 8px 16px 10px !important;
+            width: 100%;
+            max-width: 100%;
+            min-width: 0;
+            box-sizing: border-box;
+        }
+
+        .hero-container,
+        .hero-left,
+        .hero-right {
+            width: 100%;
+            max-width: 100%;
+            min-width: 0;
+            box-sizing: border-box;
         }
 
         .hero-container {
             gap: 10px !important;
+        }
+
+        .hero-title,
+        .hero-subtitle {
+            max-width: 100%;
+            overflow-wrap: break-word;
         }
 
         .hero-title {
@@ -999,18 +1020,35 @@
             margin-bottom: 8px !important;
         }
 
+        /* La riga non puo' allargare la colonna: se no il titolo va a capo
+           fuori dallo schermo e il pulsante resta tagliato. */
         .hero-search {
+            width: 100%;
+            max-width: 100%;
+            min-width: 0;
             margin-bottom: 0 !important;
-            flex-wrap: nowrap !important;
+            flex-direction: column !important;
+            align-items: stretch;
+            gap: 8px;
+            box-sizing: border-box;
         }
 
         .hero-search-input {
+            flex: none !important;
+            width: 100% !important;
             min-width: 0 !important;
             padding: 10px 12px !important;
+            box-sizing: border-box;
         }
 
         .hero-search-btn {
+            flex: none;
+            width: 100%;
+            max-width: 100%;
+            box-sizing: border-box;
             padding: 10px 12px !important;
+            white-space: normal !important;
+            line-height: 1.2;
         }
 
         .hero-video-container {
@@ -1029,9 +1067,13 @@
         .hero-spiegazione {
             min-height: 36px !important;
             margin-top: 8px !important;
-            max-width: 280px;
-            padding: 0 14px !important;
+            width: auto;
+            max-width: 100%;
+            box-sizing: border-box;
+            padding: 8px 14px !important;
             font-size: 13px !important;
+            white-space: normal;
+            text-align: center;
         }
 
         .video-play-overlay {
@@ -1042,6 +1084,10 @@
 
         .featured {
             padding: 4px 16px 8px !important;
+            width: 100%;
+            max-width: 100%;
+            min-width: 0;
+            box-sizing: border-box;
         }
 
         .featured-title {
