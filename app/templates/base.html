@@ -865,22 +865,6 @@
     </style>
 </head>
 <body>
-    {% if current_user %}
-    {# Banner delle notifiche: scende dall'alto quando si apre il sito e non
-       sono ancora attive. Sul computer non c'e' (sta nel foglio di stile). #}
-    <div class="avviso-push" id="avvisoPush" role="region" aria-label="Attiva notifiche" aria-hidden="true">
-        <div class="avviso-push-interno">
-            <div class="avviso-push-riga">
-                <div class="avviso-push-testo">
-                    <strong>🔔 Attiva notifiche</strong>
-                    <span>Ti avvisiamo di messaggi e prenotazioni anche col sito chiuso.</span>
-                </div>
-                <button type="button" id="avvisoPushAttiva">Attiva</button>
-                <button type="button" class="avviso-push-chiudi" id="avvisoPushChiudi" aria-label="Non ora">&times;</button>
-            </div>
-        </div>
-    </div>
-    {% endif %}
 
     <!-- 🎯 HEADER GLOBALE -->
     <nav class="navbar">
@@ -2053,35 +2037,39 @@
                 display: none !important;
             }
 
+            /* Scende da sopra il bordo e sposta la pagina, cosi' non copre
+               ne' la barra ne' gli appuntamenti. */
             .avviso-push {
-                display: grid;
-                grid-template-rows: 0fr;
-                transition: grid-template-rows .4s ease;
+                display: flex;
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                z-index: 2300;
+                transform: translateY(-110%);
+                transition: transform .4s ease;
                 background: #fff;
                 color: #1b5e20;
-            }
-
-            .avviso-push.visibile {
-                grid-template-rows: 1fr;
                 border-bottom: 1px solid #c8e6c9;
                 box-shadow: 0 8px 20px rgba(27, 94, 32, .08);
             }
 
-            .avviso-push-interno {
-                overflow: hidden;
+            .avviso-push.visibile {
+                transform: translateY(0);
+            }
+
+            body.avviso-push-aperto {
+                padding-top: 76px !important;
             }
 
             .avviso-push-riga {
                 display: flex;
                 align-items: center;
                 gap: 8px;
-                padding: 10px 12px;
-                transform: translateY(-110%);
-                transition: transform .4s ease;
-            }
-
-            .avviso-push.visibile .avviso-push-riga {
-                transform: translateY(0);
+                width: 100%;
+                box-sizing: border-box;
+                min-height: 64px;
+                padding: 8px 12px;
             }
 
             .avviso-push-testo {
@@ -2215,6 +2203,21 @@
         <button type="button" class="invito-chiudi" id="invitoChiudi" aria-label="{{ t('app.installa_non_ora') }}">&times;</button>
     </div>
 
+    {% if current_user %}
+    {# Banner delle notifiche: scende dall'alto quando si apre il sito e non
+       sono ancora attive. Sul computer il foglio di stile lo tiene spento. #}
+    <div class="avviso-push" id="avvisoPush" role="region" aria-label="Attiva notifiche" aria-hidden="true">
+        <div class="avviso-push-riga">
+            <div class="avviso-push-testo">
+                <strong>🔔 Attiva notifiche</strong>
+                <span>Ti avvisiamo di messaggi e prenotazioni anche col sito chiuso.</span>
+            </div>
+            <button type="button" id="avvisoPushAttiva">Attiva</button>
+            <button type="button" class="avviso-push-chiudi" id="avvisoPushChiudi" aria-label="Non ora">&times;</button>
+        </div>
+    </div>
+    {% endif %}
+
     <script>
     /* Notifiche push. L'interruttore sta nel profilo e, sul telefono, anche
        in cima al profilo e alla home: in fondo alla scheda Account non lo
@@ -2270,17 +2273,23 @@
             }
         }
 
+        function nascondiAvviso() {
+            if (!avviso) { return; }
+            avviso.classList.remove('visibile');
+            avviso.setAttribute('aria-hidden', 'true');
+            document.body.classList.remove('avviso-push-aperto');
+        }
+
         function apriAvviso() {
             if (!avviso || rimandato() || inChiamata) { return; }
             if (!window.matchMedia('(max-width: 768px)').matches) { return; }
             avviso.classList.add('visibile');
             avviso.setAttribute('aria-hidden', 'false');
+            document.body.classList.add('avviso-push-aperto');
         }
 
         function chiudiAvviso() {
-            if (!avviso) { return; }
-            avviso.classList.remove('visibile');
-            avviso.setAttribute('aria-hidden', 'true');
+            nascondiAvviso();
             try { localStorage.setItem(MEMORIA_PUSH, String(Date.now())); } catch (e) { /* navigazione privata */ }
         }
 
@@ -2314,10 +2323,7 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ iscrizione: iscrizione.toJSON() }),
                 });
-                if (avviso) {
-                    avviso.classList.remove('visibile');
-                    avviso.setAttribute('aria-hidden', 'true');
-                }
+                nascondiAvviso();
                 mostra('🔕 Disattiva notifiche', 'Le riceverai su questo dispositivo.');
             } catch (errore) {
                 mostra('🔔 Attiva notifiche', 'Non ha funzionato: riprova fra poco.');
