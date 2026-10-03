@@ -1203,6 +1203,11 @@
    e cosa c'e' di nuovo nella community. La presentazione resta per chi arriva
    la prima volta, e sul computer resta per tutti. #}
 <section class="mia-home" id="miaHome">
+    {# Stesso interruttore del profilo, in cima: le prossime cose restano sotto. #}
+    <div class="push-in-alto voce-push-nascosta" id="pushInAltoHome">
+        <button type="button" class="interruttore-push voce-push-nascosta">🔔 Attiva notifiche</button>
+        <p class="spiegazione-push voce-push-nascosta"></p>
+    </div>
     <h1 class="mia-saluto">{{ t('home.saluto') }} {{ current_user.nome or '' }}</h1>
 
     <div id="mieCose" class="mie-cose">

@@ -144,3 +144,148 @@ def test_chi_non_ha_fatto_l_accesso_non_si_iscrive(client):
     # 403 arriva prima, dal controllo anti-falsificazione delle richieste
     assert client.post("/api/push/iscrizione", json={"iscrizione": ISCRIZIONE}).status_code in (401, 403)
     assert client.get("/api/push/stato").status_code == 401
+
+
+def _blocco_push():
+    """Lo script dell'interruttore, fino all'invito a installare l'app."""
+    base = _file("app", "templates", "base.html")
+    inizio = base.index("Notifiche push.")
+    return base[inizio:base.index("const RICORDA", inizio)]
+
+
+def test_sul_telefono_il_controllo_sta_sopra_agli_appuntamenti():
+    """In fondo alla scheda Account non lo trovava nessuno. Sul telefono sta
+    sopra i prossimi appuntamenti; sul computer resta dov'era."""
+    profilo = _file("app", "templates", "profile.html")
+    alto = profilo.index('id="pushInAltoProfilo"')
+    appuntamenti = profilo.index('id="upcomingAppointmentsSection"')
+    assert alto < appuntamenti, "il controllo deve stare prima degli appuntamenti"
+    fascia = profilo[alto:appuntamenti]
+    assert "interruttore-push" in fascia
+    assert "Attiva notifiche" in fascia
+
+    account = profilo[profilo.index(">Account</h3>"):]
+    assert 'id="interruttorePush"' in account[:account.index("voceInstallaProfilo")]
+    assert "interruttore-push" in account[:account.index("voceInstallaProfilo")]
+
+
+def test_la_home_del_telefono_ha_lo_stesso_controllo():
+    """Le prossime cose restano la parte importante: il controllo sta sopra,
+    non al posto loro. La home promozionale del computer non lo contiene."""
+    home = _file("app", "templates", "home.html")
+    blocco = home[home.index('id="miaHome"'):home.index('id="mieCose"')]
+    assert 'id="pushInAltoHome"' in blocco
+    assert "interruttore-push" in blocco
+    assert blocco.index("pushInAltoHome") < blocco.index("mia-saluto")
+    # mia-home di suo non si vede: si accende solo sotto i 768px
+    nascosta = home[home.index(".mia-home {"):home.index(".mia-saluto")]
+    assert "display: none;" in nascosta
+
+
+def test_sul_computer_controllo_e_banner_restano_spenti():
+    """Da 769px in su il profilo e la home restano come prima: niente striscia
+    in alto e niente banner. Il doppione in Account si spegne solo sul telefono."""
+    base = _file("app", "templates", "base.html")
+    inizio = base.index("Sul computer il controllo in alto e il banner non esistono")
+    blocco = base[base.rfind("@media", 0, inizio):base.index("}", base.index(".avviso-push", inizio)) + 1]
+    assert "min-width: 769px" in blocco
+    assert ".push-in-alto" in blocco and ".avviso-push" in blocco
+    assert "display: none !important;" in blocco
+
+    telefono = base[base.index("@media (max-width: 768px)"):base.index(".invito-app {")]
+    assert "#interruttorePush" in telefono
+    assert "display: none !important;" in telefono
+    # la striscia in alto, spenta di suo, si accende in quel blocco
+    assert ".push-in-alto" in telefono and "display: block;" in telefono
+
+
+def test_il_banner_e_solo_per_chi_ha_fatto_l_accesso(client):
+    """Senza accesso non c'e' niente da attivare, e la frase e' la stessa
+    dell'interruttore."""
+    base = _file("app", "templates", "base.html")
+    intorno = base[base.index('id="avvisoPush"') - 250:base.index('id="avvisoPush"')]
+    assert "{% if current_user %}" in intorno
+    assert "Ti avvisiamo di messaggi e prenotazioni anche col sito chiuso." in base
+    assert 'id="avvisoPush"' not in client.get("/").text
+    assert 'id="avvisoPush"' not in client.get("/login").text
+
+
+def test_il_banner_non_compare_se_non_si_puo_o_e_gia_attivo():
+    """Niente chiave, gia' attive, chiuso di recente, chiamata in corso o
+    schermo largo: il banner sta zitto. Su iPhone il controllo resta, spento."""
+    script = _blocco_push()
+    assert "if (!stato.attivabile || !stato.chiave_pubblica) { return; }" in script
+    decisione = script[script.index("if (!stato.attivabile"):]
+    gia_attive = decisione[decisione.index("Disattiva notifiche"):decisione.index("apriAvviso()")]
+    assert "return" in gia_attive, "se sono gia' attive non si apre il banner"
+    assert "rimandato()" in script
+    assert "ispiramy-avviso-push" in script
+    assert "GIORNI_SENZA_AVVISO = 3" in script
+    assert "localStorage.setItem(MEMORIA_PUSH" in script
+    assert "max-width: 768px" in script, "sul computer il banner non si apre"
+    assert "/booking/call/" in script, "durante una chiamata non scende"
+    # un solo flusso di iscrizione: il banner chiama attiva(), non un'altra API
+    assert script.count("pushManager.subscribe") == 1
+    assert "avvisoPushAttiva" in script
+    assert "addEventListener('click', attiva)" in script
+
+    prima = script[:script.index("if (!stato.attivabile")]
+    iphone = prima[prima.index("Su iPhone servono dopo aver aggiunto Ispiramy alla schermata Home."):]
+    assert "disabled = true" in iphone
+    assert "return" in iphone
+    assert "apriAvviso" not in iphone
+
+
+def test_chi_e_dentro_vede_il_banner_e_il_controllo_in_pagina(client):
+    """Il markup c'e' solo dopo l'accesso: profilo (sopra gli appuntamenti),
+    home del telefono, e il banner su una pagina qualunque."""
+    import secrets
+
+    from sqlmodel import Session
+
+    from app.database import engine
+    from app.models import User
+    from app.utils.password import hash_password
+    from app.utils.rate_limit import reset_rate_limit
+
+    email = f"push-{secrets.token_hex(4)}@test.local"
+    with Session(engine) as s:
+        utente = User(
+            email=email,
+            password_md5=hash_password("prova-password"),
+            confirmed=1, nome="Valerio", cognome="Di Dio",
+        )
+        s.add(utente)
+        s.commit()
+        utente_id = utente.id
+
+    try:
+        reset_rate_limit()
+        marker = 'name="csrf-token" content="'
+        pagina = client.get("/login").text
+        if marker in pagina:
+            client.headers.update({"X-CSRF-Token": pagina.split(marker, 1)[1].split('"', 1)[0]})
+        assert client.post("/api/login", data={"email": email, "password": "prova-password"}).status_code == 200
+
+        home = client.get("/").text
+        assert 'id="avvisoPush"' in home
+        assert 'id="pushInAltoHome"' in home
+        assert home.index("pushInAltoHome") < home.index('id="mieCose"')
+
+        profilo = client.get("/profile").text
+        assert 'id="pushInAltoProfilo"' in profilo
+        assert profilo.index("pushInAltoProfilo") < profilo.index("upcomingAppointmentsSection")
+        assert 'id="interruttorePush"' in profilo
+
+        # un'altra pagina, non solo profilo e home
+        community = client.get("/community").text
+        assert 'id="avvisoPush"' in community
+        assert "pushInAlto" not in community
+    finally:
+        client.get("/logout")
+        reset_rate_limit()
+        with Session(engine) as s:
+            riga = s.get(User, utente_id)
+            if riga:
+                s.delete(riga)
+                s.commit()
