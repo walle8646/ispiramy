@@ -13,7 +13,8 @@ import asyncio
 import os
 
 from app.database import engine
-from app.models import User, Booking, Dispute, DisputeMessage, Review, CommunityQuestion
+from app.models import User, Booking, Dispute, DisputeMessage, Review, CommunityQuestion, Category
+from app.utils.verifica_categorie import id_categorie_verificate, scrivi_categorie_verificate
 from app.routes.auth import verify_token
 from app.logger_config import logger
 from app.utils.orari import now_italy_naive
@@ -562,6 +563,11 @@ async def admin_users(request: Request):
 
         users_raw = session.exec(query).all()
 
+        tutte_categorie = [
+            {"id": c.id, "name": c.name, "icon": c.icon or ""}
+            for c in session.exec(select(Category).order_by(Category.name)).all()
+        ]
+
         users = []
         for u in users_raw:
             # Conta consulenze e recensioni
@@ -581,6 +587,8 @@ async def admin_users(request: Request):
                 "professione": u.professione or "",
                 "profile_picture": u.profile_picture,
                 "is_verified": u.is_verified,
+                "category_id": u.category_id,
+                "categorie_verificate": sorted(id_categorie_verificate(u)),
                 "user_type_id": u.user_type_id,
                 "consulenze_vendute": u.consulenze_vendute,
                 "consulenze_acquistate": u.consulenze_acquistate,
@@ -600,6 +608,7 @@ async def admin_users(request: Request):
             "current_user": admin_user,
             "user": admin_user,
             "users": users,
+            "tutte_categorie": tutte_categorie,
             "search": search,
             "total_users": total_users,
         }
@@ -634,6 +643,37 @@ async def admin_update_user_type(user_id: int, data: UserTypeUpdateRequest, requ
         logger.info(f"👤 [admin] User #{user_id} tipo cambiato da {old_type} a {data.user_type_id} da admin {admin_user.id}")
 
     return JSONResponse({"success": True, "message": f"Tipo utente aggiornato a {data.user_type_id}"})
+
+
+class CategorieVerificateRequest(BaseModel):
+    category_ids: list[int] = Field(default_factory=list)
+
+
+@router.post("/api/users/{user_id}/categorie-verificate")
+async def admin_categorie_verificate(user_id: int, data: CategorieVerificateRequest, request: Request):
+    """Un verificatore segna per quali categorie il badge e' visibile.
+
+    Non e' un pulsante pubblico: lo stesso accesso del pannello (user_type_id >= 2).
+    is_verified resta il lasciapassare dell'account.
+    """
+    admin_user = require_admin(request)
+    if not admin_user:
+        raise HTTPException(status_code=401, detail="Non autorizzato")
+
+    with Session(engine) as session:
+        target_user = session.get(User, user_id)
+        if not target_user:
+            raise HTTPException(status_code=404, detail="Utente non trovato")
+        note = {c.id for c in session.exec(select(Category)).all()}
+        scelte = [cid for cid in data.category_ids if cid in note]
+        scrivi_categorie_verificate(target_user, scelte)
+        session.add(target_user)
+        session.commit()
+        logger.info(
+            f"👤 [admin] Categorie verificate di #{user_id} aggiornate da admin {admin_user.id}: {scelte}"
+        )
+
+    return JSONResponse({"success": True, "category_ids": scelte})
 
 
 # ========== CONSULENZE ==========

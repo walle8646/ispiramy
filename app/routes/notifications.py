@@ -4,12 +4,59 @@ Route per gestione notifiche utente
 from fastapi import APIRouter, HTTPException, Request
 from sqlmodel import Session, select, func
 from app.database import engine
-from app.models import Notification, User
+from app.models import Booking, Dispute, Notification, User
 from app.routes.auth import get_current_user
 from datetime import datetime
 from typing import List
 
 router = APIRouter()
+
+
+def _pagamento_ancora_bloccato(session: Session, notif: Notification) -> tuple[bool, bool]:
+    """Vale solo finche' i soldi sono trattenuti e c'e' una contestazione
+    aperta. Il secondo valore dice se l'indirizzo di apertura e' stato scritto."""
+    scritto = False
+    if notif.related_booking_id and not notif.action_url:
+        notif.action_url = f"/profile#prenotazione-{notif.related_booking_id}"
+        session.add(notif)
+        scritto = True
+    if notif.type != "payment_hold":
+        return True, scritto
+    if not notif.related_booking_id:
+        return False, scritto
+    booking = session.get(Booking, notif.related_booking_id)
+    if not booking or booking.payment_status != "held":
+        return False, scritto
+    aperta = session.exec(
+        select(Dispute.id).where(
+            Dispute.booking_id == booking.id,
+            Dispute.status.in_(["open", "in_review"]),
+        )
+    ).first()
+    return aperta is not None, scritto
+
+
+def _togli_avvisi_pagati(session: Session, notifiche: list) -> list:
+    """Segna come lette le notifiche di pagamento gia' risolte e le toglie
+    dall'elenco. Le altre restano."""
+    visibili = []
+    toccata = False
+    for notif in notifiche:
+        if notif.type != "payment_hold":
+            visibili.append(notif)
+            continue
+        ancora, scritto = _pagamento_ancora_bloccato(session, notif)
+        toccata = toccata or scritto
+        if not ancora:
+            if not notif.is_read:
+                notif.is_read = True
+                session.add(notif)
+                toccata = True
+            continue
+        visibili.append(notif)
+    if toccata:
+        session.commit()
+    return visibili
 
 
 @router.get("/api/notifications")
@@ -25,7 +72,7 @@ async def get_notifications(request: Request, limit: int = 50, offset: int = 0):
             Notification.user_id == current_user.id
         ).order_by(Notification.created_at.desc()).offset(offset).limit(limit)
         
-        notifications = session.exec(statement).all()
+        notifications = _togli_avvisi_pagati(session, list(session.exec(statement).all()))
         
         # Formatta le notifiche con i dati dell'utente correlato
         result = []
@@ -65,6 +112,14 @@ async def get_unread_notifications_count(request: Request):
         raise HTTPException(status_code=401, detail="Non autenticato")
     
     with Session(engine) as session:
+        in_attesa = session.exec(
+            select(Notification).where(
+                Notification.user_id == current_user.id,
+                Notification.type == "payment_hold",
+                Notification.is_read == False,
+            )
+        ).all()
+        _togli_avvisi_pagati(session, list(in_attesa))
         count = session.exec(
             select(func.count(Notification.id)).where(
                 Notification.user_id == current_user.id,

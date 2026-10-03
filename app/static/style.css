@@ -807,3 +807,17 @@ body {
 .price-filter-form * {
     box-sizing: border-box;
 }
+
+.badge-verificato-categoria {
+    display: inline-flex;
+    align-items: center;
+    margin-left: 6px;
+    padding: 1px 7px;
+    border-radius: 999px;
+    background: #e8f5e9;
+    color: #1b5e20;
+    font-size: 0.72rem;
+    font-weight: 700;
+    line-height: 1.4;
+    vertical-align: middle;
+}

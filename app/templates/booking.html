@@ -503,7 +503,30 @@
     @media (max-width: 768px) {
         
         .weekly-slots-grid {
-            grid-template-columns: repeat(3, minmax(0, 1fr));
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .booking-container,
+        .weekly-slots-section,
+        .top-row,
+        .bottom-row,
+        .calendar-grid {
+            min-width: 0;
+            max-width: 100%;
+        }
+
+        .booking-container {
+            overflow-x: clip;
+        }
+
+        .calendar-day {
+            min-width: 0;
+        }
+
+        .duration-option:hover,
+        .calendar-day:hover,
+        .day-slot:hover {
+            transform: none;
         }
         
         /* Intestazione in una riga: la foto da 120px, la categoria e la
@@ -667,7 +690,9 @@
             </div>
             <p class="consultant-role">{{ consultant.professione or 'Consulente' }}</p>
             {% if consultant_category %}
-            <div class="consultant-cat-pill">{{ consultant_category.icon }} {{ consultant_category.name }}</div>
+            <div class="consultant-cat-pill">{{ consultant_category.icon }} {{ consultant_category.name }}
+                {% if categoria_verificata %}<span class="badge-verificato-categoria">Verificato</span>{% endif %}
+            </div>
             {% endif %}
             {% if consultant_skills %}
             <div class="consultant-skills">
@@ -730,6 +755,9 @@
     <div class="weekly-slots-section">
         <div class="booking-section">
             <h3><i class="fas fa-calendar-week"></i> Orari Disponibili - Prossimi 7 Giorni</h3>
+            <p id="notaFusoPrenotazione" style="color:#546e7a; font-size:.9rem; margin:.35rem 0 0;">
+                Gli orari sono nel fuso <span id="nomeFusoPrenotazione">Europe/Rome</span>.
+            </p>
             <div class="weekly-slots-grid" id="weeklySlots">
                 <div class="loading-spinner">
                     <i class="fas fa-spinner fa-spin fa-2x"></i>
@@ -937,6 +965,10 @@
     // Le spese di servizio le somma il server al momento del pagamento: qui
     // servono solo per mostrare al cliente quanto pagherà davvero
     const speseServizio = {{ spese_servizio }};
+    (function () {
+        const nodo = document.getElementById('nomeFusoPrenotazione');
+        if (nodo && window.fusoDiChiGuarda) nodo.textContent = window.fusoDiChiGuarda;
+    })();
     
     // Dati domande community del cliente
     let selectedQuestionId = null;
@@ -1278,7 +1310,9 @@
                 dayData.slots.forEach(slot => {
                     const slotElement = document.createElement('div');
                     slotElement.className = 'day-slot';
-                    slotElement.textContent = `${slot.start_time} - ${slot.end_time}`;
+                    slotElement.textContent = window.etichettaSlot
+                        ? window.etichettaSlot(dayData.dateStr, slot.start_time, slot.end_time)
+                        : `${slot.start_time} - ${slot.end_time}`;
                     slotElement.addEventListener('click', () => selectSlotFromWeekly(slot, dayData.dateStr, dayData.date));
                     daySlotsContainer.appendChild(slotElement);
                 });
@@ -1303,7 +1337,7 @@
         display.innerHTML = `
             <div style="text-align: left;">
                 <p style="margin: 0.5rem 0;"><strong>Data:</strong> ${date.toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</p>
-                <p style="margin: 0.5rem 0;"><strong>Orario:</strong> ${slot.start_time} - ${slot.end_time}
+                <p style="margin: 0.5rem 0;"><strong>Orario:</strong> ${window.etichettaSlot ? window.etichettaSlot(dateStr, slot.start_time, slot.end_time) : (slot.start_time + ' - ' + slot.end_time)}
                    <span style="color:#78909c; font-size:.85rem;">(${window.etichettaFuso ? window.etichettaFuso(dateStr, slot.start_time) : 'ora italiana'})</span></p>
                 <p style="margin: 0.5rem 0;"><strong>Durata:</strong> ${selectedDuration} minuti</p>
                 <hr style="margin: 1rem 0;">
@@ -1333,8 +1367,10 @@
         // L'orario e' quello italiano: chi prenota dall'estero deve saperlo
         // prima di pagare, non dopo
         const fuso = window.etichettaFuso ? window.etichettaFuso(dateStr, slot.start_time) : 'ora italiana';
-        document.getElementById('summaryTime').textContent =
-            `${slot.start_time} - ${slot.end_time} (${fuso})`;
+        const fascia = window.etichettaSlot
+            ? window.etichettaSlot(dateStr, slot.start_time, slot.end_time)
+            : `${slot.start_time} - ${slot.end_time}`;
+        document.getElementById('summaryTime').textContent = `${fascia} (${fuso})`;
         document.getElementById('summaryDuration').textContent = `${duration} minuti`;
         
         const consultationPrice = (pricePerHour / 60) * duration;

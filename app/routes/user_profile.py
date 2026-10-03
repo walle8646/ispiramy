@@ -9,6 +9,13 @@ from app.utils.email import send_profile_verification_request
 from app.utils.prezzi import PREZZO_ORARIO_MINIMO
 from app.utils_user import has_payment_method
 from app.utils.ai_service import genera_aree_interesse, genera_tags, valida_profilo, modera_immagine
+from app.utils.verifica_categorie import (
+    categorie_dichiarate,
+    etichette_verificate,
+    id_categorie_verificate,
+    registra_verifica_iniziale,
+    scrivi_categorie_verificate,
+)
 from typing import Optional
 import asyncio
 import os
@@ -109,7 +116,9 @@ async def user_profile(request: Request):
                     "reviews": reviews,
                     "avg_rating": avg_rating,
                     "formatted_created_at": formatted_created_at,
-                    "has_payment_method": has_payment_method(fresh_user)
+                    "has_payment_method": has_payment_method(fresh_user),
+                    "categorie_verificate": etichette_verificate(session, fresh_user),
+                    "categorie_verificate_ids": list(id_categorie_verificate(fresh_user)),
                 }
             )
     
@@ -326,6 +335,16 @@ async def update_profile(
             was_verified_before = db_user.is_verified
             descrizione_originale = (db_user.descrizione or "").strip()
 
+            # Un profilo gia' verificato senza elenco esplicito tiene il badge
+            # sulle categorie dichiarate adesso. Si congela prima di scrivere
+            # la categoria nuova, altrimenti quella nuova risulterebbe verificata.
+            if (
+                was_verified_before
+                and db_user.verified_category_ids is None
+                and (category_id is not None or selected_subcategories is not None)
+            ):
+                scrivi_categorie_verificate(db_user, categorie_dichiarate(db_user))
+
             if nome is not None:
                 db_user.nome = nome
             if cognome is not None:  # ✅ AGGIUNGI questo
@@ -461,6 +480,9 @@ async def update_profile(
             else:
                 # Profilo incompleto → salvato ma non verificato
                 db_user.is_verified = False
+
+            if db_user.is_verified:
+                registra_verifica_iniziale(db_user)
 
             session.add(db_user)
             session.commit()

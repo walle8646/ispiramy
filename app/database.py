@@ -122,6 +122,7 @@ COLONNE_AGGIUNTE = [
     ("booking", "acceptance_deadline", "TIMESTAMP"),         # migration_add_booking_acceptance
     ("booking", "paypal_authorization_id", "VARCHAR(64)"),   # migration_add_booking_acceptance
     ("booking", "service_fee", "NUMERIC(10, 2)"),            # migration_add_booking_service_fee
+    ("user", "verified_category_ids", "TEXT"),               # migration_add_verified_categories
 ]
 
 

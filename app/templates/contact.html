@@ -2,7 +2,47 @@
 {% block title %}Contattaci - Ispiramy{% endblock %}
 {% block page_content %}
 <h1>Contattaci</h1>
-<p class="updated">Hai domande, problemi o suggerimenti? Siamo qui per aiutarti.</p>
+<p class="updated">Hai una lamentela, un problema o un suggerimento? Scrivici: il messaggio arriva a chi gestisce il sito.</p>
+
+{% if inviato %}
+<div class="contact-box">
+    <p style="margin:0;"><strong>Messaggio inviato.</strong> Lo leggiamo all'indirizzo di amministrazione e rispondiamo di norma entro 1-2 giorni lavorativi.</p>
+</div>
+{% endif %}
+
+{% if errore %}
+<div class="contact-box" style="background:#ffebee;">
+    <p style="margin:0;">{{ errore }}</p>
+</div>
+{% endif %}
+
+<h2>Scrivi una lamentela</h2>
+<p>Il modulo è aperto a chi ha un account e a chi sta solo visitando il sito. Indica il riferimento della prenotazione, se ne hai uno.</p>
+
+<form method="post" action="/contact" class="contact-form">
+    <input type="hidden" name="csrf_token" value="{{ request.state.csrf_token }}">
+    <label for="tipo">Tipo di messaggio</label>
+    <select id="tipo" name="tipo">
+        <option value="lamentela" {% if tipo_scelto|default('lamentela') == 'lamentela' %}selected{% endif %}>Lamentela</option>
+        <option value="domanda" {% if tipo_scelto|default('lamentela') == 'domanda' %}selected{% endif %}>Domanda o suggerimento</option>
+    </select>
+
+    <label for="nome">Nome</label>
+    <input id="nome" name="nome" type="text" required maxlength="120" value="{{ nome_precompilato|default('') }}">
+
+    <label for="email">Email</label>
+    <input id="email" name="email" type="email" required maxlength="200" value="{{ email_precompilata|default('') }}">
+
+    <label for="messaggio">Messaggio</label>
+    <textarea id="messaggio" name="messaggio" required minlength="20" maxlength="4000" rows="6">{{ messaggio_precompilato|default('') }}</textarea>
+
+    <button type="submit">Invia</button>
+</form>
+
+<div class="contact-box">
+    <p style="margin:0 0 8px;"><strong>📧 Amministrazione</strong></p>
+    <p style="margin:0;"><a href="mailto:admin@ispiramy.com">admin@ispiramy.com</a></p>
+</div>
 
 <div class="contact-box">
     <p style="margin:0 0 8px;"><strong>📧 Supporto generale</strong></p>
@@ -17,12 +57,6 @@
 <h2>Tempi di risposta</h2>
 <p>
     Rispondiamo di norma entro 1-2 giorni lavorativi. Per questioni relative a una consulenza
-    specifica, indica nell'email il riferimento della prenotazione così possiamo aiutarti più in fretta.
-</p>
-
-<h2>Sei un consulente?</h2>
-<p>
-    Per domande sul tuo profilo, sui pagamenti o sulla verifica, scrivi a
-    <a href="mailto:supporto@ispiramy.com">supporto@ispiramy.com</a> specificando che sei un consulente.
+    specifica, indica nel messaggio il riferimento della prenotazione così possiamo aiutarti più in fretta.
 </p>
 {% endblock %}
