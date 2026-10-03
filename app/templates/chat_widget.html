@@ -885,7 +885,7 @@
                 <button class="chat-send-btn" id="sendBtn">
                     <i class="fas fa-paper-plane"></i>
                 </button>
-                <div class="chat-message-count" id="messageCount">1/40</div>
+                <div class="chat-message-count" id="messageCount">0/{{ max_messaggi_conversazione }}</div>
             </div>
         </div>
     </div>
@@ -1633,7 +1633,7 @@
     
     // Variables for chat limits
     let chatConfig = {
-        max_messages: 40,
+        max_messages: {{ max_messaggi_conversazione }},
         max_length: 500
     };
     
