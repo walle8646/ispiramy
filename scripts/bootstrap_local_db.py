@@ -226,7 +226,7 @@ def seed_notification_types(conn) -> None:
 # Senza queste righe l'app ripiega sui default scritti nel codice, e in locale
 # non si riesce a provare l'effetto di una configurazione diversa.
 CONFIGURATION_PROPERTIES = [
-    ("MAX_MESSAGES_PER_CONVERSATION", "80", "Numero massimo di messaggi per conversazione"),
+    ("MAX_MESSAGES_PER_CONVERSATION", "60", "Numero massimo di messaggi per conversazione"),
     ("MAX_MESSAGE_LENGTH", "1000", "Lunghezza massima in caratteri per un singolo messaggio"),
 ]
 

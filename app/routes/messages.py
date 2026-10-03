@@ -21,8 +21,17 @@ router = APIRouter()
 # ========== CONFIGURAZIONE LIMITI ==========
 # Valori di ripiego, usati solo se la tabella configuration_property non è
 # raggiungibile o non contiene la chiave.
-DEFAULT_MAX_MESSAGES_PER_CONVERSATION = 80
+# 60 è il limite della conversazione: banner, contatore e blocco all'invio
+# leggono questo stesso numero. Prima il banner ne aveva uno suo, 15, e il
+# backend un altro, 80.
+DEFAULT_MAX_MESSAGES_PER_CONVERSATION = 60
 DEFAULT_MAX_MESSAGE_LENGTH = 1000
+
+# Valori spediti in passato e poi smentiti. 15 era scritto nel banner della
+# chat. 80 era il default del backend e della riga inserita a suo tempo in
+# configuration_property. Se in tabella c'è ancora uno di questi, lo si porta
+# a 60. Un valore diverso, scelto di proposito, non si tocca.
+_LIMITI_MESSAGGI_OBSOLETI = ("15", "80")
 
 # Chiavi in configuration_property. Attenzione: /api/chat-config leggeva
 # 'max_messages' e 'max_length', che nel database non esistono; ricadeva
@@ -75,6 +84,58 @@ def max_lunghezza_messaggio() -> int:
 def svuota_cache_configurazione() -> None:
     """Usata dai test e dopo un cambio di configurazione."""
     _config_cache.clear()
+
+
+def frase_messaggi(n: int) -> str:
+    """'1 messaggio' oppure 'N messaggi': il numero e la parola devono accordarsi."""
+    numero = int(n)
+    if numero == 1:
+        return "1 messaggio"
+    return f"{numero} messaggi"
+
+
+def campi_limite(total_messages: int) -> dict:
+    """Gli stessi numeri che il server applica al blocco, da mostrare in chat.
+
+    Il banner non deve avere un tetto suo: legge max_messages e messages_left
+    da qui, cioè da max_messaggi_per_conversazione().
+    """
+    massimo = max_messaggi_per_conversazione()
+    return {
+        "max_messages": massimo,
+        "messages_left": max(0, massimo - total_messages),
+        "limit_reached": total_messages >= massimo,
+    }
+
+
+def allinea_limite_messaggi_obsoleto() -> bool:
+    """Porta a 60 un limite ancora fermo su 15 o su 80.
+
+    Ritorna True se ha aggiornato la riga. Un valore diverso resta com'è,
+    così una configurazione scelta di proposito non viene riscritta a ogni avvio.
+    """
+    try:
+        with get_session() as session:
+            riga = session.exec(
+                select(ConfigurationProperty)
+                .where(ConfigurationProperty.property_key == CONFIG_KEY_MAX_MESSAGES)
+            ).first()
+            if not riga or str(riga.property_value) not in _LIMITI_MESSAGGI_OBSOLETI:
+                return False
+            vecchio = riga.property_value
+            riga.property_value = str(DEFAULT_MAX_MESSAGES_PER_CONVERSATION)
+            riga.updated_at = datetime.utcnow()
+            session.add(riga)
+            session.commit()
+    except Exception as e:  # noqa: BLE001 — l'avvio non deve fallire per la config
+        logger.warning(f"⚠️ Limite messaggi non allineato ({e})")
+        return False
+    svuota_cache_configurazione()
+    logger.info(
+        f"Limite messaggi per conversazione portato da {vecchio} a "
+        f"{DEFAULT_MAX_MESSAGES_PER_CONVERSATION}"
+    )
+    return True
 
 
 def conta_messaggi_conversazione(session, conversation: Conversation) -> int:
@@ -331,7 +392,8 @@ async def get_messages(
                     "messages": [],
                     "total": 0,
                     "showing": 0,
-                    "has_more": False
+                    "has_more": False,
+                    **campi_limite(0),
                 }, status_code=200)
 
             # ✅ Ottieni gli ultimi 100 messaggi (modificato da 15)
@@ -383,7 +445,8 @@ async def get_messages(
                 "messages": result,
                 "total": total_messages,
                 "showing": len(result),
-                "has_more": total_messages > 100  # ✅ Indica se ci sono più di 100 messaggi
+                "has_more": total_messages > 100,  # ✅ Indica se ci sono più di 100 messaggi
+                **campi_limite(total_messages),
             }, status_code=200)
     
     except Exception as e:
@@ -469,9 +532,10 @@ async def send_message(
             if total_messages >= max_messaggi:
                 return JSONResponse({
                     "error": (
-                        f"Hai raggiunto il limite di {max_messaggi} messaggi per questa "
+                        f"Hai raggiunto il limite di {frase_messaggi(max_messaggi)} per questa "
                         "conversazione. Prenota una consulenza per continuare a scrivere."
-                    )
+                    ),
+                    **campi_limite(total_messages),
                 }, status_code=400)
             
             # ✅ CREA MESSAGGIO
@@ -561,7 +625,7 @@ async def send_message(
                     "created_at": message.created_at.isoformat(),
                     "is_mine": True
                 },
-                "messages_left": max(0, max_messaggi - total_messages - 1)
+                **campi_limite(total_messages + 1),
             }, status_code=201)
     
     except Exception as e:

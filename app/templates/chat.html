@@ -260,7 +260,7 @@
     <!-- ✅ BANNER PRENOTA CONSULENZA (MOSTRATO AL LIMITE) -->
     <div id="bookingBanner" style="display: none;" class="booking-banner">
         <h3>🎯 Vuoi continuare la conversazione?</h3>
-        <p>Hai raggiunto il limite di 15 messaggi gratuiti. Prenota una consulenza per approfondire!</p>
+        <p id="bookingLimitText">Hai raggiunto il limite di {% if max_messaggi_conversazione == 1 %}1 messaggio gratuito{% else %}{{ max_messaggi_conversazione }} messaggi gratuiti{% endif %}. Prenota una consulenza per approfondire!</p>
         <a href="/booking/{{ other_user.id }}" class="booking-btn">
             📅 Prenota Consulenza con {{ other_user.nome }}
         </a>
@@ -300,7 +300,25 @@
     const OTHER_USER_ID = {{ other_user.id }};
     const CURRENT_USER_ID = {{ user.id }};
     const MAX_MESSAGE_LENGTH = 1000;
-    const MAX_MESSAGES = 15;
+    // Lo stesso tetto che il server applica all'invio. Non scriverne un altro qui.
+    let MAX_MESSAGES = {{ max_messaggi_conversazione }};
+
+    // 1 messaggio / N messaggi: la parola segue il numero, anche nel banner giallo.
+    function fraseRimasti(n) {
+        const numero = Number(n);
+        if (numero === 1) {
+            return "1 messaggio";
+        }
+        return numero + " messaggi";
+    }
+
+    function paroleGratuite(n) {
+        return Number(n) === 1 ? "messaggio gratuito" : "messaggi gratuiti";
+    }
+
+    function fraseGratuiti(n) {
+        return Number(n) + " " + paroleGratuite(n);
+    }
     
     let lastMessageId = null;
     let messageCount = 0;
@@ -342,9 +360,14 @@
             // ✅ LIMITE RAGGIUNTO - Mostra banner prenota
             banner.className = 'chat-limit-warning chat-limit-error';
             banner.innerHTML = `
-                ⚠️ <strong>Limite raggiunto!</strong> Hai inviato ${total}/${MAX_MESSAGES} messaggi gratuiti.
+                ⚠️ <strong>Limite raggiunto!</strong> Hai inviato ${total}/${MAX_MESSAGES} ${paroleGratuite(total)}.
             `;
             banner.style.display = 'block';
+
+            const testoPrenota = document.getElementById('bookingLimitText');
+            if (testoPrenota) {
+                testoPrenota.textContent = `Hai raggiunto il limite di ${fraseGratuiti(MAX_MESSAGES)}. Prenota una consulenza per approfondire!`;
+            }
             
             // ✅ MOSTRA BOTTONE PRENOTA CONSULENZA
             bookingBanner.style.display = 'block';
@@ -358,7 +381,7 @@
             // AVVISO: POCHI MESSAGGI RIMASTI
             banner.className = 'chat-limit-warning';
             banner.innerHTML = `
-                ⚠️ Attenzione: ti rimangono solo <strong>${messagesLeft} messaggi</strong> su ${MAX_MESSAGES} per questa conversazione.
+                ⚠️ Attenzione: ti rimangono solo <strong>${fraseRimasti(messagesLeft)}</strong> su ${MAX_MESSAGES} per questa conversazione.
             `;
             banner.style.display = 'block';
             bookingBanner.style.display = 'none';
@@ -381,17 +404,23 @@
 
                 messageCount = data.total || messages.length;
                 const showing = data.showing || messages.length;
-                limitReached = data.limit_reached || false;
+                if (typeof data.max_messages === "number") {
+                    MAX_MESSAGES = data.max_messages;
+                }
+                const messagesLeft = (typeof data.messages_left === "number")
+                    ? data.messages_left
+                    : Math.max(0, MAX_MESSAGES - messageCount);
+                limitReached = Boolean(data.limit_reached);
 
-                // ✅ AGGIORNA BANNER
-                showLimitBanner(MAX_MESSAGES - messageCount, messageCount);
+                // ✅ AGGIORNA BANNER (il tetto arriva dal server, non da un 15 scritto qui)
+                showLimitBanner(messagesLeft, messageCount);
 
                 if (messages.length === 0) {
                     messagesArea.innerHTML = `
                         <div class="empty-chat">
                             <div class="empty-chat-icon">💬</div>
                             <p>Nessun messaggio ancora</p>
-                            <p style="font-size: 14px;">Inizia la conversazione! (Max ${MAX_MESSAGES} messaggi gratuiti)</p>
+                            <p style="font-size: 14px;">Inizia la conversazione! (Max ${fraseGratuiti(MAX_MESSAGES)})</p>
                         </div>
                     `;
                 } else {
@@ -481,6 +510,9 @@
                 input.style.height = 'auto';
                 updateCharCounter();
 
+                if (typeof result.max_messages === "number") {
+                    MAX_MESSAGES = result.max_messages;
+                }
                 if (result.messages_left !== undefined) {
                     messageCount = MAX_MESSAGES - result.messages_left;
                     showLimitBanner(result.messages_left, messageCount);

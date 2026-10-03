@@ -206,6 +206,18 @@ def _utente_in_ogni_pagina(request: Request) -> dict:
     return {"current_user": ricordato}
 
 
+def _limiti_chat_in_ogni_pagina(request: Request) -> dict:
+    """Il tetto dei messaggi, lo stesso che applica il server.
+
+    Il banner della chat e il contatore del widget lo leggono da qui: se
+    restasse un numero scritto nel template, lo schermo direbbe 15 mentre
+    l'invio si ferma a un altro valore.
+    """
+    from app.routes.messages import max_messaggi_per_conversazione
+
+    return {"max_messaggi_conversazione": max_messaggi_per_conversazione()}
+
+
 def _lingua_in_ogni_pagina(request: Request) -> dict:
     # La lingua scelta e la funzione per tradurre, in tutte le pagine.
     from app.utils.lingue_ui import (LINGUE_UI, lingua_di, nome_categoria,
@@ -224,7 +236,8 @@ def _lingua_in_ogni_pagina(request: Request) -> dict:
 
 templates = Jinja2Templates(directory="app/templates",
                             context_processors=[_utente_in_ogni_pagina,
-                                                _lingua_in_ogni_pagina])
+                                                _lingua_in_ogni_pagina,
+                                                _limiti_chat_in_ogni_pagina])
 # Aggiungi filtro personalizzato per nomi utenti
 templates.env.filters['display_name'] = get_display_name
 templates.env.filters['default_avatar'] = get_default_avatar
@@ -431,6 +444,10 @@ def test_s3_credentials():
 @app.on_event("startup")
 def on_startup():
     create_db_and_tables()
+    # 15 nel banner e 80 nel database erano i limiti vecchi: in produzione la
+    # riga c'è già, quindi il default nuovo da solo non cambierebbe niente.
+    from app.routes.messages import allinea_limite_messaggi_obsoleto
+    allinea_limite_messaggi_obsoleto()
     test_s3_credentials()  # Test S3 credentials early
     start_scheduler()  # Avvia lo scheduler per le notifiche programmate
     logger.info("✅ Ispiramy started successfully")

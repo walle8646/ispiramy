@@ -136,7 +136,7 @@ Tutti gli stili sono inline nel file `chat_widget.html`. Colori principali:
 ## Limitazioni Attuali
 - ✅ Solo conversazioni 1-on-1 (no gruppi)
 - ✅ Polling ogni 5 secondi (no WebSocket real-time)
-- ✅ Max 15 messaggi per conversazione (configurabile in `messages.py`)
+- ✅ Max 60 messaggi per conversazione (configurabile in `messages.py`, chiave `MAX_MESSAGES_PER_CONVERSATION`)
 - ✅ Notifiche solo quando pagina è aperta (no Service Worker)
 - ✅ Suono notification semplice (non personalizzabile)
 

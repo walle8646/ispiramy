@@ -20,7 +20,10 @@ from app.routes.messages import (
     CONFIG_KEY_MAX_LENGTH,
     CONFIG_KEY_MAX_MESSAGES,
     DEFAULT_MAX_MESSAGES_PER_CONVERSATION,
+    allinea_limite_messaggi_obsoleto,
+    campi_limite,
     conta_messaggi_conversazione,
+    frase_messaggi,
     get_config_int,
     max_lunghezza_messaggio,
     max_messaggi_per_conversazione,
@@ -293,3 +296,214 @@ class TestFrequenzaInvio:
                     if u:
                         s.delete(u)
                 s.commit()
+
+
+class TestLimiteSessanta:
+    """Una conversazione vale 60 messaggi, non 15.
+
+    Il banner del telefono diceva «1 messaggi su 15» perché il numero era
+    scritto a mano nel template, mentre il server ne usava un altro. Se il
+    tetto torna a 15, o se schermo e server si separano di nuovo, questi
+    test falliscono.
+    """
+
+    def test_la_parola_si_accorda_col_numero(self):
+        assert frase_messaggi(1) == "1 messaggio"
+        assert frase_messaggi(60) == "60 messaggi"
+        assert "1 messaggi" not in frase_messaggi(1)
+
+    def test_il_default_e_60(self):
+        TestConfigurazione()._rimuovi(CONFIG_KEY_MAX_MESSAGES)
+        svuota_cache_configurazione()
+        assert DEFAULT_MAX_MESSAGES_PER_CONVERSATION == 60
+        assert max_messaggi_per_conversazione() == 60
+        assert campi_limite(0) == {
+            "max_messages": 60,
+            "messages_left": 60,
+            "limit_reached": False,
+        }
+        assert campi_limite(59)["messages_left"] == 1
+        assert campi_limite(60)["limit_reached"] is True
+
+    def test_il_template_non_ha_un_15_suo(self):
+        from pathlib import Path
+
+        radice = Path(__file__).resolve().parent.parent
+        chat = (radice / "app" / "templates" / "chat.html").read_text(encoding="utf-8")
+        widget = (radice / "app" / "templates" / "chat_widget.html").read_text(encoding="utf-8")
+        assert "MAX_MESSAGES = 15" not in chat
+        assert "limite di 15" not in chat
+        assert "${messagesLeft} messaggi" not in chat
+        assert "max_messaggi_conversazione" in chat
+        assert 'return "1 messaggio"' in chat
+        assert "max_messages: 40" not in widget
+        assert "1/40" not in widget
+        assert "max_messaggi_conversazione" in widget
+
+    def test_i_vecchi_15_e_80_diventano_60_un_valore_scelto_resta(self):
+        cfg = TestConfigurazione()
+        try:
+            for vecchio in ("15", "80"):
+                cfg._imposta(CONFIG_KEY_MAX_MESSAGES, vecchio)
+                svuota_cache_configurazione()
+                assert allinea_limite_messaggi_obsoleto() is True
+                assert max_messaggi_per_conversazione() == 60
+
+            cfg._imposta(CONFIG_KEY_MAX_MESSAGES, 40)
+            svuota_cache_configurazione()
+            assert allinea_limite_messaggi_obsoleto() is False
+            assert max_messaggi_per_conversazione() == 40
+        finally:
+            cfg._rimuovi(CONFIG_KEY_MAX_MESSAGES)
+            svuota_cache_configurazione()
+
+
+class TestLimiteApplicato:
+    """Il 60° messaggio passa, il 61° no. Quindici messaggi non chiudono la chat."""
+
+    def _utenti(self):
+        from app.utils.password import hash_password
+
+        password = "password-di-prova"
+        with Session(engine) as s:
+            a = User(email=f"lim1-{secrets.token_hex(4)}@test.local",
+                     password_md5=hash_password(password), confirmed=1, nome="Ada")
+            b = User(email=f"lim2-{secrets.token_hex(4)}@test.local",
+                     password_md5=hash_password(password), confirmed=1, nome="Bruno")
+            s.add(a)
+            s.add(b)
+            s.commit()
+            s.refresh(a)
+            s.refresh(b)
+            conv = Conversation(user1_id=min(a.id, b.id), user2_id=max(a.id, b.id))
+            s.add(conv)
+            s.commit()
+            s.refresh(conv)
+            return conv.id, a.id, b.id, a.email, password
+
+    def _pulisci(self, ids):
+        with Session(engine) as s:
+            for m in s.exec(select(Message).where(Message.conversation_id == ids[0])).all():
+                s.delete(m)
+            conv = s.get(Conversation, ids[0])
+            if conv:
+                s.delete(conv)
+            for uid in ids[1:3]:
+                u = s.get(User, uid)
+                if u:
+                    s.delete(u)
+            s.commit()
+
+    def _senza_riga_di_config(self):
+        TestConfigurazione()._rimuovi(CONFIG_KEY_MAX_MESSAGES)
+        svuota_cache_configurazione()
+
+    def test_quindici_messaggi_non_chiudono_la_conversazione(self, csrf_client, monkeypatch):
+        """Se il tetto tornasse a 15, questo invio verrebbe rifiutato."""
+        from app.utils.rate_limit import reset_rate_limit
+
+        async def consenti(testo):
+            return {"approved": True, "reason": ""}
+
+        monkeypatch.setattr("app.routes.messages.modera_testo_chat", consenti)
+        self._senza_riga_di_config()
+        reset_rate_limit()
+        ids = self._utenti()
+        try:
+            _messaggi(ids[0], ids[1], 15, datetime.utcnow())
+            login = csrf_client.post("/api/login", data={"email": ids[3], "password": ids[4]})
+            assert login.status_code == 200, login.text
+
+            lettura = csrf_client.get(f"/api/messaggi/{ids[2]}")
+            assert lettura.status_code == 200
+            dati = lettura.json()
+            assert dati["max_messages"] == 60
+            assert dati["messages_left"] == 45
+            assert dati["limit_reached"] is False
+
+            inviato = csrf_client.post(f"/api/messaggi/{ids[2]}", data={"content": "il sedicesimo"})
+            assert inviato.status_code == 201, inviato.text
+            assert inviato.json()["max_messages"] == 60
+            assert inviato.json()["messages_left"] == 44
+        finally:
+            csrf_client.get("/logout")
+            reset_rate_limit()
+            self._pulisci(ids)
+            self._senza_riga_di_config()
+
+    def test_il_sessantesimo_passa_e_il_sessantunesimo_no(self, csrf_client, monkeypatch):
+        from app.utils.rate_limit import reset_rate_limit
+
+        async def consenti(testo):
+            return {"approved": True, "reason": ""}
+
+        monkeypatch.setattr("app.routes.messages.modera_testo_chat", consenti)
+        self._senza_riga_di_config()
+        reset_rate_limit()
+        ids = self._utenti()
+        try:
+            _messaggi(ids[0], ids[1], 59, datetime.utcnow())
+            login = csrf_client.post("/api/login", data={"email": ids[3], "password": ids[4]})
+            assert login.status_code == 200, login.text
+
+            sessantesimo = csrf_client.post(
+                f"/api/messaggi/{ids[2]}", data={"content": "il sessantesimo"}
+            )
+            assert sessantesimo.status_code == 201, sessantesimo.text
+            corpo = sessantesimo.json()
+            assert corpo["max_messages"] == 60
+            assert corpo["messages_left"] == 0
+            assert corpo["limit_reached"] is True
+
+            oltre = csrf_client.post(
+                f"/api/messaggi/{ids[2]}", data={"content": "il sessantunesimo"}
+            )
+            assert oltre.status_code == 400, oltre.text
+            assert "60" in oltre.json()["error"]
+            assert "1 messaggi" not in oltre.json()["error"]
+
+            with Session(engine) as s:
+                quanti = conta_messaggi_conversazione(s, s.get(Conversation, ids[0]))
+            assert quanti == 60
+        finally:
+            csrf_client.get("/logout")
+            reset_rate_limit()
+            self._pulisci(ids)
+            self._senza_riga_di_config()
+
+    def test_pagina_e_api_dicono_lo_stesso_numero(self, csrf_client):
+        from app.utils.rate_limit import reset_rate_limit
+
+        self._senza_riga_di_config()
+        reset_rate_limit()
+        ids = self._utenti()
+        try:
+            login = csrf_client.post("/api/login", data={"email": ids[3], "password": ids[4]})
+            assert login.status_code == 200, login.text
+
+            pagina = csrf_client.get(f"/messaggi/{ids[2]}")
+            assert pagina.status_code == 200, pagina.text
+            assert "let MAX_MESSAGES = 60;" in pagina.text
+            assert "max_messages: 60" in pagina.text
+            assert "0/60" in pagina.text
+            assert "MAX_MESSAGES = 15" not in pagina.text
+            assert "limite di 15" not in pagina.text
+            assert "su 15" not in pagina.text
+            assert "1/40" not in pagina.text
+            assert 'return "1 messaggio"' in pagina.text
+
+            api = csrf_client.get("/api/chat-config")
+            assert api.json()["max_messages"] == 60
+
+            TestConfigurazione()._imposta(CONFIG_KEY_MAX_MESSAGES, 40)
+            svuota_cache_configurazione()
+            pagina_40 = csrf_client.get(f"/messaggi/{ids[2]}")
+            assert "let MAX_MESSAGES = 40;" in pagina_40.text
+            assert "MAX_MESSAGES = 15" not in pagina_40.text
+            assert csrf_client.get("/api/chat-config").json()["max_messages"] == 40
+            assert csrf_client.get(f"/api/messaggi/{ids[2]}").json()["max_messages"] == 40
+        finally:
+            csrf_client.get("/logout")
+            reset_rate_limit()
+            self._pulisci(ids)
+            self._senza_riga_di_config()
