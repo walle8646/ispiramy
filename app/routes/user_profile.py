@@ -9,6 +9,7 @@ from app.utils.email import send_profile_verification_request
 from app.utils.prezzi import PREZZO_ORARIO_MINIMO
 from app.utils_user import has_payment_method
 from app.utils.ai_service import genera_aree_interesse, genera_tags, valida_profilo, modera_immagine
+from app.utils.file_immagini import tipo_immagine
 from app.utils.verifica_categorie import (
     categorie_dichiarate,
     etichette_verificate,
@@ -597,10 +598,6 @@ async def upload_profile_picture(request: Request, file: UploadFile = File(...))
         
         if not user:
             return JSONResponse({"error": "Non autenticato"}, status_code=401)
-        
-        # Verifica che sia un'immagine
-        if file.content_type not in ["image/jpeg", "image/png", "image/webp", "image/gif"]:
-            return JSONResponse({"error": "Formato file non supportato"}, status_code=400)
 
         # Il limite va applicato PRIMA di tenere tutto in memoria: con
         # `await file.read()` secco, un upload da qualche GB veniva caricato per
@@ -613,7 +610,14 @@ async def upload_profile_picture(request: Request, file: UploadFile = File(...))
         contents = await file.read(MAX_UPLOAD + 1)
         if len(contents) > MAX_UPLOAD:
             return JSONResponse({"error": "File troppo grande (max 5MB)"}, status_code=413)
-        
+
+        # Il tipo e il nome arrivano dal browser: un HTML chiamato foto.jpg
+        # con Content-Type image/jpeg non è una foto. Si guarda l'inizio del file.
+        riconosciuto = tipo_immagine(contents)
+        if riconosciuto is None:
+            return JSONResponse({"error": "Il file non è un'immagine valida"}, status_code=400)
+        file_extension, file_mime = riconosciuto
+
         # ========== MODERAZIONE AI ==========
         import base64
         image_b64 = base64.b64encode(contents).decode("utf-8")
@@ -662,7 +666,6 @@ async def upload_profile_picture(request: Request, file: UploadFile = File(...))
             
             # Genera nome unico per il file
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-            file_extension = file.filename.split(".")[-1].lower()
             s3_key = f"profile-pictures/{user.id}_{timestamp}.{file_extension}"
             
             logger.info(f"🔍 DEBUG - Uploading to S3: {s3_bucket}/{s3_key}")
@@ -673,7 +676,7 @@ async def upload_profile_picture(request: Request, file: UploadFile = File(...))
                 Bucket=s3_bucket,
                 Key=s3_key,
                 Body=contents,
-                ContentType=file.content_type,
+                ContentType=file_mime,
                 CacheControl="max-age=31536000"  # Cache per 1 anno
             )
             logger.info(f"✅ File uploaded successfully to S3")
@@ -716,7 +719,7 @@ async def upload_profile_picture(request: Request, file: UploadFile = File(...))
         except Exception as s3_error:
             logger.exception("❌ S3 upload error")
             # Fallback a salvataggio locale
-            return save_profile_picture_locally(user, contents)
+            return save_profile_picture_locally(user, contents, file_extension)
     
     except Exception as e:
         logger.exception("❌ Error uploading profile picture")
@@ -726,7 +729,7 @@ async def upload_profile_picture(request: Request, file: UploadFile = File(...))
         )
 
 
-def save_profile_picture_locally(user, file_contents):
+def save_profile_picture_locally(user, file_contents, extension="jpg"):
     """Salva immagine profilo localmente come fallback"""
     try:
         from datetime import datetime
@@ -737,7 +740,7 @@ def save_profile_picture_locally(user, file_contents):
         
         # Genera nome unico
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        filename = f"{user.id}_{timestamp}.jpg"
+        filename = f"{user.id}_{timestamp}.{extension}"
         file_path = upload_dir / filename
         
         # Salva file

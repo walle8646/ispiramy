@@ -175,7 +175,7 @@ def test_anche_la_pagina_profilo_ha_il_collegamento():
     """«Lo vedo nel menù ma non nel profilo»: la voce nel menu dell'avatar non
     è la pagina Profilo, dove la scheda Account è il posto che tutti guardano."""
     profilo = _file("app", "templates", "profile.html")
-    account = profilo[profilo.index("<h3 style=\"color: #1a202c;\">Account</h3>"):]
+    account = profilo[profilo.index('id="schedaAccount"'):]
     account = account[:account.index("</div>\n                </div>")]
     assert 'id="voceInstallaProfilo"' in account
     assert "voceInstallaProfilo" in _blocco_invito(), "deve essere collegata come le altre"

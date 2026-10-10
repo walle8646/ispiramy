@@ -1,33 +1,25 @@
 {% extends "static_page_base.html" %}
-{% block title %}Chi Siamo - Ispiramy{% endblock %}
+{% block title %}{{ t('chi.titolo') }} - Ispiramy{% endblock %}
 {% block page_content %}
-<h1>Chi Siamo</h1>
-<p class="updated">La piattaforma che mette in contatto chi cerca aiuto con chi può darlo.</p>
+<h1>{{ t('chi.titolo') }}</h1>
+<p class="updated">{{ t('chi.sottotitolo') }}</p>
 
-<p>
-    <strong>Ispiramy</strong> nasce da un'idea semplice: per ogni problema che affronti,
-    c'è qualcuno che ci è già passato e può aiutarti davvero. Che si tratti di carriera,
-    fisco, tecnologia, benessere o qualsiasi altra sfida, ti mettiamo in contatto con
-    persone esperte pronte a darti una consulenza concreta.
-</p>
+<p>{{ t('chi.intro') }}</p>
 
-<h2>Come funziona</h2>
+<h2>{{ t('chi.come') }}</h2>
 <ul>
-    <li><strong>Cerchi</strong> il consulente giusto per categoria o con la ricerca intelligente.</li>
-    <li><strong>Prenoti</strong> una consulenza in videochiamata, scegliendo data e durata.</li>
-    <li><strong>Parli</strong> direttamente con l'esperto e ottieni risposte concrete.</li>
-    <li><strong>Lasci una recensione</strong> per aiutare gli altri a scegliere.</li>
+    <li><strong>{{ t('chi.cerchi') }}</strong> {{ t('chi.cerchi_testo') }}</li>
+    <li><strong>{{ t('chi.prenoti') }}</strong> {{ t('chi.prenoti_testo') }}</li>
+    <li><strong>{{ t('chi.parli') }}</strong> {{ t('chi.parli_testo') }}</li>
+    <li><strong>{{ t('chi.recensione') }}</strong> {{ t('chi.recensione_testo') }}</li>
 </ul>
 
-<h2>La nostra missione</h2>
-<p>
-    Rendere l'esperienza e la conoscenza accessibili a tutti, in modo diretto e umano.
-    Nessun intermediario complicato: solo persone che si aiutano a vicenda.
-</p>
+<h2>{{ t('chi.missione') }}</h2>
+<p>{{ t('chi.missione_testo') }}</p>
 
-<h2>Vuoi diventare consulente?</h2>
+<h2>{{ t('chi.diventa') }}</h2>
 <p>
-    Se hai competenze da condividere, puoi <a href="/register">registrarti come consulente</a>
-    e iniziare a offrire le tue consulenze sulla piattaforma.
+    {{ t('chi.diventa_a') }} <a href="/register">{{ t('chi.diventa_link') }}</a>
+    {{ t('chi.diventa_b') }}
 </p>
 {% endblock %}

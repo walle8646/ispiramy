@@ -1,44 +1,40 @@
 {% extends "static_page_base.html" %}
-{% block title %}Privacy Policy - Ispiramy{% endblock %}
+{% block title %}{{ t('privacy.titolo') }} - Ispiramy{% endblock %}
 {% block page_content %}
-<h1>Privacy Policy</h1>
-<p class="updated">Ultimo aggiornamento: {{ current_year or 2026 }}</p>
+<h1>{{ t('privacy.titolo') }}</h1>
+<p class="updated">{{ t('termini.aggiornato') }} {{ current_year or 2026 }}</p>
 
 <div class="draft-note">
-    ⚠️ <strong>Bozza da completare.</strong> Questo testo è un segnaposto. Prima della pubblicazione
-    ufficiale va rivisto da un consulente legale per la piena conformità al GDPR (Reg. UE 2016/679).
+    ⚠️ <strong>{{ t('legale.bozza') }}</strong> {{ t('privacy.bozza') }}
 </div>
 
-<p>
-    Ispiramy ("noi") rispetta la tua privacy. Questa informativa descrive quali dati personali
-    raccogliamo, come li utilizziamo e quali sono i tuoi diritti.
-</p>
+<p>{{ t('privacy.intro') }}</p>
 
-<h2>Titolare del trattamento</h2>
-<p>Il titolare del trattamento è Ispiramy. Per qualsiasi richiesta: <a href="mailto:info@ispiramy.com">info@ispiramy.com</a>.</p>
+<h2>{{ t('privacy.titolare') }}</h2>
+<p>{{ t('privacy.titolare_a') }} <a href="mailto:info@ispiramy.com">info@ispiramy.com</a>.</p>
 
-<h2>Dati che raccogliamo</h2>
+<h2>{{ t('privacy.dati') }}</h2>
 <ul>
-    <li><strong>Dati di registrazione</strong>: nome, email, password (cifrata).</li>
-    <li><strong>Dati di profilo</strong>: descrizione, competenze, foto, tariffe (per i consulenti).</li>
-    <li><strong>Dati di utilizzo</strong>: prenotazioni, messaggi, recensioni.</li>
-    <li><strong>Dati di pagamento</strong>: gestiti dai provider Stripe e PayPal (non conserviamo i dati delle carte).</li>
-    <li><strong>Registrazioni video</strong>: le consulenze possono essere registrate per finalità di sicurezza e gestione contestazioni, conservate per un massimo di 30 giorni.</li>
+    <li><strong>{{ t('privacy.reg') }}</strong> {{ t('privacy.reg_testo') }}</li>
+    <li><strong>{{ t('privacy.profilo') }}</strong> {{ t('privacy.profilo_testo') }}</li>
+    <li><strong>{{ t('privacy.uso') }}</strong> {{ t('privacy.uso_testo') }}</li>
+    <li><strong>{{ t('privacy.pagamento') }}</strong> {{ t('privacy.pagamento_testo') }}</li>
+    <li><strong>{{ t('privacy.video') }}</strong> {{ t('privacy.video_testo') }}</li>
 </ul>
 
-<h2>Come usiamo i dati</h2>
+<h2>{{ t('privacy.come') }}</h2>
 <ul>
-    <li>Fornire e gestire il servizio (prenotazioni, videochiamate, pagamenti).</li>
-    <li>Inviare comunicazioni di servizio (conferme, promemoria, notifiche).</li>
-    <li>Garantire la sicurezza e gestire eventuali contestazioni.</li>
+    <li>{{ t('privacy.come_a') }}</li>
+    <li>{{ t('privacy.come_b') }}</li>
+    <li>{{ t('privacy.come_c') }}</li>
 </ul>
 
-<h2>Conservazione</h2>
-<p>Conserviamo i dati per il tempo necessario a fornire il servizio e secondo gli obblighi di legge. Le registrazioni video sono cancellate automaticamente dopo 30 giorni.</p>
+<h2>{{ t('privacy.conservazione') }}</h2>
+<p>{{ t('privacy.conservazione_testo') }}</p>
 
-<h2>I tuoi diritti</h2>
+<h2>{{ t('privacy.diritti') }}</h2>
 <p>
-    Hai diritto di accedere, rettificare, cancellare i tuoi dati e opporti al trattamento.
-    Per esercitare i tuoi diritti scrivi a <a href="mailto:info@ispiramy.com">info@ispiramy.com</a>.
+    {{ t('privacy.diritti_a') }}
+    <a href="mailto:info@ispiramy.com">info@ispiramy.com</a>.
 </p>
 {% endblock %}

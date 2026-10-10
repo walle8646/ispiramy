@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Pagamento Completato - Ispiramy{% endblock %}
+{% block title %}{{ t('esito.pagato_titolo') }} - Ispiramy{% endblock %}
 
 {% block extra_css %}
 <style>
@@ -178,25 +178,24 @@
         <i class="fas fa-check"></i>
     </div>
     
-    <h1>Pagamento Completato!</h1>
-    <p>La tua prenotazione è stata confermata con successo. Riceverai una email di conferma con tutti i dettagli.</p>
+    <h1>{{ t('esito.pagato_titolo') }}</h1>
+    <p>{{ t('esito.pagato_testo') }}</p>
     
     <div class="booking-details" id="bookingDetails">
-        <h3>📅 Dettagli Prenotazione</h3>
+        <h3>📅 {{ t('esito.dettagli') }}</h3>
         <div id="detailsContent">
             <p style="text-align: center; color: #666;">
-                I dettagli completi della tua prenotazione sono stati inviati via email.<br>
-                Puoi visualizzare tutte le tue prenotazioni nella sezione <strong>Profilo</strong>.
+                {{ t('esito.dettagli_testo') }} <strong>{{ t('esito.profilo') }}</strong>.
             </p>
         </div>
     </div>
     
     <div class="action-buttons">
         <a href="/profile" class="btn btn-primary">
-            <i class="fas fa-user"></i> Vai al Profilo
+            <i class="fas fa-user"></i> {{ t('esito.vai_profilo') }}
         </a>
         <a href="/messaggi" class="btn btn-secondary">
-            <i class="fas fa-comments"></i> Messaggi
+            <i class="fas fa-comments"></i> {{ t('messaggi.titolo') }}
         </a>
     </div>
 </div>

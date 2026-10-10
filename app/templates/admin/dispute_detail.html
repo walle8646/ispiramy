@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Contestazione #{{ dispute.id }} - Admin Ispiramy{% endblock %}
+{% block title %}{{ t('admin.contestazione_n') }} #{{ dispute.id }} - Admin Ispiramy{% endblock %}
 
 {% block extra_css %}
 <style>
@@ -400,36 +400,37 @@
 <div class="admin-container">
     <div class="admin-header">
         <h1>
-            Contestazione #{{ dispute.id }}
+            {{ t('admin.contestazione_n') }} #{{ dispute.id }}
             <span class="badge badge-{{ dispute.status }}">
-                {% if dispute.status == 'open' %}Aperta
-                {% elif dispute.status == 'in_review' %}In revisione
-                {% elif dispute.status == 'resolved' %}Risolta
-                {% elif dispute.status == 'rejected' %}Rifiutata
+                {% if dispute.status == 'open' %}{{ t('admin.aperta') }}
+                {% elif dispute.status == 'in_review' %}{{ t('admin.in_revisione') }}
+                {% elif dispute.status == 'resolved' %}{{ t('admin.risolta') }}
+                {% elif dispute.status == 'rejected' %}{{ t('admin.rifiutata') }}
                 {% endif %}
             </span>
         </h1>
         <nav class="admin-nav">
-            <a href="/admin/disputes"><i class="fas fa-arrow-left"></i> Torna alla lista</a>
+            <a href="/admin/disputes"><i class="fas fa-arrow-left"></i> {{ t('admin.torna_lista') }}</a>
             <a href="/admin/transaction-problems"><i class="fas fa-rotate"></i> {{ t('problemi.menu') }}{% if problemi_transazione_aperti %} <span class="nav-badge">{{ problemi_transazione_aperti }}</span>{% endif %}</a>
-            <a href="/admin/users"><i class="fas fa-users"></i> Utenti</a>
-            <a href="/admin/bookings"><i class="fas fa-video"></i> Consulenze</a>
+            <a href="/admin/reports"><i class="fas fa-flag"></i> {{ t('segnalazioni.menu') }}{% if segnalazioni_aperte %} <span class="nav-badge">{{ segnalazioni_aperte }}</span>{% endif %}</a>
+            <a href="/admin/users"><i class="fas fa-users"></i> {{ t('admin.utenti') }}</a>
+            <a href="/admin/bookings"><i class="fas fa-video"></i> {{ t('admin.consulenze') }}</a>
         </nav>
     </div>
 
     <!-- Info booking e parti -->
     <div class="info-card">
-        <h3><i class="fas fa-info-circle"></i> Dettagli</h3>
+        <h3><i class="fas fa-info-circle"></i> {{ t('admin.dettagli') }}</h3>
         <div class="info-grid">
             <div class="info-item">
-                <label>Cliente</label>
+                <label>{{ t('admin.cliente') }}</label>
                 <div class="value">
                     <a href="/user/{{ dispute.client.id }}">{{ dispute.client.name }}</a>
                     <br><small style="color:#888;">{{ dispute.client.email }}</small>
                 </div>
             </div>
             <div class="info-item">
-                <label>Consulente</label>
+                <label>{{ t('admin.consulente') }}</label>
                 <div class="value">
                     <a href="/user/{{ dispute.consultant.id }}">{{ dispute.consultant.name }}</a>
                     {% if dispute.consultant.professione %}
@@ -439,7 +440,7 @@
                 </div>
             </div>
             <div class="info-item">
-                <label>Consulenza</label>
+                <label>{{ t('admin.consulenza') }}</label>
                 <div class="value">
                     Booking #{{ dispute.booking_id }}
                     {% if dispute.booking.date %}
@@ -448,34 +449,34 @@
                 </div>
             </div>
             <div class="info-item">
-                <label>Pagamento</label>
+                <label>{{ t('admin.pagamento') }}</label>
                 <div class="value">
                     {% if dispute.booking.total_paid > 0 %}&euro;{{ "%.2f"|format(dispute.booking.total_paid) }}{% elif dispute.booking.price > 0 %}&euro;{{ "%.2f"|format(dispute.booking.price) }}{% else %}-{% endif %}
                     {% if dispute.booking.service_fee and dispute.booking.service_fee > 0 %}
-                    <br><small style="color:#888;">consulenza &euro;{{ "%.2f"|format(dispute.booking.price) }} + servizio &euro;{{ "%.2f"|format(dispute.booking.service_fee) }}</small>
+                    <br><small style="color:#888;">{{ t('admin.voce_consulenza') }} &euro;{{ "%.2f"|format(dispute.booking.price) }} + {{ t('admin.voce_servizio') }} &euro;{{ "%.2f"|format(dispute.booking.service_fee) }}</small>
                     {% endif %}
-                    <br><small style="color:#888;">Stato: {{ dispute.booking.payment_status or '-' }}</small>
+                    <br><small style="color:#888;">{{ t('admin.stato') }}: {{ dispute.booking.payment_status or '-' }}</small>
                 </div>
             </div>
             <div class="info-item">
-                <label>Data apertura</label>
+                <label>{{ t('admin.data_apertura') }}</label>
                 <div class="value">{{ dispute.created_at.strftime('%d/%m/%Y %H:%M') if dispute.created_at else '-' }}</div>
             </div>
             <div class="info-item">
-                <label>Ultimo aggiornamento</label>
-                <div class="value">{{ dispute.updated_at.strftime('%d/%m/%Y %H:%M') if dispute.updated_at else 'Mai' }}</div>
+                <label>{{ t('admin.ultimo_aggiornamento') }}</label>
+                <div class="value">{{ dispute.updated_at.strftime('%d/%m/%Y %H:%M') if dispute.updated_at else t('admin.mai') }}</div>
             </div>
             <div class="info-item">
-                <label>Registrazione</label>
+                <label>{{ t('admin.registrazione') }}</label>
                 <div class="value">
                     {% if dispute.booking.recording_filename %}
                     <button class="download-btn" onclick="downloadRecording({{ dispute.booking_id }}, this)">
-                        <i class="fas fa-download"></i> Scarica MP4
+                        <i class="fas fa-download"></i> {{ t('admin.scarica_mp4') }}
                     </button>
                     {% else %}
-                    <span style="color: #999;"><i class="fas fa-video-slash"></i> Nessun video</span>
+                    <span style="color: #999;"><i class="fas fa-video-slash"></i> {{ t('admin.nessun_video') }}</span>
                     {% endif %}
-                    <br><small style="color:#888;">Registrazione in prenotazione: {% if dispute.booking.recording_requested %}sì{% else %}no{% endif %}</small>
+                    <br><small style="color:#888;">{{ t('admin.reg_prenotazione') }} {% if dispute.booking.recording_requested %}{{ t('admin.si') }}{% else %}{{ t('admin.no') }}{% endif %}</small>
                 </div>
             </div>
         </div>
@@ -483,47 +484,47 @@
 
     <!-- Descrizione contestazione -->
     <div class="dispute-description">
-        <h3><i class="fas fa-exclamation-triangle"></i> Motivazione del cliente</h3>
+        <h3><i class="fas fa-exclamation-triangle"></i> {{ t('admin.motivazione') }}</h3>
         <p>{{ dispute.description }}</p>
     </div>
 
     <!-- Analisi AI -->
     <div class="ai-section">
-        <h3><i class="fas fa-robot"></i> Analisi AI del Video</h3>
+        <h3><i class="fas fa-robot"></i> {{ t('admin.analisi_titolo') }}</h3>
         
         {% if dispute.ai_verdict %}
         <!-- Risultato esistente -->
         <div id="aiResult" class="ai-result {{ dispute.ai_verdict }}">
             <span class="ai-verdict-badge {{ dispute.ai_verdict }}">
-                {% if dispute.ai_verdict == 'justified' %}⚠️ Contestazione Giustificata
-                {% elif dispute.ai_verdict == 'unjustified' %}✅ Contestazione Non Giustificata
-                {% else %}❓ Risultato Incerto
+                {% if dispute.ai_verdict == 'justified' %}⚠️ {{ t('admin.giustificata') }}
+                {% elif dispute.ai_verdict == 'unjustified' %}✅ {{ t('admin.non_giustificata') }}
+                {% else %}❓ {{ t('admin.incerta') }}
                 {% endif %}
             </span>
             <div class="ai-confidence">
-                <strong style="font-size: 0.85rem; min-width: 80px;">Confidenza: {{ dispute.ai_confidence }}%</strong>
+                <strong style="font-size: 0.85rem; min-width: 80px;">{{ t('admin.confidenza') }} {{ dispute.ai_confidence }}%</strong>
                 <div class="ai-confidence-bar">
                     <div class="ai-confidence-fill" style="width: {{ dispute.ai_confidence }}%; background: {% if dispute.ai_confidence >= 75 %}#43a047{% elif dispute.ai_confidence >= 50 %}#f59e0b{% else %}#ef4444{% endif %};"></div>
                 </div>
             </div>
             <div class="ai-comment">{{ dispute.ai_comment }}</div>
-            <div class="ai-timestamp">Analisi eseguita il {{ dispute.ai_analyzed_at.strftime('%d/%m/%Y alle %H:%M') if dispute.ai_analyzed_at else '' }}</div>
+            <div class="ai-timestamp">{{ t('admin.analisi_il') }} {% if dispute.ai_analyzed_at %}{{ dispute.ai_analyzed_at.strftime('%d/%m/%Y') }} {{ t('admin.alle') }} {{ dispute.ai_analyzed_at.strftime('%H:%M') }}{% endif %}</div>
         </div>
         {% if dispute.booking.recording_filename %}
         <button class="ai-btn" style="margin-top: 14px; background: #6b7280;" onclick="runAiAnalysis(this)">
-            <i class="fas fa-redo"></i> Ripeti Analisi
+            <i class="fas fa-redo"></i> {{ t('admin.ripeti_analisi') }}
         </button>
         {% endif %}
         {% else %}
         <!-- Nessuna analisi ancora -->
         <div id="aiResult"></div>
         {% if dispute.booking.recording_filename %}
-        <p style="color: #666; font-size: 0.9rem; margin-bottom: 14px;">Avvia l'analisi AI per verificare automaticamente se la contestazione è giustificata analizzando il video della consulenza.</p>
+        <p style="color: #666; font-size: 0.9rem; margin-bottom: 14px;">{{ t('admin.analisi_testo') }}</p>
         <button class="ai-btn" id="aiBtn" onclick="runAiAnalysis(this)">
-            <i class="fas fa-brain"></i> Avvia Analisi AI
+            <i class="fas fa-brain"></i> {{ t('admin.avvia_analisi') }}
         </button>
         {% else %}
-        <p style="color: #999; font-size: 0.9rem;"><i class="fas fa-video-slash"></i> Nessun video disponibile per l'analisi.</p>
+        <p style="color: #999; font-size: 0.9rem;"><i class="fas fa-video-slash"></i> {{ t('admin.nessun_video_analisi') }}</p>
         {% endif %}
         {% endif %}
         <div id="aiMsg" class="status-msg"></div>
@@ -531,22 +532,21 @@
 
     <!-- Azioni stato -->
     <div class="status-actions">
-        <label>Cambia stato:</label>
-        <button class="status-btn btn-open {% if dispute.status == 'open' %}active{% endif %}" onclick="updateStatus('open')">Aperta</button>
-        <button class="status-btn btn-in_review {% if dispute.status == 'in_review' %}active{% endif %}" onclick="updateStatus('in_review')">In revisione</button>
-        <button class="status-btn btn-resolved {% if dispute.status == 'resolved' %}active{% endif %}" onclick="showRefundPanel()">Risolta</button>
-        <button class="status-btn btn-rejected {% if dispute.status == 'rejected' %}active{% endif %}" onclick="updateStatus('rejected')">Rifiutata</button>
+        <label>{{ t('admin.cambia_stato') }}</label>
+        <button class="status-btn btn-open {% if dispute.status == 'open' %}active{% endif %}" onclick="updateStatus('open')">{{ t('admin.aperta') }}</button>
+        <button class="status-btn btn-in_review {% if dispute.status == 'in_review' %}active{% endif %}" onclick="updateStatus('in_review')">{{ t('admin.in_revisione') }}</button>
+        <button class="status-btn btn-resolved {% if dispute.status == 'resolved' %}active{% endif %}" onclick="showRefundPanel()">{{ t('admin.risolta') }}</button>
+        <button class="status-btn btn-rejected {% if dispute.status == 'rejected' %}active{% endif %}" onclick="updateStatus('rejected')">{{ t('admin.rifiutata') }}</button>
         <div id="statusMsg" class="status-msg"></div>
     </div>
 
     <!-- Pannello rimborso parziale -->
     <div id="refundPanel" style="display:none; background:#fff; border-radius:14px; padding:24px; box-shadow:0 2px 12px rgba(0,0,0,0.06); margin-bottom:20px;">
         <h3 style="color:#1a1a2e; font-size:1rem; margin:0 0 16px 0;">
-            <i class="fas fa-hand-holding-usd" style="color:#2e7d32; margin-right:6px;"></i> Rimborso al cliente
+            <i class="fas fa-hand-holding-usd" style="color:#2e7d32; margin-right:6px;"></i> {{ t('admin.rimborso_titolo') }}
         </h3>
         <p style="color:#666; font-size:0.9rem; margin-bottom:16px;">
-            Il rimborso al cliente è calcolato sul totale pagato, spese di servizio comprese.
-            Al consulente resta la quota della sola consulenza, meno la commissione.
+            {{ t('admin.rimborso_testo') }}
         </p>
         <div style="display:flex; align-items:center; gap:16px; margin-bottom:12px;">
             <input type="range" id="refundSlider" min="0" max="100" value="100" step="5" 
@@ -562,29 +562,29 @@
         <div id="refundPreview" style="background:#f8f9fa; border-radius:10px; padding:16px; margin-bottom:16px;">
             <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
                 <div>
-                    <div style="font-size:0.8rem; color:#888; text-transform:uppercase; letter-spacing:0.3px;">Rimborso al cliente</div>
+                    <div style="font-size:0.8rem; color:#888; text-transform:uppercase; letter-spacing:0.3px;">{{ t('admin.rimborso_titolo') }}</div>
                     <div id="refundAmountDisplay" style="font-size:1.2rem; font-weight:700; color:#c62828;">€{{ "%.2f"|format(price_val) }}</div>
                 </div>
                 <div>
-                    <div style="font-size:0.8rem; color:#888; text-transform:uppercase; letter-spacing:0.3px;">Pagamento al consulente</div>
+                    <div style="font-size:0.8rem; color:#888; text-transform:uppercase; letter-spacing:0.3px;">{{ t('admin.pagamento_consulente') }}</div>
                     <div id="consultantAmountDisplay" style="font-size:1.2rem; font-weight:700; color:#2e7d32;">€0.00</div>
-                    <div id="consultantFeeNote" style="font-size:0.75rem; color:#999; display:none;">al netto della commissione piattaforma</div>
+                    <div id="consultantFeeNote" style="font-size:0.75rem; color:#999; display:none;">{{ t('admin.al_netto') }}</div>
                 </div>
             </div>
         </div>
         <div style="display:flex; gap:10px;">
             <button onclick="confirmResolve()" style="flex:1; padding:10px 20px; background:#43a047; color:#fff; border:none; border-radius:8px; font-weight:600; cursor:pointer; font-size:0.9rem;">
-                <i class="fas fa-check"></i> Conferma risoluzione
+                <i class="fas fa-check"></i> {{ t('admin.conferma_risoluzione') }}
             </button>
             <button onclick="hideRefundPanel()" style="padding:10px 20px; background:#f5f5f5; color:#555; border:none; border-radius:8px; font-weight:600; cursor:pointer; font-size:0.9rem;">
-                Annulla
+                {{ t('comune.annulla') }}
             </button>
         </div>
     </div>
 
     <!-- Thread messaggi -->
     <div class="messages-section">
-        <h3><i class="fas fa-comments"></i> Conversazione</h3>
+        <h3><i class="fas fa-comments"></i> {{ t('admin.conversazione') }}</h3>
 
         <div class="messages-thread" id="messagesThread">
             {% if messages %}
@@ -598,16 +598,16 @@
             {% else %}
                 <div class="no-messages">
                     <i class="fas fa-comment-slash"></i>
-                    <p>Nessun messaggio ancora. Rispondi per avviare la conversazione.</p>
+                    <p>{{ t('admin.nessun_messaggio') }}</p>
                 </div>
             {% endif %}
         </div>
 
         <!-- Reply form -->
         <div class="reply-form">
-            <textarea id="replyMessage" placeholder="Scrivi un messaggio al cliente..." maxlength="5000"></textarea>
+            <textarea id="replyMessage" placeholder="{{ t('admin.scrivi_cliente') }}" maxlength="5000"></textarea>
             <button id="sendBtn" onclick="sendMessage()">
-                <i class="fas fa-paper-plane"></i> Invia
+                <i class="fas fa-paper-plane"></i> {{ t('admin.invia') }}
             </button>
         </div>
         <div id="replyMsg" class="status-msg"></div>
@@ -615,6 +615,7 @@
 </div>
 
 <script>
+    const LOCALE_ADMIN = {{ t('admin.locale_data')|tojson }};
     // Scroll messaggi in fondo
     const thread = document.getElementById('messagesThread');
     if (thread) thread.scrollTop = thread.scrollHeight;
@@ -645,18 +646,18 @@
                 bubble.innerHTML = `
                     <div class="msg-sender">{{ current_user.nome or '' }} {{ current_user.cognome or '' }}</div>
                     <div>${msg.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</div>
-                    <div class="msg-time">${now.toLocaleDateString('it-IT')} ${now.toLocaleTimeString('it-IT', {hour:'2-digit', minute:'2-digit'})}</div>
+                    <div class="msg-time">${now.toLocaleDateString(LOCALE_ADMIN)} ${now.toLocaleTimeString(LOCALE_ADMIN, {hour:'2-digit', minute:'2-digit'})}</div>
                 `;
                 thread.appendChild(bubble);
                 thread.scrollTop = thread.scrollHeight;
                 textarea.value = '';
 
-                showReplyMsg('Messaggio inviato', 'success');
+                showReplyMsg({{ t('admin.messaggio_inviato')|tojson }}, 'success');
             } else {
-                showReplyMsg(data.detail || 'Errore', 'error');
+                showReplyMsg(data.detail || {{ t('comune.errore')|tojson }}, 'error');
             }
         } catch (e) {
-            showReplyMsg('Errore di connessione', 'error');
+            showReplyMsg({{ t('comune.errore_rete')|tojson }}, 'error');
         }
         btn.disabled = false;
     }
@@ -693,8 +694,8 @@
 
     async function confirmResolve() {
         const pct = parseInt(document.getElementById('refundSlider').value);
-        const label = pct === 100 ? 'rimborso totale' : `rimborso ${pct}%`;
-        if (!confirm(`Confermare risoluzione con ${label} al cliente?`)) return;
+        const label = pct === 100 ? {{ t('admin.rimborso_totale')|tojson }} : {{ t('admin.rimborso_parziale')|tojson }}.replace('{pct}', pct);
+        if (!confirm({{ t('admin.conferma_rimborso')|tojson }}.replace('{label}', label))) return;
         await updateStatus('resolved', pct);
         hideRefundPanel();
     }
@@ -714,12 +715,12 @@
                 // Aggiorna bottoni attivi
                 document.querySelectorAll('.status-btn').forEach(b => b.classList.remove('active'));
                 document.querySelector(`.btn-${status}`).classList.add('active');
-                showStatusMsg('Stato aggiornato', 'success');
+                showStatusMsg({{ t('admin.stato_aggiornato')|tojson }}, 'success');
             } else {
-                showStatusMsg(data.detail || 'Errore', 'error');
+                showStatusMsg(data.detail || {{ t('comune.errore')|tojson }}, 'error');
             }
         } catch (e) {
-            showStatusMsg('Errore di connessione', 'error');
+            showStatusMsg({{ t('comune.errore_rete')|tojson }}, 'error');
         }
     }
 
@@ -740,28 +741,28 @@
     async function downloadRecording(bookingId, btn) {
         btn.disabled = true;
         const originalText = btn.innerHTML;
-        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Caricamento...';
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> {{ t('comune.caricamento') }}';
         try {
             const resp = await fetch(`/admin/api/bookings/${bookingId}/download`);
             const data = await resp.json();
             if (resp.ok && data.url) {
                 window.open(data.url, '_blank');
             } else {
-                alert(data.detail || 'Errore nel download');
+                alert(data.detail || {{ t('admin.download_errore')|tojson }});
             }
         } catch (e) {
-            alert('Errore di connessione');
+            alert({{ t('comune.errore_rete')|tojson }});
         }
         btn.disabled = false;
         btn.innerHTML = originalText;
     }
 
     async function runAiAnalysis(btn) {
-        if (!confirm('Avviare l\'analisi AI del video? L\'operazione potrebbe richiedere qualche minuto.')) return;
+        if (!confirm({{ t('admin.avvia_confirm')|tojson }})) return;
         
         btn.disabled = true;
         const originalText = btn.innerHTML;
-        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Analisi in corso... (potrebbe richiedere qualche minuto)';
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> {{ t('admin.analisi_corso') }}';
 
         try {
             const resp = await fetch('/admin/api/disputes/{{ dispute.id }}/ai-analysis', {
@@ -772,35 +773,35 @@
             if (resp.ok && data.success) {
                 const container = document.getElementById('aiResult');
                 const verdictLabels = {
-                    'justified': '⚠️ Contestazione Giustificata',
-                    'unjustified': '✅ Contestazione Non Giustificata',
-                    'uncertain': '❓ Risultato Incerto'
+                    'justified': '⚠️ {{ t('admin.giustificata') }}',
+                    'unjustified': '✅ {{ t('admin.non_giustificata') }}',
+                    'uncertain': '❓ {{ t('admin.incerta') }}'
                 };
                 const barColor = data.confidence >= 75 ? '#43a047' : data.confidence >= 50 ? '#f59e0b' : '#ef4444';
                 const now = new Date();
-                const ts = `${now.toLocaleDateString('it-IT')} alle ${now.toLocaleTimeString('it-IT', {hour:'2-digit', minute:'2-digit'})}`;
+                const ts = `${now.toLocaleDateString(LOCALE_ADMIN)} {{ t('admin.alle') }} ${now.toLocaleTimeString(LOCALE_ADMIN, {hour:'2-digit', minute:'2-digit'})}`;
                 
                 container.className = `ai-result ${data.verdict}`;
                 container.innerHTML = `
                     <span class="ai-verdict-badge ${data.verdict}">${verdictLabels[data.verdict] || '❓ '+data.verdict}</span>
                     <div class="ai-confidence">
-                        <strong style="font-size: 0.85rem; min-width: 80px;">Confidenza: ${data.confidence}%</strong>
+                        <strong style="font-size: 0.85rem; min-width: 80px;">{{ t('admin.confidenza') }} ${data.confidence}%</strong>
                         <div class="ai-confidence-bar">
                             <div class="ai-confidence-fill" style="width: ${data.confidence}%; background: ${barColor};"></div>
                         </div>
                     </div>
                     <div class="ai-comment">${data.comment.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</div>
-                    <div class="ai-timestamp">Analisi eseguita il ${ts}</div>
+                    <div class="ai-timestamp">{{ t('admin.analisi_il') }} ${ts}</div>
                 `;
-                btn.innerHTML = '<i class="fas fa-redo"></i> Ripeti Analisi';
+                btn.innerHTML = '<i class="fas fa-redo"></i> {{ t('admin.ripeti_analisi') }}';
                 btn.style.background = '#6b7280';
-                showAiMsg('Analisi completata', 'success');
+                showAiMsg({{ t('admin.analisi_completata')|tojson }}, 'success');
             } else {
-                showAiMsg(data.detail || 'Errore nell\'analisi', 'error');
+                showAiMsg(data.detail || {{ t('admin.errore_analisi')|tojson }}, 'error');
                 btn.innerHTML = originalText;
             }
         } catch (e) {
-            showAiMsg('Errore di connessione', 'error');
+            showAiMsg({{ t('comune.errore_rete')|tojson }}, 'error');
             btn.innerHTML = originalText;
         }
         btn.disabled = false;

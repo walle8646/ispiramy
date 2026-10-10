@@ -94,6 +94,25 @@ def _categorie() -> dict:
         return {}
 
 
+def etichetta_attivita(minuti: int, lingua: str):
+    """Scritta di presenza e se il pallino verde deve accendersi."""
+    if minuti < 5:
+        return traduci("presenza.online", lingua), True
+    if minuti < 60:
+        return traduci("presenza.minuti", lingua).replace("{n}", str(minuti)), False
+    if minuti < 1440:
+        ore = minuti // 60
+        chiave = "presenza.ora" if ore == 1 else "presenza.ore"
+        return traduci(chiave, lingua).replace("{n}", str(ore)), False
+    if minuti < 43200:
+        giorni = minuti // 1440
+        chiave = "presenza.giorno" if giorni == 1 else "presenza.giorni"
+        return traduci(chiave, lingua).replace("{n}", str(giorni)), False
+    mesi = max(1, minuti // 43200)
+    chiave = "presenza.mese" if mesi == 1 else "presenza.mesi"
+    return traduci(chiave, lingua).replace("{n}", str(mesi)), False
+
+
 def nome_categoria(nome: Optional[str], lingua: str) -> str:
     """Il nome della categoria nella lingua chiesta.
 

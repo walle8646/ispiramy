@@ -227,11 +227,22 @@ def _problemi_in_ogni_pagina(request: Request) -> dict:
     utente = getattr(request.state, "utente_corrente", None)
     if not utente or (getattr(utente, "user_type_id", 0) or 0) < 2:
         return {"problemi_transazione_aperti": 0}
+    aperti = 0
+    segnalazioni = 0
     try:
         from app.utils.problemi_transazione import conta_aperti
-        return {"problemi_transazione_aperti": conta_aperti()}
+        aperti = conta_aperti()
     except Exception:
-        return {"problemi_transazione_aperti": 0}
+        aperti = 0
+    try:
+        from app.routes.admin import conta_segnalazioni_aperte
+        segnalazioni = conta_segnalazioni_aperte()
+    except Exception:
+        segnalazioni = 0
+    return {
+        "problemi_transazione_aperti": aperti,
+        "segnalazioni_aperte": segnalazioni,
+    }
 
 
 def _lingua_in_ogni_pagina(request: Request) -> dict:
@@ -314,9 +325,11 @@ templates.env.globals['ore_limite_annullamento'] = ORE_LIMITE_ANNULLAMENTO
 # Le cifre che raccontiamo nelle pagine devono essere quelle vere: se un domani
 # cambiano le spese di servizio, la pagina "Come funziona" cambia con loro.
 from app.utils.prezzi import PREZZO_ORARIO_MINIMO, SPESE_SERVIZIO
+from app.routes.auth import MIN_PASSWORD_LENGTH
 templates.env.globals['spese_servizio_valore'] = float(SPESE_SERVIZIO)
 templates.env.globals['spese_servizio_euro'] = f"{float(SPESE_SERVIZIO):.2f}".replace('.', ',')
 templates.env.globals['prezzo_orario_minimo'] = PREZZO_ORARIO_MINIMO
+templates.env.globals['min_password'] = MIN_PASSWORD_LENGTH
 
 # Filtro per parsing JSON (usato per le immagini community)
 import json as _json

@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Crea Offerta Consulenza{% endblock %}
+{% block title %}{{ t('offerta.crea_titolo') }}{% endblock %}
 
 {% block extra_css %}
 <style>
@@ -261,7 +261,7 @@
 
 {% block content %}
 <div class="consultation-form-container">
-    <h2 style="margin-top: 0;">🎯 Crea Offerta di Consulenza</h2>
+    <h2 style="margin-top: 0;">🎯 {{ t('offerta.crea_titolo') }}</h2>
     
     <div class="client-info">
         <div class="client-avatar">
@@ -279,7 +279,7 @@
     
     {% if existing_offer %}
     <div class="existing-offer-warning">
-        <strong>⚠️ Attenzione</strong>
+        <strong>⚠️ {{ t('offerta.attenzione') }}</strong>
         Hai già un'offerta attiva per questo cliente (€{{ existing_offer.price }}, {{ existing_offer.duration_minutes }} min).
         Creando una nuova offerta, quella precedente verrà annullata.
     </div>
@@ -288,7 +288,7 @@
     <form method="POST" action="/consulenza/crea/{{ client.id }}" id="consultationForm">
         <input type="hidden" name="csrf_token" value="{{ request.state.csrf_token }}">
         <div class="form-group">
-            <label for="price">Prezzo (€) <span style="color: #d32f2f;">*</span></label>
+            <label for="price">{{ t('offerta.prezzo') }} <span style="color: #d32f2f;">*</span></label>
             <div class="price-input-wrapper">
                 <span class="currency-symbol">€</span>
                 <input 
@@ -301,12 +301,12 @@
                     required
                 >
             </div>
-            <div class="help-text">Il compenso della consulenza. Il cliente pagherà in più le spese di servizio di Ispiramy</div>
-            <small style="color: #d32f2f;">⚠️ Minimo 20€/ora: per 90 minuti almeno 30€, per 2 ore almeno 40€</small>
+            <div class="help-text">{{ t('offerta.prezzo_aiuto') }}</div>
+            <small style="color: #d32f2f;">⚠️ {{ t('offerta.prezzo_min') }}</small>
         </div>
         
         <div class="form-group">
-            <label>Durata</label>
+            <label>{{ t('prenota.durata') }}</label>
             <div class="duration-options">
                 {% for duration in duration_options %}
                 <div class="duration-option">
@@ -322,26 +322,26 @@
                 </div>
                 {% endfor %}
             </div>
-            <div class="help-text">La durata della consulenza che verrà prenotata</div>
+            <div class="help-text">{{ t('offerta.durata_aiuto') }}</div>
         </div>
         
         <div class="form-group">
-            <label for="custom_message">Messaggio personalizzato (opzionale)</label>
+            <label for="custom_message">{{ t('offerta.messaggio_label') }}</label>
             <textarea 
                 id="custom_message" 
                 name="custom_message"
-                placeholder="Aggiungi un messaggio personalizzato all'offerta..."
+                placeholder="{{ t('offerta.messaggio_ph') }}"
                 maxlength="500"
             ></textarea>
-            <div class="help-text">Un messaggio che verrà mostrato insieme all'offerta</div>
+            <div class="help-text">{{ t('offerta.messaggio_aiuto') }}</div>
         </div>
         
         <button type="submit" class="btn-submit">
-            ✅ Crea Offerta e Invia
+            ✅ {{ t('offerta.crea') }}
         </button>
         
         <a href="/messaggi/{{ client.id }}" class="btn-cancel">
-            ❌ Annulla
+            ❌ {{ t('comune.annulla') }}
         </a>
     </form>
     

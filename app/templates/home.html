@@ -486,6 +486,26 @@
         border-radius: 16px;
     }
 
+    /* Il filmato ha i titoli in italiano. In inglese al suo posto c'e' la stessa frase, scritta. */
+    .hero-testo-en {
+        height: auto !important;
+        min-height: 140px;
+        background: #fff;
+        color: #1b3a1f;
+        padding: 18px 16px;
+        display: flex;
+        align-items: center;
+        cursor: default;
+        box-sizing: border-box;
+    }
+
+    .hero-testo-en p {
+        margin: 0;
+        font-size: 15px;
+        line-height: 1.45;
+        font-weight: 650;
+    }
+
     .video-play-overlay {
         position: absolute;
         top: 50%;
@@ -1262,14 +1282,20 @@
         </div>
         
         <div class="hero-right">
+            {% if lingua_ui == 'en' %}
+            <div class="hero-video-container hero-testo-en">
+                <p>{{ t('cf.intro') }}</p>
+            </div>
+            {% else %}
             <div class="hero-video-container" id="heroVideoContainer">
                 <video id="heroVideo" preload="auto" playsinline muted autoplay
                        poster="https://ispiramy-images.s3.eu-north-1.amazonaws.com/homepage/video_homepage_v2.jpg">
                     <source src="https://ispiramy-images.s3.eu-north-1.amazonaws.com/homepage/video_homepage_v2.mp4" type="video/mp4">
                 </video>
                 <div class="video-play-overlay" id="videoPlayBtn">▶️</div>
-                <button class="video-unmute-btn" id="videoUnmuteBtn">🔇 Attiva audio</button>
+                <button class="video-unmute-btn" id="videoUnmuteBtn">🔇 {{ t('home.attiva_audio') }}</button>
             </div>
+            {% endif %}
             <a href="/come-funziona" class="hero-spiegazione">
                 {{ t('home.come_funziona') }}
             </a>
@@ -1291,10 +1317,9 @@
 
         <!-- Community Q&A -->
         <a href="/community" class="cta-card">
-            <h3 class="cta-card-title">Community Q&A</h3>
+            <h3 class="cta-card-title">{{ t('home.cta_community_titolo') }}</h3>
             <p class="cta-card-desc">
-                Pubblica la tua domanda e ricevi risposte dagli esperti della community,
-                gratis.
+                {{ t('home.cta_community_testo') }}
             </p>
             <span class="cta-btn cta-btn-secondary">{{ t('home.cta_community_pulsante') }}</span>
         </a>
@@ -1351,7 +1376,7 @@
                  onerror="this.onerror=null; this.src='{{ item.user|default_avatar }}'">
 
             <h3>{{ item.user.nome }} {{ item.user.cognome or '' }}</h3>
-            <p class="consultant-profession">{{ item.user.professione or 'Consulente' }}</p>
+            <p class="consultant-profession">{{ item.user.professione or t('prenota.consulente') }}</p>
 
             {% if item.category %}
             <span class="consultant-category" style="background: {{ item.category.color }}20; color: {{ item.category.color }};">
@@ -1363,12 +1388,12 @@
                 {% if item.avg_rating %}
                 <span>⭐ {{ item.avg_rating }} <span style="opacity:.75;">({{ item.review_count }})</span></span>
                 {% endif %}
-                <span>💼 {{ item.user.consulenze_vendute }} consulenze</span>
+                <span>💼 {{ item.user.consulenze_vendute }} {{ t('home.consulenze') }}</span>
             </div>
 
             {% if item.user.prezzo_consulenza %}
             <div class="consultant-price">
-                €{{ "%.0f"|format(item.user.prezzo_consulenza) }}/ora
+                €{{ "%.0f"|format(item.user.prezzo_consulenza) }}{{ t('home.all_ora') }}
             </div>
             {% endif %}
 
@@ -1382,7 +1407,7 @@
     </div>
     {% else %}
     <p style="text-align: center; color: #666; font-size: 18px;">
-        Nessun consulente disponibile al momento.
+        {{ t('home.nessun_consulente') }}
     </p>
     {% endif %}
 </section>
@@ -1397,13 +1422,28 @@
         // La vetrina si nasconde solo quando questo blocco c'e' davvero
         document.body.classList.add('ha-mia-home');
 
+        const H = {
+            ora: {{ t('home.fra_ora')|tojson }},
+            minuti: {{ t('home.fra_minuti')|tojson }},
+            oraSing: {{ t('home.fra_ora_sing')|tojson }},
+            ore: {{ t('home.fra_ore')|tojson }},
+            giorno: {{ t('home.fra_giorno')|tojson }},
+            giorni: {{ t('home.fra_giorni')|tojson }},
+            partecipa: {{ t('home.partecipa')|tojson }},
+            siComincia: {{ t('home.si_comincia')|tojson }},
+            con: {{ t('home.con')|tojson }},
+            minutiParola: {{ t('home.minuti')|tojson }},
+            daRispondere: {{ t('home.da_rispondere')|tojson }},
+            chiesto: {{ t('home.chiesto')|tojson }},
+            accetta: {{ t('home.accetta_profilo')|tojson }}
+        };
         function quando(minuti) {
-            if (minuti <= 0) { return 'ora'; }
-            if (minuti < 60) { return `fra ${minuti} minuti`; }
+            if (minuti <= 0) { return H.ora; }
+            if (minuti < 60) { return H.minuti.replace('{n}', minuti); }
             const ore = Math.round(minuti / 60);
-            if (ore < 24) { return `fra ${ore} ${ore === 1 ? 'ora' : 'ore'}`; }
+            if (ore < 24) { return (ore === 1 ? H.oraSing : H.ore).replace('{n}', ore); }
             const giorni = Math.round(ore / 24);
-            return `fra ${giorni} ${giorni === 1 ? 'giorno' : 'giorni'}`;
+            return (giorni === 1 ? H.giorno : H.giorni).replace('{n}', giorni);
         }
 
         function scappa(testo) {
@@ -1417,17 +1457,18 @@
             const orario = (b.start_time || '').slice(0, 5);
             // Gli orari del sito sono italiani: da un altro fuso lo diciamo
             const fuso = window.etichettaFuso ? window.etichettaFuso(b.date, orario) : '';
-            const notaFuso = (fuso && fuso !== 'ora italiana') ? ` · ${fuso}` : '';
+            const soloItaliano = fuso === 'ora italiana' || fuso === 'Italian time';
+            const notaFuso = (fuso && !soloItaliano) ? ` · ${fuso}` : '';
             // Si entra solo nella fascia oraria. Fuori, il link porta al
             // profilo: aprire la call un giorno prima accendeva camera e microfono.
             const azione = b.can_join
-                ? `<span class="azione">Partecipa alla videochiamata</span>`
+                ? `<span class="azione">${H.partecipa}</span>`
                 : '';
             const destinazione = b.can_join ? `/booking/call/${b.id}` : '/profile#bookings';
             return `<a href="${destinazione}" class="mia-cosa ${b.can_join ? 'urgente' : ''}">
-                <span class="quando">${b.can_join ? 'Si comincia' : quando(b.time_until_minutes)}</span>
-                <strong>Consulenza con ${scappa(altro.name)}</strong>
-                <span class="dettaglio">${orario} · ${b.duration} minuti${altro.profession ? ' · ' + scappa(altro.profession) : ''}${notaFuso}</span>
+                <span class="quando">${b.can_join ? H.siComincia : quando(b.time_until_minutes)}</span>
+                <strong>${H.con} ${scappa(altro.name)}</strong>
+                <span class="dettaglio">${orario} · ${b.duration} ${H.minutiParola}${altro.profession ? ' · ' + scappa(altro.profession) : ''}${notaFuso}</span>
                 ${azione}
             </a>`;
         }
@@ -1435,9 +1476,9 @@
         function richiesta(r) {
             const altro = r.other_user || {};
             return `<a href="/profile" class="mia-cosa urgente">
-                <span class="quando">Da rispondere</span>
-                <strong>${scappa(altro.name)} ti ha chiesto una consulenza</strong>
-                <span class="dettaglio">Accettala o rifiutala dal profilo</span>
+                <span class="quando">${H.daRispondere}</span>
+                <strong>${scappa(altro.name)} ${H.chiesto}</strong>
+                <span class="dettaglio">${H.accetta}</span>
             </a>`;
         }
 
@@ -1478,7 +1519,7 @@
     unmuteBtn.addEventListener('click', function(e) {
         e.stopPropagation();
         video.muted = false;
-        unmuteBtn.innerHTML = '🔊 Audio attivo';
+        unmuteBtn.innerHTML = '🔊 ' + {{ t('home.audio_attivo')|tojson }};
         unmuteBtn.classList.add('hidden');
     });
 

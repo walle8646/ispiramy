@@ -309,6 +309,6 @@ def test_le_altre_pagine_sul_telefono_stringono_l_apertura():
     assert ".consultant-skills" in blocco and "display: none" in blocco
     assert ".calendar-section" in blocco and "order: 2;" in blocco
     assert ".detail-creata" in blocco and "display: none" in blocco
-    assert "Creata il" in offerta, "la data di creazione resta nel markup"
+    assert "offerta.creata" in offerta, "la data di creazione resta nel markup"
     prima = offerta[:offerta.index("il primo giorno resta in vista")]
     assert "order: 2;" not in prima

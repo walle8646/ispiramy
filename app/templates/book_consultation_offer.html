@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Prenota Consulenza{% endblock %}
+{% block title %}{{ t('offerta.titolo') }}{% endblock %}
 
 {% block extra_css %}
 <style>
@@ -680,10 +680,10 @@
                 <h1>{{ consultant.nome }} {{ consultant.cognome }}</h1>
                 <span class="price-badge">€{{ "%.2f"|format(offer.price) }}</span>
             </div>
-            <p class="consultant-role">{{ consultant.professione or 'Consulente' }}</p>
+            <p class="consultant-role">{{ consultant.professione or t('prenota.consulente') }}</p>
             {% if consultant_category %}
             <div class="consultant-cat-pill">
-                {{ consultant_category.icon }} {{ consultant_category.name }}
+                {{ consultant_category.icon }} {{ nc(consultant_category.name) }}
             </div>
             {% endif %}
             {% if consultant_skills and consultant_skills|length > 0 %}
@@ -697,48 +697,48 @@
     </div>
     
     <div class="offer-details">
-        <h3>📋 Dettagli Offerta</h3>
+        <h3>📋 {{ t('offerta.dettagli') }}</h3>
         
         <div class="detail-row">
-            <span class="detail-label">Durata</span>
+            <span class="detail-label">{{ t('prenota.durata') }}</span>
             <span class="detail-value">
-                {{ offer.duration_minutes }} minuti
+                {{ offer.duration_minutes }} {{ t('home.minuti') }}
                 <span class="locked-badge">
                     <i class="fas fa-lock"></i>
-                    Bloccato
+                    {{ t('offerta.bloccato') }}
                 </span>
             </span>
         </div>
         
         <div class="detail-row">
-            <span class="detail-label">Consulenza</span>
+            <span class="detail-label">{{ t('prenota.voce_consulenza') }}</span>
             <span class="detail-value">
                 €{{ "%.2f"|format(offer.price) }}
                 <span class="locked-badge">
                     <i class="fas fa-lock"></i>
-                    Bloccato
+                    {{ t('offerta.bloccato') }}
                 </span>
             </span>
         </div>
 
         <div class="detail-row">
-            <span class="detail-label">Spese di servizio</span>
+            <span class="detail-label">{{ t('prenota.spese') }}</span>
             <span class="detail-value">€{{ "%.2f"|format(spese_servizio) }}</span>
         </div>
 
         <div class="detail-row">
-            <span class="detail-label">Totale</span>
+            <span class="detail-label">{{ t('prenota.totale') }}</span>
             <span class="detail-value price-highlight">€{{ "%.2f"|format(offer.price + spese_servizio) }}</span>
         </div>
         
         <div class="detail-row detail-creata">
-            <span class="detail-label">Creata il</span>
-            <span class="detail-value">{{ offer.created_at.strftime('%d/%m/%Y alle %H:%M') }}</span>
+            <span class="detail-label">{{ t('offerta.creata') }}</span>
+            <span class="detail-value">{{ offer.created_at.strftime('%d/%m/%Y') }} {{ t('offerta.alle') }} {{ offer.created_at.strftime('%H:%M') }}</span>
         </div>
         
         {% if offer.message %}
         <div class="custom-message">
-            <p><strong>Messaggio del consulente:</strong></p>
+            <p><strong>{{ t('offerta.messaggio') }}:</strong></p>
             <p>{{ offer.message }}</p>
         </div>
         {% endif %}
@@ -746,15 +746,15 @@
     
     <div class="expires-warning">
         <i class="fas fa-clock"></i>
-        Questa offerta scade il <strong>{{ offer.expires_at.strftime('%d/%m/%Y alle %H:%M') }}</strong>
+        {{ t('offerta.scade') }} <strong>{{ offer.expires_at.strftime('%d/%m/%Y') }} {{ t('offerta.alle') }} {{ offer.expires_at.strftime('%H:%M') }}</strong>
     </div>
     
     <!-- Associa Domanda Community (opzionale) -->
     {% if client_questions %}
     <div class="blocco-dopo" style="background: white; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); padding: 25px; margin-bottom: 30px;">
-        <h3 style="margin: 0 0 8px 0; font-size: 18px; color: #333;"><i class="fas fa-comments"></i> Associa una Domanda dalla Community</h3>
+        <h3 style="margin: 0 0 8px 0; font-size: 18px; color: #333;"><i class="fas fa-comments"></i> {{ t('prenota.associa') }}</h3>
         <p style="color: #666; font-size: 0.9rem; margin-bottom: 1rem;">
-            Se hai già pubblicato una domanda nella community, puoi associarla a questa consulenza. In questo caso la descrizione diventerà facoltativa.
+            {{ t('prenota.associa_testo') }}
         </p>
         <input type="hidden" id="communityQuestionSelect" value="">
         <div id="questionCardsList" style="max-height: 340px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; padding-right: 4px;">
@@ -824,14 +824,14 @@
             required
         ></textarea>
         <div id="descriptionError" style="color: #ff4757; font-size: 0.9rem; margin-top: 0.5rem; display: none;">
-            La descrizione della consulenza è obbligatoria
+            {{ t('prenota.descrizione_obbligatoria') }}
         </div>
     </div>
 
     <div class="calendar-section">
-        <h3>📅 Seleziona Data e Ora</h3>
+        <h3>📅 {{ t('offerta.seleziona') }}</h3>
         <p id="notaFusoPrenotazione" style="color:#546e7a; font-size:.9rem; margin:0 0 12px;">
-            <span id="nomeFusoPrenotazione">Orari in ora italiana.</span>
+            <span id="nomeFusoPrenotazione">{{ t('prenota.orari_nota') }}</span>
         </p>
         
         <!-- Week navigation -->
@@ -842,11 +842,11 @@
             <div class="week-nav-buttons" style="display: flex; width: 100%; justify-content: space-between;">
                 <button id="prevWeekBtn" style="padding: 10px 20px; background: white; border: 2px solid #43a047; color: #43a047; border-radius: 8px; cursor: pointer; font-weight: 600; transition: all 0.3s;">
                     <i class="fas fa-chevron-left"></i>
-                    <span class="btn-label-long">Settimana Precedente</span>
-                    <span class="btn-label-short" style="display: none;">Precedente</span>
+                    <span class="btn-label-long">{{ t('offerta.settimana_prec') }}</span>
+                    <span class="btn-label-short" style="display: none;">{{ t('offerta.precedente') }}</span>
                 </button>
                 <button id="nextWeekBtn" style="padding: 10px 20px; background: white; border: 2px solid #43a047; color: #43a047; border-radius: 8px; cursor: pointer; font-weight: 600; transition: all 0.3s;">
-                    <span class="btn-label-long">Settimana Successiva</span>
+                    <span class="btn-label-long">{{ t('offerta.settimana_succ') }}</span>
                     <span class="btn-label-short" style="display: none;">Successiva</span>
                     <i class="fas fa-chevron-right"></i>
                 </button>
@@ -912,13 +912,13 @@
     <div class="blocco-dopo" style="background: #f8f9fa; border-radius: 10px; padding: 14px 16px; margin-bottom: 16px; border: 1px solid #e0e0e0;">
         <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
             <i class="fas fa-credit-card" style="color: #2e7d32;"></i>
-            <strong style="font-size: 0.95rem; color: #1a202c;">Metodo di pagamento</strong>
+            <strong style="font-size: 0.95rem; color: #1a202c;">{{ t('prenota.metodo') }}</strong>
         </div>
         <div class="payment-method-options" style="display: flex; gap: 10px;">
             {% if stripe_available %}
             <label style="flex: 1; display: flex; align-items: center; gap: 8px; padding: 10px 14px; border-radius: 8px; border: 2px solid #635bff; background: #f0efff; cursor: pointer; font-size: 0.9rem; font-weight: 600; color: #1a202c; transition: all 0.2s;" id="payStripeLabel">
                 <input type="radio" name="paymentMethod" value="stripe" {% if stripe_available %}checked{% endif %} style="accent-color: #635bff;" onchange="updatePaymentMethod()">
-                <i class="fab fa-cc-stripe" style="color: #635bff; font-size: 1.2rem;"></i> Carta di credito
+                <i class="fab fa-cc-stripe" style="color: #635bff; font-size: 1.2rem;"></i> {{ t('offerta.carta') }}
             </label>
             {% endif %}
             {% if paypal_available %}
@@ -932,13 +932,13 @@
     
     <button class="btn-book blocco-dopo" id="confirmBookingBtn" disabled>
         <i class="fas fa-calendar-check"></i>
-        Conferma Prenotazione
+        {{ t('prenota.conferma') }}
     </button>
     
     <div class="blocco-dopo" style="margin-top: 30px; padding: 20px; background: #e3f2fd; border-radius: 8px; text-align: center; font-size: 14px; color: #1565c0;">
         <i class="fas fa-info-circle"></i>
         <strong>Come funziona:</strong><br>
-        Seleziona un orario disponibile del consulente, conferma la prenotazione e procedi al pagamento.
+        {{ t('offerta.info') }}
         Il prezzo e la durata sono già stati concordati e non possono essere modificati.
     </div>
 </div>
@@ -1322,7 +1322,7 @@ confirmBtn.addEventListener('click', async function() {
                 }
                 if (descEl) descEl.focus();
                 confirmBtn.disabled = false;
-                confirmBtn.innerHTML = '<i class="fas fa-calendar-check"></i> Conferma Prenotazione';
+                confirmBtn.innerHTML = '<i class="fas fa-calendar-check"></i> {{ t('prenota.conferma') }}';
                 return;
             }
         } catch (e) {
@@ -1373,13 +1373,13 @@ confirmBtn.addEventListener('click', async function() {
             const error = data.detail || 'Impossibile completare la prenotazione';
             alert('❌ Errore: ' + error);
             confirmBtn.disabled = false;
-            confirmBtn.innerHTML = '<i class="fas fa-calendar-check"></i> Conferma Prenotazione';
+            confirmBtn.innerHTML = '<i class="fas fa-calendar-check"></i> {{ t('prenota.conferma') }}';
         }
     } catch (error) {
         console.error('Error confirming booking:', error);
         alert('❌ Errore di connessione');
         confirmBtn.disabled = false;
-        confirmBtn.innerHTML = '<i class="fas fa-calendar-check"></i> Conferma Prenotazione';
+        confirmBtn.innerHTML = '<i class="fas fa-calendar-check"></i> {{ t('prenota.conferma') }}';
     }
 });
 </script>

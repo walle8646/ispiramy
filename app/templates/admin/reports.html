@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+
+{% block title %}{{ t('segnalazioni.titolo') }} - Admin Ispiramy{% endblock %}
+
+{% block extra_css %}
+<style>
+    .admin-container { max-width: 980px; margin: 30px auto; padding: 0 16px 40px; }
+    .admin-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 24px; }
+    .admin-header h1 { font-size: 1.5rem; color: #1a1a2e; margin: 0; }
+    .admin-nav { display: flex; gap: 8px; flex-wrap: wrap; }
+    .admin-nav a { padding: 8px 14px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; font-weight: 500; color: #555; background: #f5f5f5; }
+    .admin-nav a:hover, .admin-nav a.active { background: #2e7d32; color: #fff; }
+    .segnalazione-vuoto { background: #fff; border-radius: 14px; padding: 36px 20px; text-align: center; color: #777; box-shadow: 0 2px 12px rgba(0,0,0,0.05); }
+    .segnalazione-card { background: #fff; border-radius: 14px; padding: 18px 16px; margin-bottom: 14px; box-shadow: 0 2px 12px rgba(0,0,0,0.06); border-left: 4px solid #e65100; }
+    .segnalazione-testa { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; align-items: baseline; margin-bottom: 8px; }
+    .segnalazione-titolo { font-weight: 700; color: #1a1a2e; }
+    .segnalazione-griglia { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 16px; margin-bottom: 10px; }
+    .segnalazione-griglia span { display: block; font-size: 0.75rem; color: #888; text-transform: uppercase; letter-spacing: 0.03em; }
+    .segnalazione-griglia strong { font-weight: 600; color: #222; overflow-wrap: anywhere; }
+    .segnalazione-motivo { background: #fff8e1; color: #5d4037; border-radius: 8px; padding: 10px 12px; margin: 8px 0 12px; overflow-wrap: anywhere; }
+    .segnalazione-bottoni { display: flex; flex-wrap: wrap; gap: 8px; }
+    .segnalazione-bottoni button { flex: 1 1 160px; border: none; border-radius: 8px; padding: 10px 14px; font-weight: 600; cursor: pointer; }
+    .btn-ignora { background: #eceff1; color: #333; }
+    .btn-nascondi { background: #c62828; color: #fff; }
+    .segnalazione-msg { min-height: 1.2em; color: #c62828; font-size: 0.9rem; margin: 8px 0 0; }
+    @media (max-width: 640px) {
+        .segnalazione-griglia { grid-template-columns: 1fr; }
+        .admin-container { padding: 0 12px 32px; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="admin-container">
+    <div class="admin-header">
+        <h1><i class="fas fa-flag"></i> {{ t('segnalazioni.titolo') }}</h1>
+        <nav class="admin-nav">
+            <a href="/admin"><i class="fas fa-chart-bar"></i> {{ t('admin.dashboard') }}</a>
+            <a href="/admin/disputes"><i class="fas fa-exclamation-triangle"></i> {{ t('admin.contestazioni') }}</a>
+            <a href="/admin/transaction-problems"><i class="fas fa-rotate"></i> {{ t('problemi.menu') }}{% if problemi_transazione_aperti %} <span class="nav-badge">{{ problemi_transazione_aperti }}</span>{% endif %}</a>
+            <a href="/admin/reports" class="active"><i class="fas fa-flag"></i> {{ t('segnalazioni.menu') }}{% if segnalazioni_aperte %} <span class="nav-badge">{{ segnalazioni_aperte }}</span>{% endif %}</a>
+            <a href="/admin/users"><i class="fas fa-users"></i> {{ t('admin.utenti') }}</a>
+            <a href="/admin/bookings"><i class="fas fa-video"></i> {{ t('admin.consulenze') }}</a>
+        </nav>
+    </div>
+
+    {% if not segnalazioni %}
+    <div class="segnalazione-vuoto">{{ t('segnalazioni.vuoto') }}</div>
+    {% endif %}
+
+    {% for s in segnalazioni %}
+    <article class="segnalazione-card">
+        <div class="segnalazione-testa">
+            <div class="segnalazione-titolo">{{ s.title }}</div>
+            <div>#{{ s.question_id }}</div>
+        </div>
+        <div class="segnalazione-griglia">
+            <div><span>{{ t('segnalazioni.autore') }}</span><strong>{{ s.author_name }}</strong></div>
+            <div><span>{{ t('segnalazioni.da') }}</span><strong>{{ s.reporter_name }}</strong></div>
+            <div><span>{{ t('segnalazioni.quando') }}</span><strong>{% if s.created_at %}{{ s.created_at.strftime('%d/%m/%Y %H:%M') }}{% else %}—{% endif %}</strong></div>
+        </div>
+        {% if s.excerpt %}
+        <p style="margin:0 0 8px;color:#444;">{{ s.excerpt }}</p>
+        {% endif %}
+        <div class="segnalazione-motivo"><span>{{ t('segnalazioni.motivo') }}: </span>{{ s.reason }}</div>
+        <div class="segnalazione-bottoni">
+            <button type="button" class="btn-ignora" onclick="decidiSegnalazione({{ s.id }}, 'dismiss', this)">{{ t('segnalazioni.ignora') }}</button>
+            <button type="button" class="btn-nascondi" onclick="decidiSegnalazione({{ s.id }}, 'hide', this)">{{ t('segnalazioni.nascondi') }}</button>
+        </div>
+        <p class="segnalazione-msg" id="msg-seg-{{ s.id }}"></p>
+    </article>
+    {% endfor %}
+</div>
+<script>
+    const SEG_ERR = {{ t('segnalazioni.errore')|tojson }};
+    const SEG_RETE = {{ t('segnalazioni.rete')|tojson }};
+    async function decidiSegnalazione(id, azione, btn) {
+        btn.disabled = true;
+        const msg = document.getElementById('msg-seg-' + id);
+        msg.textContent = '';
+        try {
+            const resp = await fetch('/admin/api/reports/' + id + '/' + azione, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: '{}'
+            });
+            if (resp.ok) {
+                window.location.reload();
+                return;
+            }
+            const data = await resp.json().catch(() => ({}));
+            msg.textContent = data.detail || SEG_ERR;
+        } catch (e) {
+            msg.textContent = SEG_RETE;
+        }
+        btn.disabled = false;
+    }
+</script>
+{% endblock %}

@@ -248,7 +248,8 @@ async def consultants_page(
             
             # Nome di ogni categoria: serve sia per filtrare sia per il
             # punteggio, ed e' una tabella piccola.
-            nomi_categorie = {c.id: c.name for c in session.exec(select(Category)).all()}
+            categorie_per_id = {c.id: c for c in session.exec(select(Category)).all()}
+            nomi_categorie = {i: c.name for i, c in categorie_per_id.items()}
 
             # ========== BASE QUERY ==========
             # Il filtro sul metodo di pagamento va fatto in SQL, non in Python:
@@ -476,7 +477,7 @@ async def consultants_page(
                 }
                 
                 if user.category_id:
-                    cat = session.get(Category, user.category_id)
+                    cat = categorie_per_id.get(user.category_id)
                     if cat:
                         user_data['category'] = cat
                 

@@ -118,8 +118,8 @@ def test_il_consulente_deve_dire_in_che_lingua_lavora():
     """Senza lingua dichiarata il profilo non compare in nessun filtro: il
     controllo sta nel modulo e anche nella rotta, perche' il primo si aggira."""
     modulo = _file("app", "templates", "profile.html")
-    assert "Lingue Parlate *" in modulo
-    assert "Scegli almeno una lingua" in modulo, "manca il blocco prima di inviare"
+    assert "profilo.lingue_titolo" in modulo
+    assert "profilo.scegli_lingua" in modulo, "manca il blocco prima di inviare"
     # a chi non ha mai scelto, l'italiano arriva gia' spuntato
     assert "{% if 'it' in user_languages or not user_languages %}checked{% endif %}" in modulo
 

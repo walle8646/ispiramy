@@ -3,12 +3,12 @@
    Sta in piedi da sola: niente CSS, niente font e niente immagini prese da
    fuori, perche' quando serve non c'e' modo di scaricarli. #}
 <!DOCTYPE html>
-<html lang="it">
+<html lang="{{ lingua_ui }}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#43a047">
-    <title>Senza rete - Ispiramy</title>
+    <title>{{ t('offline.titolo') }} - Ispiramy</title>
     <style>
         body {
             margin: 0;
@@ -79,10 +79,9 @@
         </g>
     </svg>
 
-    <h1>Sei senza rete</h1>
-    <p>Ispiramy ha bisogno della connessione per mostrarti consulenti, messaggi
-       e prenotazioni. Appena torna il campo riprendi da dove eri.</p>
-    <button type="button" onclick="location.reload()">Riprova</button>
+    <h1>{{ t('offline.titolo') }}</h1>
+    <p>{{ t('offline.testo') }}</p>
+    <button type="button" onclick="location.reload()">{{ t('offline.riprova') }}</button>
 
     <script>
         // Appena il telefono ritrova la rete, si riparte senza toccare niente

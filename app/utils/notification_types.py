@@ -74,6 +74,33 @@ NOTIFICATION_TYPES = [
 ]
 
 
+# Oggetto della mail quando chi la riceve ha il sito in inglese.
+# I nomi nel database restano in italiano: li ha scelti chi amministra.
+SOGGETTI_EN = {
+    "community_contact": "You have a new message on Ispiramy",
+    "booking_confirmed": "Booking confirmed",
+    "booking_refused": "Booking declined",
+    "booking_request": "New consultation request to confirm",
+    "booking_accepted": "The consultant accepted your request",
+    "booking_request_expired": "The consultant did not answer your request",
+    "booking_confirmed_client": "Your consultation is confirmed",
+    "booking_cancelled": "Consultation cancelled",
+    "dispute_opened": "A dispute was opened about your consultation",
+    "dispute_decided": "Decision on the dispute",
+    "reminder_1h": "Your consultation is in 1 hour",
+    "reminder_10min": "Your consultation is in 10 minutes",
+    "review_request": "Leave a review on Ispiramy",
+    "review_received": "You received a review on Ispiramy",
+    "review_reminder": "Don't forget your review",
+}
+
+
+def soggetto_email(type_key: str, soggetto_it: str, lingua: str) -> str:
+    if lingua == "en":
+        return SOGGETTI_EN.get(type_key) or soggetto_it
+    return soggetto_it
+
+
 def ensure_notification_types(eng=None) -> list[str]:
     """Inserisce i tipi di NOTIFICATION_TYPES che mancano. Ritorna le chiavi aggiunte."""
     from sqlmodel import Session, select

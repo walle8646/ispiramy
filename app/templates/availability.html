@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Gestisci Disponibilità - Ispiramy{% endblock %}
+{% block title %}{{ t('agenda.titolo') }} - Ispiramy{% endblock %}
 
 {% block extra_css %}
 <style>
@@ -761,14 +761,14 @@
 <div class="availability-container">
     <!-- Header -->
     <div class="page-header">
-        <h1>📅 Gestisci la tua Disponibilità</h1>
-        <p>Imposta gli orari in cui sei disponibile per consulenze</p>
+        <h1>📅 {{ t('agenda.titolo') }}</h1>
+        <p>{{ t('agenda.intro') }}</p>
     </div>
 
     <div class="content-grid">
         <!-- Calendario -->
         <div class="calendar-section">
-            <h2>Seleziona un Giorno</h2>
+            <h2>{{ t('agenda.giorno') }}</h2>
             <div class="calendar">
                 <div class="calendar-header">
                     <button class="calendar-nav" id="prevMonth">◀</button>
@@ -776,13 +776,13 @@
                     <button class="calendar-nav" id="nextMonth">▶</button>
                 </div>
                 <div class="calendar-grid" id="calendarGrid">
-                    <div class="calendar-day-name">Lun</div>
-                    <div class="calendar-day-name">Mar</div>
-                    <div class="calendar-day-name">Mer</div>
-                    <div class="calendar-day-name">Gio</div>
-                    <div class="calendar-day-name">Ven</div>
-                    <div class="calendar-day-name">Sab</div>
-                    <div class="calendar-day-name">Dom</div>
+                    <div class="calendar-day-name">{{ t('agenda.lun') }}</div>
+                    <div class="calendar-day-name">{{ t('agenda.mar') }}</div>
+                    <div class="calendar-day-name">{{ t('agenda.mer') }}</div>
+                    <div class="calendar-day-name">{{ t('agenda.gio') }}</div>
+                    <div class="calendar-day-name">{{ t('agenda.ven') }}</div>
+                    <div class="calendar-day-name">{{ t('agenda.sab') }}</div>
+                    <div class="calendar-day-name">{{ t('agenda.dom') }}</div>
                 </div>
             </div>
         </div>
@@ -790,15 +790,15 @@
         <!-- Gestione Orari -->
         <div class="schedule-section">
             <div class="schedule-header">
-                <h2>Orari di Disponibilità</h2>
-                <span class="selected-date" id="selectedDate">Seleziona un giorno</span>
+                <h2>{{ t('agenda.orari') }}</h2>
+                <span class="selected-date" id="selectedDate">{{ t('agenda.scegli') }}</span>
             </div>
 
             <div id="scheduleContent">
                 <div class="empty-state">
                     <i class="fas fa-calendar-plus"></i>
-                    <h3>Seleziona un giorno dal calendario</h3>
-                    <p>Clicca su una data per gestire i tuoi orari disponibili</p>
+                    <h3>{{ t('agenda.scegli_testo') }}</h3>
+                    <p>{{ t('agenda.clicca') }}</p>
                 </div>
             </div>
         </div>
@@ -806,7 +806,7 @@
 
     <!-- Riepilogo Settimanale -->
     <div class="weekly-summary">
-        <h2>📆 Riepilogo Prossimi 7 Giorni</h2>
+        <h2>📆 {{ t('agenda.riepilogo') }}</h2>
         <div class="week-grid" id="weekSummary"></div>
     </div>
 </div>
@@ -814,9 +814,9 @@
 <!-- Modal per copiare disponibilità -->
 <div class="copy-modal" id="copyModal">
     <div class="copy-modal-content">
-        <h3>📋 Copia Disponibilità</h3>
+        <h3>📋 {{ t('agenda.copia') }}</h3>
         <div class="copy-instructions">
-            <strong>ℹ️ Clicca sui giorni</strong> in cui vuoi copiare gli orari del <span id="sourceDate"></span>
+            <strong>ℹ️ {{ t('agenda.copia_istruzioni') }}</strong> <span id="sourceDate"></span>
         </div>
         <div class="copy-calendar">
             <div class="calendar-header">
@@ -825,18 +825,18 @@
                 <button class="calendar-nav" id="copyNextMonth">▶</button>
             </div>
             <div class="copy-calendar-grid" id="copyCalendarGrid">
-                <div class="calendar-day-name">Lun</div>
-                <div class="calendar-day-name">Mar</div>
-                <div class="calendar-day-name">Mer</div>
-                <div class="calendar-day-name">Gio</div>
-                <div class="calendar-day-name">Ven</div>
-                <div class="calendar-day-name">Sab</div>
-                <div class="calendar-day-name">Dom</div>
+                <div class="calendar-day-name">{{ t('agenda.lun') }}</div>
+                <div class="calendar-day-name">{{ t('agenda.mar') }}</div>
+                <div class="calendar-day-name">{{ t('agenda.mer') }}</div>
+                <div class="calendar-day-name">{{ t('agenda.gio') }}</div>
+                <div class="calendar-day-name">{{ t('agenda.ven') }}</div>
+                <div class="calendar-day-name">{{ t('agenda.sab') }}</div>
+                <div class="calendar-day-name">{{ t('agenda.dom') }}</div>
             </div>
         </div>
         <div class="modal-actions">
-            <button class="btn btn-secondary" onclick="closeCopyModal()">Annulla</button>
-            <button class="btn btn-primary" onclick="confirmCopy()">Copia Disponibilità</button>
+            <button class="btn btn-secondary" onclick="closeCopyModal()">{{ t('comune.annulla') }}</button>
+            <button class="btn btn-primary" onclick="confirmCopy()">{{ t('agenda.copia') }}</button>
         </div>
     </div>
 </div>
@@ -1023,8 +1023,8 @@ function renderSchedule() {
         content.innerHTML = `
             <div class="empty-state">
                 <i class="fas fa-calendar-plus"></i>
-                <h3>Seleziona un giorno dal calendario</h3>
-                <p>Clicca su una data per gestire i tuoi orari disponibili</p>
+                <h3>{{ t('agenda.scegli_testo') }}</h3>
+                <p>{{ t('agenda.clicca') }}</p>
             </div>
         `;
         return;
@@ -1033,14 +1033,14 @@ function renderSchedule() {
     content.innerHTML = `
         <div class="time-blocks" id="timeBlocks"></div>
         <button class="btn btn-success" onclick="addTimeBlock()">
-            <i class="fas fa-plus"></i> Aggiungi Fascia Oraria
+            <i class="fas fa-plus"></i> {{ t('agenda.aggiungi') }}
         </button>
         <div class="actions">
             <button class="btn btn-primary" onclick="saveAvailability()">
-                <i class="fas fa-save"></i> Salva Disponibilità
+                <i class="fas fa-save"></i> {{ t('agenda.salva') }}
             </button>
             <button class="btn btn-secondary" onclick="openCopyModal()" id="copyButton" style="display: none;">
-                <i class="fas fa-copy"></i> Copia in Altri Giorni
+                <i class="fas fa-copy"></i> {{ t('agenda.copia_giorni') }}
             </button>
         </div>
     `;
@@ -1066,8 +1066,8 @@ function renderTimeBlocks() {
         container.innerHTML = `
             <div class="empty-state" style="padding: 40px 20px;">
                 <i class="fas fa-clock"></i>
-                <h3>Nessuna fascia oraria</h3>
-                <p>Aggiungi le fasce orarie in cui sei disponibile</p>
+                <h3>{{ t('agenda.nessuna_fascia') }}</h3>
+                <p>{{ t('agenda.aggiungi_testo') }}</p>
             </div>
         `;
         return;
@@ -1184,7 +1184,7 @@ function deleteBlock(blockId, index) {
 
 async function saveAvailability() {
     if (!selectedDate) {
-        alert('Seleziona un giorno dal calendario');
+        alert({{ t('agenda.scegli_testo')|tojson }});
         return;
     }
 

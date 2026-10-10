@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Pagamento Annullato - Ispiramy{% endblock %}
+{% block title %}{{ t('esito.annullato_titolo') }} - Ispiramy{% endblock %}
 
 {% block extra_css %}
 <style>
@@ -138,23 +138,23 @@
         <i class="fas fa-times"></i>
     </div>
     
-    <h1>Pagamento Annullato</h1>
-    <p>Non è stato effettuato alcun addebito. La prenotazione non è stata completata.</p>
+    <h1>{{ t('esito.annullato_titolo') }}</h1>
+    <p>{{ t('esito.annullato_testo') }}</p>
     
     <div class="info-box">
         <i class="fas fa-info-circle"></i>
-        <strong>Cosa è successo?</strong><br>
-        Hai annullato il processo di pagamento oppure si è verificato un errore. Nessun importo è stato addebitato sulla tua carta.
+        <strong>{{ t('esito.cosa') }}</strong><br>
+        {{ t('esito.cosa_testo') }}
     </div>
     
-    <p>Puoi riprovare quando vuoi. L'offerta di consulenza rimarrà disponibile fino alla scadenza.</p>
+    <p>{{ t('esito.riprova_testo') }}</p>
     
     <div class="action-buttons">
         <a href="{{ back_url }}" class="btn btn-primary" id="retryBtn">
-            <i class="fas fa-redo"></i> Riprova Pagamento
+            <i class="fas fa-redo"></i> {{ t('esito.riprova_pagamento') }}
         </a>
         <a href="/profile" class="btn btn-secondary">
-            <i class="fas fa-user"></i> Torna al Profilo
+            <i class="fas fa-user"></i> {{ t('esito.torna_profilo') }}
         </a>
     </div>
 </div>

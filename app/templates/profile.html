@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Profilo - Ispiramy{% endblock %}
+{% block title %}{{ t('profilo.titolo') }} - Ispiramy{% endblock %}
 
 {% block extra_css %}
 <link rel="stylesheet" href="{{ statico('profile.css') }}">
@@ -795,17 +795,17 @@
                          id="profileImage"
                          class="profile-avatar-large"
                          onerror="this.onerror=null; this.src='{{ user|default_avatar }}'">
-                    <label for="profilePictureInput" class="pub-edit-avatar" title="Cambia immagine profilo">
+                    <label for="profilePictureInput" class="pub-edit-avatar" title="{{ t('profilo.cambia_foto') }}">
                         ✏️
                     </label>
                     <input type="file" id="profilePictureInput" accept="image/*" style="display: none;">
                 </div>
                 <div class="pub-hero-text">
                     <h1>{{ user|display_name }}</h1>
-                    <p class="pub-role">{{ user.professione or 'Professione non impostata' }}</p>
+                    <p class="pub-role">{{ user.professione or t('profilo.professione_manca') }}</p>
                     {% if user_category %}
                     <div class="pub-cat-pill">{{ user_category.icon }} {{ nc(user_category.name) }}
-                        {% if user_category.id in categorie_verificate_ids %}<span class="badge-verificato-categoria">Verificato</span>{% endif %}
+                        {% if user_category.id in categorie_verificate_ids %}<span class="badge-verificato-categoria">{{ t('comune.verificato') }}</span>{% endif %}
                     </div>
                     {% endif %}
                     {% if aree_interesse_list %}
@@ -816,14 +816,14 @@
                     </div>
                     {% endif %}
                     {% if user.is_verified %}
-                    <button id="editProfileBtn" class="btn-edit">✏️ Modifica Profilo</button>
+                    <button id="editProfileBtn" class="btn-edit">✏️ {{ t('profilo.modifica') }}</button>
                     {% else %}
-                    <button id="simpleEditBtn" class="btn-edit">✏️ Modifica Profilo</button>
-                    <button id="mobileBecomeCta" onclick="document.getElementById('simpleEditBtn').click()" class="btn-edit" style="display:none; margin-top:8px; background:linear-gradient(135deg,#2e7d32,#43a047); color:white; border:none;">🚀 Diventa Consulente</button>
+                    <button id="simpleEditBtn" class="btn-edit">✏️ {{ t('profilo.modifica') }}</button>
+                    <button id="mobileBecomeCta" onclick="document.getElementById('simpleEditBtn').click()" class="btn-edit" style="display:none; margin-top:8px; background:linear-gradient(135deg,#2e7d32,#43a047); color:white; border:none;">🚀 {{ t('profilo.diventa') }}</button>
                     {% endif %}
                     {% if user.is_verified and not has_payment_method %}
                     <p style="color: #e65100; font-size: 0.85rem; margin-top: 8px; background: #fff3e0; padding: 8px 14px; border-radius: 8px; border-left: 3px solid #e65100;">
-                        ⚠️ Per effettuare consulenze devi anche configurare un metodo di ricezione pagamento (Stripe o PayPal) nell'apposita sezione a destra del tuo profilo.
+                        ⚠️ {{ t('profilo.pagamento_manca_corto') }}
                     </p>
                     {% endif %}
                 </div>
@@ -834,7 +834,7 @@
            fondo alla scheda Account non si trovava. Sul computer questo
            blocco non occupa spazio (si accende solo sotto i 768px). #}
         <div class="push-in-alto voce-push-nascosta" id="pushInAltoProfilo">
-            <button type="button" class="interruttore-push voce-push-nascosta">🔔 Attiva notifiche</button>
+            <button type="button" class="interruttore-push voce-push-nascosta">🔔 {{ t('profilo.attiva_notifiche') }}</button>
             <p class="spiegazione-push voce-push-nascosta"></p>
         </div>
 
@@ -842,7 +842,7 @@
         {% if user.is_verified and not has_payment_method %}
         <div style="background: linear-gradient(135deg, #e76f00 0%, #f59e0b 100%); color: #fff; padding: 14px 24px; display: flex; align-items: center; gap: 12px; border-radius: 0; font-size: 0.95rem; box-shadow: 0 2px 8px rgba(231,111,0,0.15);">
             <span style="font-size: 1.4rem;">⚠️</span>
-            <span>Per ricevere i pagamenti dalle consulenze devi configurare almeno un metodo di incasso (<b>Stripe</b> o <b>PayPal</b>) nella sezione qui a destra. Senza non potrai effettuare consulenze.</span>
+            <span>{{ t('profilo.pagamento_manca') }}</span>
         </div>
         {% endif %}
 
@@ -857,7 +857,7 @@
                 <!-- Richieste di consulenza (offerte inviate/ricevute via chat) -->
                 <section class="pub-narrative" id="consultationOffersSection" style="display:none; margin-bottom: 32px;">
                     <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;">
-                        <div class="pub-section-label" style="margin-bottom:0;">💼 Richieste di consulenza</div>
+                        <div class="pub-section-label" style="margin-bottom:0;">💼 {{ t('profilo.richieste') }}</div>
                         <button type="button" class="history-toggle" id="offerteStoricoBtn"
                                 onclick="toggleStoricoOfferte()" hidden></button>
                     </div>
@@ -867,7 +867,7 @@
                 <!-- Descrizione profilo (visibile) -->
                 {% if user.descrizione %}
                 <section class="pub-narrative" style="margin-bottom: 32px;">
-                    <div class="pub-section-label">📝 Chi sono</div>
+                    <div class="pub-section-label">📝 {{ t('profilo.chi_sono') }}</div>
                     <p class="pub-desc">{{ user.descrizione }}</p>
                 </section>
                 {% endif %}
@@ -875,8 +875,8 @@
                 <!-- Liked Questions Section -->
                 <section class="pub-narrative" id="likedQuestionsTopSection" style="display:none; margin-bottom: 32px;">
                     <div class="section-header-row">
-                        <div class="pub-section-label" style="margin:0;">❤️ Domande a cui hai messo Like</div>
-                        <a href="javascript:void(0)" id="viewAllLikedQuestions" class="view-all-btn" style="display:none;" onclick="openViewAllModal('liked-questions')">Guarda tutte</a>
+                        <div class="pub-section-label" style="margin:0;">❤️ {{ t('profilo.like') }}</div>
+                        <a href="javascript:void(0)" id="viewAllLikedQuestions" class="view-all-btn" style="display:none;" onclick="openViewAllModal('liked-questions')">{{ t('profilo.guarda_tutte') }}</a>
                     </div>
                     <div id="likedQuestionsContainerTop" class="liked-questions-grid">
                     </div>
@@ -885,8 +885,8 @@
                 <!-- Consulenti Preferiti Section -->
                 <section class="pub-narrative" id="favoritesSection" style="display:none; margin-bottom: 32px;">
                     <div class="section-header-row">
-                        <div class="pub-section-label" style="margin:0;">❤️ I tuoi Consulenti Preferiti</div>
-                        <a href="javascript:void(0)" id="viewAllFavorites" class="view-all-btn" style="display:none;" onclick="openViewAllModal('favorites')">Guarda tutte</a>
+                        <div class="pub-section-label" style="margin:0;">❤️ {{ t('profilo.preferiti') }}</div>
+                        <a href="javascript:void(0)" id="viewAllFavorites" class="view-all-btn" style="display:none;" onclick="openViewAllModal('favorites')">{{ t('profilo.guarda_tutte') }}</a>
                     </div>
                     <div id="favoritesContainer" class="favorites-grid">
                     </div>
@@ -894,69 +894,69 @@
 
                 <!-- Edit Mode Form (Hidden by default) -->
                 <section class="card" id="editSection" style="display:none;">
-                    <h2>✏️ Modifica Profilo</h2>
+                    <h2>✏️ {{ t('profilo.modifica') }}</h2>
                     <div id="successMessage" class="success-message" style="display:none;"></div>
                     <div id="errorMessage" class="error-message" style="display:none;"></div>
                     
                     <form id="profileForm" class="edit-form">
                         <div class="form-section">
-                            <div class="form-section-title">👤 Informazioni Personali</div>
+                            <div class="form-section-title">👤 {{ t('profilo.personali') }}</div>
                             <div class="form-row">
                                 <div class="form-group">
-                                    <label>Nome</label>
-                                    <input type="text" name="nome" value="{{ user.nome or '' }}" placeholder="Inserisci il tuo nome">
+                                    <label>{{ t('profilo.nome') }}</label>
+                                    <input type="text" name="nome" value="{{ user.nome or '' }}" placeholder="{{ t('profilo.nome_ph') }}">
                                 </div>
                                 <div class="form-group">
-                                    <label>Cognome</label>
-                                    <input type="text" name="cognome" value="{{ user.cognome or '' }}" placeholder="Inserisci il tuo cognome">
+                                    <label>{{ t('profilo.cognome') }}</label>
+                                    <input type="text" name="cognome" value="{{ user.cognome or '' }}" placeholder="{{ t('profilo.cognome_ph') }}">
                                 </div>
                             </div>
                             <div class="form-group">
-                                <label>Professione</label>
+                                <label>{{ t('profilo.professione') }}</label>
                                 <input type="text" name="professione" value="{{ user.professione or '' }}" placeholder="Es: Lead Software Developer">
                             </div>
                             <div class="form-group">
-                                <label>Genere</label>
+                                <label>{{ t('profilo.genere') }}</label>
                                 <div class="gender-options" style="display: flex; gap: 16px; align-items: center; margin-top: 4px;">
                                     <label style="display: flex; align-items: center; cursor: pointer; gap: 6px; font-weight: 400;">
                                         <input type="radio" name="genere" value="M" {% if user.genere == 'M' %}checked{% endif %}
                                                style="width: 18px; height: 18px; accent-color: #43a047;">
-                                        🙋‍♂️ Uomo
+                                        🙋‍♂️ {{ t('profilo.uomo') }}
                                     </label>
                                     <label style="display: flex; align-items: center; cursor: pointer; gap: 6px; font-weight: 400;">
                                         <input type="radio" name="genere" value="F" {% if user.genere == 'F' %}checked{% endif %}
                                                style="width: 18px; height: 18px; accent-color: #43a047;">
-                                        🙋‍♀️ Donna
+                                        🙋‍♀️ {{ t('profilo.donna') }}
                                     </label>
                                     <label style="display: flex; align-items: center; cursor: pointer; gap: 6px; font-weight: 400;">
                                         <input type="radio" name="genere" value="" {% if not user.genere %}checked{% endif %}
                                                style="width: 18px; height: 18px; accent-color: #43a047;">
-                                        Preferisco non specificare
+                                        {{ t('profilo.non_specificare') }}
                                     </label>
                                 </div>
-                                <small style="color:#888; margin-top:4px; display:block;">Usato per personalizzare il tuo avatar predefinito</small>
+                                <small style="color:#888; margin-top:4px; display:block;">{{ t('profilo.avatar_nota') }}</small>
                             </div>
                         </div>
 
                         <div class="form-section">
-                            <div class="form-section-title">🎓 Categoria e Specializzazione</div>
+                            <div class="form-section-title">🎓 {{ t('profilo.categoria_titolo') }}</div>
                             <div class="form-group">
-                                <label>Categoria</label>
+                                <label>{{ t('profilo.categoria') }}</label>
                                 <select id="categorySelect" name="category_id" style="padding:12px; border:1px solid #d1d8e0; border-radius:10px; font-size:1rem; background-color: #f8fafb;">
-                                    <option value="">Nessuna categoria</option>
+                                    <option value="">{{ t('profilo.nessuna_categoria') }}</option>
                                     {% for cat in categories %}
                                     <option value="{{ cat.id }}" {% if user.category_id == cat.id %}selected{% endif %}>
-                                        {{ cat.icon }} {{ cat.name }}
+                                        {{ cat.icon }} {{ nc(cat.name) }}
                                     </option>
                                     {% endfor %}
                                 </select>
-                                <small style="color:#888; margin-top:8px; display:block;">Seleziona la categoria che meglio rappresenta la tua expertise</small>
+                                <small style="color:#888; margin-top:8px; display:block;">{{ t('profilo.categoria_nota') }}</small>
                             </div>
                             
                             <div id="subcategoriesContainer" class="form-group" style="display:none;">
-                                <label>Sottocategorie (opzionale)</label>
+                                <label>{{ t('profilo.sottocategorie') }}</label>
                                 <div id="subcategoriesList" style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;"></div>
-                                <small style="color:#888; margin-top:8px; display:block;">Seleziona una o più sottocategorie</small>
+                                <small style="color:#888; margin-top:8px; display:block;">{{ t('profilo.sottocategorie_nota') }}</small>
                                 <input type="hidden" id="selectedSubcategories" name="selected_subcategories" value="">
                             </div>
                         </div>
@@ -966,28 +966,28 @@
                                 <input type="checkbox" name="notify_category_requests" value="true" {% if user.notify_category_requests %}checked{% endif %} 
                                        style="margin-right: 10px; width: 20px; height: 20px;">
                                 <span>
-                                    <strong>🔔 Ricevi Notifiche di Categoria</strong><br>
-                                    <small style="color: #666;">Ricevi notifiche e email quando qualcuno richiede aiuto nella tua categoria di expertise.</small>
+                                    <strong>🔔 {{ t('profilo.notifiche_cat') }}</strong><br>
+                                    <small style="color: #666;">{{ t('profilo.notifiche_cat_testo') }}</small>
                                 </span>
                             </label>
                         </div>
                         
                         <div class="consultant-only-fields">
                         <div class="form-group">
-                            <label>Descrizione <span id="charCounter" style="float:right; font-size:0.9rem; color:#dc3545;">0/200 caratteri</span></label>
+                            <label>{{ t('profilo.descrizione') }} <span id="charCounter" style="float:right; font-size:0.9rem; color:#dc3545;">0/200 {{ t('profilo.caratteri') }}</span></label>
                             <textarea id="descrizioneTextarea" name="descrizione" rows="5" 
-                                placeholder="Raccontaci di te, della tua esperienza e come puoi aiutare gli altri (minimo 200 caratteri)">{{ user.descrizione or '' }}</textarea>
-                            <small id="descrizioneHint" style="color:#dc3545; display:block; margin-top:4px;">La descrizione deve essere di almeno 200 caratteri per richiedere la verifica del profilo.</small>
+                                placeholder="{{ t('profilo.descrizione_ph') }}">{{ user.descrizione or '' }}</textarea>
+                            <small id="descrizioneHint" style="color:#dc3545; display:block; margin-top:4px;">{{ t('profilo.descrizione_min') }}</small>
                         </div>
                         
                         <div class="form-group">
-                            <label>Aree di Interesse</label>
-                            <textarea id="areeInteresseTextarea" name="aree_interesse" rows="4" placeholder="Es: Sviluppo Mobile, Leadership, Crescita Personale">{{ user.aree_interesse or '' }}</textarea>
+                            <label>{{ t('profilo.aree') }}</label>
+                            <textarea id="areeInteresseTextarea" name="aree_interesse" rows="4" placeholder="{{ t('profilo.aree_ph') }}">{{ user.aree_interesse or '' }}</textarea>
                             <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 6px;">
-                                <small>Separa con virgole</small>
+                                <small>{{ t('profilo.virgole') }}</small>
                                 <button type="button" id="generateInterestsBtn" 
                                         style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; padding: 8px 16px; border-radius: 8px; font-size: 0.85em; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; transition: all 0.3s; box-shadow: 0 2px 8px rgba(102,126,234,.3);">
-                                    🤖 Genera con AI
+                                    🤖 {{ t('profilo.genera_ai') }}
                                 </button>
                             </div>
                             <div id="generateInterestsStatus" style="display: none; margin-top: 8px; padding: 10px 14px; border-radius: 8px; font-size: 0.9em;"></div>
@@ -997,88 +997,50 @@
                         <input type="hidden" id="tagsInput" name="tags" value='{{ user.tags or "" }}'>
 
                         <div class="form-section">
-                            <div class="form-section-title">🌐 Lingue Parlate *</div>
+                            <div class="form-section-title">🌐 {{ t('profilo.lingue_titolo') }} *</div>
                             <p style="margin: -6px 0 10px; font-size: .86em; color: #6b7a85;">
-                                In che lingue puoi fare una consulenza. È il primo filtro di chi
-                                cerca: senza, chi non parla italiano non ti trova.
+                                {{ t('profilo.lingue_testo') }}
                             </p>
                             <div class="languages-grid" style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px;">
                                 <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; padding: 8px; border-radius: 8px; border: 1px solid #e5e7eb; transition: all .2s;">
                                     <input type="checkbox" name="lang_it" value="it" {% if 'it' in user_languages or not user_languages %}checked{% endif %} style="width: 18px; height: 18px; accent-color: #2e7d32;">
-                                    🇮🇹 Italiano
+                                    🇮🇹 {{ t('profilo.nome_it') }}
                                 </label>
                                 <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; padding: 8px; border-radius: 8px; border: 1px solid #e5e7eb; transition: all .2s;">
                                     <input type="checkbox" name="lang_en" value="en" {% if user_languages and 'en' in user_languages %}checked{% endif %} style="width: 18px; height: 18px; accent-color: #2e7d32;">
-                                    🇬🇧 Inglese
+                                    🇬🇧 {{ t('profilo.nome_en') }}
                                 </label>
                                 <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; padding: 8px; border-radius: 8px; border: 1px solid #e5e7eb; transition: all .2s;">
                                     <input type="checkbox" name="lang_fr" value="fr" {% if user_languages and 'fr' in user_languages %}checked{% endif %} style="width: 18px; height: 18px; accent-color: #2e7d32;">
-                                    🇫🇷 Francese
+                                    🇫🇷 {{ t('profilo.nome_fr') }}
                                 </label>
                                 <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; padding: 8px; border-radius: 8px; border: 1px solid #e5e7eb; transition: all .2s;">
                                     <input type="checkbox" name="lang_es" value="es" {% if user_languages and 'es' in user_languages %}checked{% endif %} style="width: 18px; height: 18px; accent-color: #2e7d32;">
-                                    🇪🇸 Spagnolo
+                                    🇪🇸 {{ t('profilo.nome_es') }}
                                 </label>
                                 <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; padding: 8px; border-radius: 8px; border: 1px solid #e5e7eb; transition: all .2s;">
                                     <input type="checkbox" name="lang_de" value="de" {% if user_languages and 'de' in user_languages %}checked{% endif %} style="width: 18px; height: 18px; accent-color: #2e7d32;">
-                                    🇩🇪 Tedesco
+                                    🇩🇪 {{ t('profilo.nome_de') }}
                                 </label>
                                 <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; padding: 8px; border-radius: 8px; border: 1px solid #e5e7eb; transition: all .2s;">
                                     <input type="checkbox" name="lang_other" id="langOtherCheckbox" value="other" {% if user_languages and 'other' in user_languages %}checked{% endif %} style="width: 18px; height: 18px; accent-color: #2e7d32;">
-                                    🌍 Altro
+                                    🌍 {{ t('profilo.nome_altro') }}
                                 </label>
                             </div>
                             <div id="otherLanguageField" style="display: {% if user_other_language %}block{% else %}none{% endif %}; margin-top: 10px;">
-                                <input type="text" name="other_language" list="worldLanguages" autocomplete="off" value="{{ user_other_language or '' }}" placeholder="Scrivi o scegli un'altra lingua..." style="padding: 10px 14px; border: 1px solid #d1d8e0; border-radius: 8px; font-size: .95em; width: 100%;">
+                                <input type="text" name="other_language" list="worldLanguages" autocomplete="off" value="{{ user_other_language or '' }}" placeholder="{{ t('profilo.altra_lingua_ph') }}" style="padding: 10px 14px; border: 1px solid #d1d8e0; border-radius: 8px; font-size: .95em; width: 100%;">
                                 <datalist id="worldLanguages">
-                                    <option value="Portoghese"></option>
-                                    <option value="Cinese (Mandarino)"></option>
-                                    <option value="Arabo"></option>
-                                    <option value="Russo"></option>
-                                    <option value="Giapponese"></option>
-                                    <option value="Coreano"></option>
-                                    <option value="Olandese"></option>
-                                    <option value="Polacco"></option>
-                                    <option value="Rumeno"></option>
-                                    <option value="Ucraino"></option>
-                                    <option value="Greco"></option>
-                                    <option value="Turco"></option>
-                                    <option value="Hindi"></option>
-                                    <option value="Bengalese"></option>
-                                    <option value="Urdu"></option>
-                                    <option value="Persiano (Farsi)"></option>
-                                    <option value="Ebraico"></option>
-                                    <option value="Svedese"></option>
-                                    <option value="Norvegese"></option>
-                                    <option value="Danese"></option>
-                                    <option value="Finlandese"></option>
-                                    <option value="Ceco"></option>
-                                    <option value="Slovacco"></option>
-                                    <option value="Ungherese"></option>
-                                    <option value="Croato"></option>
-                                    <option value="Serbo"></option>
-                                    <option value="Sloveno"></option>
-                                    <option value="Bosniaco"></option>
-                                    <option value="Bulgaro"></option>
-                                    <option value="Albanese"></option>
-                                    <option value="Catalano"></option>
-                                    <option value="Thailandese"></option>
-                                    <option value="Vietnamita"></option>
-                                    <option value="Indonesiano"></option>
-                                    <option value="Filippino (Tagalog)"></option>
-                                    <option value="Swahili"></option>
-                                    <option value="Maltese"></option>
-                                    <option value="Estone"></option>
-                                    <option value="Lettone"></option>
-                                    <option value="Lituano"></option>
+                                    {% for nome in t('profilo.altre_lingue').split('|') %}
+                                    <option value="{{ nome }}"></option>
+                                    {% endfor %}
                                 </datalist>
                             </div>
                         </div>
 
                         <div class="form-group">
-                            <label>Prezzo della Consulenza Orario (€) <span style="color: #d32f2f;">*</span></label>
+                            <label>{{ t('profilo.prezzo') }} <span style="color: #d32f2f;">*</span></label>
                             <input type="number" name="prezzo_consulenza" value="{{ user.prezzo_consulenza or 150 }}" min="20" step="5" required>
-                            <small style="color: #d32f2f;">⚠️ Minimo 20€/ora</small>
+                            <small style="color: #d32f2f;">⚠️ {{ t('profilo.prezzo_min') }}</small>
                         </div>
 
                         <!-- Si salva subito al cambio (niente name: non passa dal form) -->
@@ -1087,8 +1049,8 @@
                                 <input type="checkbox" id="autoAcceptToggle" {% if user.auto_accept_bookings != false %}checked{% endif %}
                                        style="margin-right: 10px; width: 20px; height: 20px; flex-shrink: 0;">
                                 <span>
-                                    <strong>Le richieste di consulenza in arrivo si confermano da sole</strong><br>
-                                    <small style="color: #666;">Con questa impostazione attiva, ogni richiesta di consulenza che ti arriva viene confermata automaticamente, senza che tu debba accettarla. Se la spegni, la richiesta resta in sospeso finché non la accetti o la rifiuti: hai 24 ore, e comunque non oltre un'ora prima dell'inizio. Se non rispondi in tempo, la richiesta viene rifiutata da sola. L'importo del cliente resta solo bloccato e viene addebitato quando la richiesta è confermata; se rifiuti o non rispondi, il blocco si annulla.</small>
+                                    <strong>{{ t('profilo.autoconferma') }}</strong><br>
+                                    <small style="color: #666;">{{ t('profilo.autoconferma_testo') }}</small>
                                     <small id="autoAcceptStatus" style="display: block; margin-top: 4px;" aria-live="polite"></small>
                                 </span>
                             </label>
@@ -1102,19 +1064,19 @@
                                 <input type="checkbox" name="is_anonymous" value="true" {% if user.is_anonymous %}checked{% endif %} 
                                        style="margin-right: 10px; width: 20px; height: 20px;">
                                 <span>
-                                    <strong>🔒 Modalità Anonima</strong><br>
-                                    <small style="color: #666;">Se attivata, il tuo nome e cognome non verranno mostrati pubblicamente. Apparirà "Utente #{{ user.id }}" al posto del tuo nome reale.</small>
+                                    <strong>🔒 {{ t('profilo.anonima') }}</strong><br>
+                                    <small style="color: #666;">{{ t('profilo.anonima_testo') }}</small>
                                 </span>
                             </label>
                         </div>
                         
                         <div class="form-actions">
-                            <button type="submit" class="btn btn-primary">Salva Modifiche</button>
-                            <button type="button" id="cancelEditBtn" class="btn btn-secondary">Annulla</button>
+                            <button type="submit" class="btn btn-primary">{{ t('profilo.salva') }}</button>
+                            <button type="button" id="cancelEditBtn" class="btn btn-secondary">{{ t('comune.annulla') }}</button>
                         </div>
                         {% if user.is_verified and not has_payment_method %}
                         <p style="color: #e65100; font-size: 0.85rem; margin-top: 12px; background: #fff3e0; padding: 10px 14px; border-radius: 8px; border-left: 3px solid #e65100;">
-                            ⚠️ Per effettuare consulenze devi anche configurare un metodo di ricezione pagamento (Stripe o PayPal) nell'apposita sezione a destra del tuo profilo.
+                            ⚠️ {{ t('profilo.pagamento_manca_corto') }}
                         </p>
                         {% endif %}
                     </form>
@@ -1122,8 +1084,8 @@
                 <!-- User Questions Section -->
                 <section class="pub-narrative" id="userQuestionsSection" style="display:none; margin-bottom: 32px;">
                     <div class="section-header-row">
-                        <div class="pub-section-label" style="margin:0;">💬 Le tue Domande nella Community</div>
-                        <a href="javascript:void(0)" id="viewAllUserQuestions" class="view-all-btn" style="display:none;" onclick="openViewAllModal('user-questions')">Guarda tutte</a>
+                        <div class="pub-section-label" style="margin:0;">💬 {{ t('profilo.domande') }}</div>
+                        <a href="javascript:void(0)" id="viewAllUserQuestions" class="view-all-btn" style="display:none;" onclick="openViewAllModal('user-questions')">{{ t('profilo.guarda_tutte') }}</a>
                     </div>
                     <div id="userQuestionsContainer" class="liked-questions-grid">
                     </div>
@@ -1146,7 +1108,7 @@
                 <section class="pub-narrative" style="margin-bottom: 32px; margin-top: 16px;">
                     <div class="reviews-toggle-header" onclick="this.classList.toggle('open'); this.nextElementSibling.classList.toggle('open');">
                         <div class="reviews-toggle-left">
-                            <span style="font-size: 1.1rem; font-weight: 600; color: #1a202c;">⭐ Recensioni ricevute</span>
+                            <span style="font-size: 1.1rem; font-weight: 600; color: #1a202c;">⭐ {{ t('profilo.recensioni') }}</span>
                             <span class="pub-avg-score" style="font-size: 1.1rem;">{{ avg_rating }}</span>
                             <span class="pub-avg-stars" style="font-size: 1rem;">
                                 {% for i in range(1, 6) %}
@@ -1167,9 +1129,9 @@
                                         <span class="pub-review-date">{{ r.created_at.strftime('%d/%m/%Y') if r.created_at else 'N/A' }}</span>
                                     </div>
                                     <div class="pub-review-ratings">
-                                        <span title="Aiuto concreto">🎯 {{ r.rating_helpful }}/5</span>
-                                        <span title="Preparazione">📚 {{ r.rating_prepared }}/5</span>
-                                        <span title="Comunicazione">💬 {{ r.rating_communication }}/5</span>
+                                        <span title="{{ t('profilo.aiuto') }}">🎯 {{ r.rating_helpful }}/5</span>
+                                        <span title="{{ t('profilo.preparazione') }}">📚 {{ r.rating_prepared }}/5</span>
+                                        <span title="{{ t('profilo.comunicazione') }}">💬 {{ r.rating_communication }}/5</span>
                                     </div>
                                     {% if r.comment %}
                                     <p class="pub-review-comment">{{ r.comment }}</p>
@@ -1187,43 +1149,43 @@
             <div class="pub-sidebar">
                 {% if not user.is_verified %}
                 <div class="pub-sidebar-card" style="background: linear-gradient(135deg, #2e7d32 0%, #43a047 100%); text-align: center; padding: 28px 20px;">
-                    <h3 style="color: white; font-size: 1.3em; margin-bottom: 8px;">🚀 Diventa Consulente</h3>
-                    <p style="color: rgba(255,255,255,.85); font-size: .9em; margin-bottom: 16px;">Compila il tuo profilo completo per diventare un Ispiramyer e offrire consulenze</p>
+                    <h3 style="color: white; font-size: 1.3em; margin-bottom: 8px;">🚀 {{ t('profilo.diventa') }}</h3>
+                    <p style="color: rgba(255,255,255,.85); font-size: .9em; margin-bottom: 16px;">{{ t('profilo.inizia_testo') }}</p>
                     <button id="editProfileBtn" style="width: 100%; padding: 14px; background: white; color: #2e7d32; border: none; border-radius: 12px; font-weight: 700; cursor: pointer; font-size: 1.05em; box-shadow: 0 4px 14px rgba(0,0,0,.15); transition: all .2s;">
-                        Inizia Ora →
+                        {{ t('profilo.inizia') }} →
                     </button>
                 </div>
                 {% endif %}
                 {% if user.is_verified %}
                 <div class="pub-sidebar-card">
-                    <h3>Gestisci il tuo profilo</h3>
+                    <h3>{{ t('profilo.gestisci') }}</h3>
                     {% if user.prezzo_consulenza %}
                     <div class="pub-sidebar-price">€{{ user.prezzo_consulenza }} <span>/ ora</span></div>
                     {% endif %}
                     {% if categorie_verificate %}
                     <p class="pub-sidebar-sub">
-                        Verificato in
+                        {{ t('profilo.verificato_in') }}
                         {% for cat in categorie_verificate %}{{ cat.icon }} {{ cat.name }}{% if not loop.last %}, {% endif %}{% endfor %}
                     </p>
                     {% endif %}
 
                     <a href="/availability" class="pub-sidebar-btn">
-                        📅 Gestisci Fasce Orarie
+                        📅 {{ t('profilo.fasce') }}
                     </a>
                     <button onclick="document.getElementById('editProfileBtn').click(); window.scrollTo({top: document.getElementById('editSection').offsetTop - 80, behavior: 'smooth'});" 
                             class="pub-sidebar-msg">
-                        ⚙️ Modifica Profilo e Prezzi
+                        ⚙️ {{ t('profilo.prezzi') }}
                     </button>
                     <a href="/user/{{ user.id }}" class="pub-sidebar-link">
-                        👁️ Vedi il tuo profilo pubblico
+                        👁️ {{ t('profilo.pubblico') }}
                     </a>
                 </div>
 
                 <!-- Stripe Connect Card -->
                 <div class="pub-sidebar-card" id="stripeConnectCard" style="background: linear-gradient(135deg, #2e7d32 0%, #43a047 100%);">
-                    <h3 style="color: white;">💳 Pagamenti Stripe</h3>
+                    <h3 style="color: white;">💳 {{ t('profilo.stripe') }}</h3>
                     <div id="stripeConnectContent">
-                        <p style="color: rgba(255,255,255,.85); font-size: .9em; margin-bottom: 14px;">Caricamento...</p>
+                        <p style="color: rgba(255,255,255,.85); font-size: .9em; margin-bottom: 14px;">{{ t('comune.caricamento') }}</p>
                     </div>
                 </div>
 
@@ -1232,22 +1194,22 @@
                     <h3 style="color: white;"><i class="fab fa-paypal"></i> PayPal</h3>
                     <div id="paypalContent">
                         {% if user.paypal_email %}
-                        <p style="color: rgba(255,255,255,.9); font-size: .9em; margin-bottom: 8px;">✅ Collegato</p>
+                        <p style="color: rgba(255,255,255,.9); font-size: .9em; margin-bottom: 8px;">✅ {{ t('profilo.collegato') }}</p>
                         <p style="color: rgba(255,255,255,.75); font-size: .82em; margin-bottom: 12px; word-break: break-all;">{{ user.paypal_email }}</p>
                         <button onclick="togglePaypalEdit()" style="width: 100%; padding: 10px; background: white; color: #003087; border: none; border-radius: 10px; font-weight: 600; cursor: pointer; font-size: .85em; transition: all .2s;">
-                            ✏️ Modifica Email PayPal
+                            ✏️ {{ t('profilo.paypal_modifica') }}
                         </button>
                         {% else %}
-                        <p style="color: rgba(255,255,255,.9); font-size: .9em; margin-bottom: 12px;">Inserisci la tua email PayPal per ricevere pagamenti tramite PayPal</p>
+                        <p style="color: rgba(255,255,255,.9); font-size: .9em; margin-bottom: 12px;">{{ t('profilo.paypal_testo') }}</p>
                         <button onclick="togglePaypalEdit()" style="width: 100%; padding: 12px; background: white; color: #003087; border: none; border-radius: 10px; font-weight: 600; cursor: pointer; font-size: .9em; transition: all .2s;">
-                            🔗 Collega PayPal
+                            🔗 {{ t('profilo.paypal_collega') }}
                         </button>
                         {% endif %}
                         <div id="paypalEditForm" style="display: none; margin-top: 12px;">
                             <input type="email" id="paypalEmailInput" value="{{ user.paypal_email or '' }}" placeholder="email@paypal.com" style="width: 100%; padding: 10px 12px; border: 2px solid rgba(255,255,255,.3); border-radius: 8px; background: rgba(255,255,255,.15); color: white; font-size: .9em; margin-bottom: 8px; box-sizing: border-box;" />
                             <div style="display: flex; gap: 8px;">
-                                <button onclick="savePaypalEmail()" style="flex: 1; padding: 10px; background: #00b4d8; color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: .85em;">💾 Salva</button>
-                                <button onclick="togglePaypalEdit()" style="flex: 1; padding: 10px; background: rgba(255,255,255,.2); color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: .85em;">Annulla</button>
+                                <button onclick="savePaypalEmail()" style="flex: 1; padding: 10px; background: #00b4d8; color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: .85em;">💾 {{ t('comune.salva') }}</button>
+                                <button onclick="togglePaypalEdit()" style="flex: 1; padding: 10px; background: rgba(255,255,255,.2); color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: .85em;">{{ t('comune.annulla') }}</button>
                             </div>
                             <p id="paypalError" style="display: none; color: #ff6b6b; font-size: .8em; margin-top: 6px;"></p>
                         </div>
@@ -1258,30 +1220,30 @@
                 {% if user.is_verified and user.category_id %}
                 <div class="pub-sidebar-card" style="background: linear-gradient(135deg, #1b5e20 0%, #2e7d32 100%);">
                     <button id="openCategoryRequestsBtn" style="width: 100%; padding: 14px; background: white; color: #1b5e20; border: none; border-radius: 12px; font-weight: 600; cursor: pointer; font-size: 1em; position: relative; box-shadow: 0 4px 14px rgba(0,0,0,.1);">
-                        🔔 Richieste della tua Categoria
+                        🔔 {{ t('profilo.richieste_categoria') }}
                         <span id="categoryRequestsBadge" style="display: none; position: absolute; top: -8px; right: -8px; background: #dc3545; color: white; border-radius: 50%; width: 24px; height: 24px; align-items: center; justify-content: center; font-size: 0.75em; font-weight: bold; border: 2px solid white;"></span>
                     </button>
                 </div>
                 {% endif %}
 
-                <div class="pub-sidebar-card" style="background: white; color: #374151;">
-                    <h3 style="color: #1a202c;">Account</h3>
+                <div class="pub-sidebar-card" id="schedaAccount" style="background: white; color: #374151;">
+                    <h3 style="color: #1a202c;">{{ t('profilo.account') }}</h3>
                     <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 14px;">
                         <a href="/reset-password" class="pub-sidebar-link" style="color: #2e7d32; text-decoration: none; padding: 10px 16px; background: #f0f8f0; border-radius: 8px; font-weight: 500; font-size: .9em; text-align: center; transition: all .2s;">
-                            🔑 Cambia Password
+                            🔑 {{ t('profilo.password') }}
                         </a>
                         {# Acceso da base.html: solo dove le push esistono davvero #}
                         <button type="button" class="pub-sidebar-link voce-push-nascosta interruttore-push" id="interruttorePush" style="border: none; cursor: pointer; text-decoration: none; color: #2e7d32; padding: 10px 16px; background: #f0f8f0; border-radius: 8px; font-weight: 500; font-size: .9em; text-align: center; transition: all .2s; font-family: inherit;">
-                            🔔 Attiva notifiche
+                            🔔 {{ t('profilo.attiva_notifiche') }}
                         </button>
                         <div id="spiegazionePush" class="voce-push-nascosta spiegazione-push" style="font-size: .78em; color: #6b7280; line-height: 1.35; text-align: center;"></div>
 
                         {# Il collegamento e' acceso da base.html, che sa se l'app e' gia' installata #}
                         <a href="#" class="pub-sidebar-link voce-installa-nascosta" id="voceInstallaProfilo" style="color: #2e7d32; text-decoration: none; padding: 10px 16px; background: #f0f8f0; border-radius: 8px; font-weight: 500; font-size: .9em; text-align: center; transition: all .2s;">
-                            📱 Installa l'app
+                            📱 {{ t('profilo.installa') }}
                         </a>
                         <a href="/logout" class="pub-sidebar-link" style="color: #dc3545; text-decoration: none; padding: 10px 16px; background: #fef2f2; border-radius: 8px; font-weight: 500; font-size: .9em; text-align: center; transition: all .2s;">
-                            🚪 Esci dall'account
+                            🚪 {{ t('profilo.esci') }}
                         </a>
                     </div>
                 </div>
@@ -1296,13 +1258,13 @@
 <div id="cropModal" class="modal" style="display: none;">
     <div class="modal-content">
         <span class="close-modal">&times;</span>
-        <h2>Ritaglia l'immagine</h2>
+        <h2>{{ t('profilo.ritaglia') }}</h2>
         <div class="crop-container">
             <img id="imageToCrop" style="max-width: 100%;">
         </div>
         <div class="modal-actions" style="margin-top: 20px;">
-            <button id="cancelCrop" class="btn btn-secondary">Annulla</button>
-            <button id="saveCrop" class="btn btn-primary">Salva</button>
+            <button id="cancelCrop" class="btn btn-secondary">{{ t('comune.annulla') }}</button>
+            <button id="saveCrop" class="btn btn-primary">{{ t('comune.salva') }}</button>
         </div>
     </div>
 </div>
@@ -1311,11 +1273,11 @@
 <div id="categoryRequestsModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); z-index: 1000; overflow-y: auto;">
     <div style="background: white; margin: 20px auto; max-width: 95%; max-height: 95vh; border-radius: 12px; overflow: hidden; display: flex; flex-direction: column;">
         <div style="background: linear-gradient(135deg, #43a047 0%, #2e7d32 100%); color: white; padding: 20px; display: flex; justify-content: space-between; align-items: center;">
-            <h2 style="margin: 0; font-size: 1.5em;">🔔 Richieste della tua Categoria</h2>
+            <h2 style="margin: 0; font-size: 1.5em;">🔔 {{ t('profilo.richieste_categoria') }}</h2>
             <button id="closeCategoryRequestsBtn" style="background: white; border: none; color: #2e7d32; font-size: 1.5em; cursor: pointer; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center;">×</button>
         </div>
         <div id="categoryRequestsContent" style="flex: 1; overflow-y: auto; padding: 20px;">
-            <p style="text-align: center; color: #888;">Caricamento richieste...</p>
+            <p style="text-align: center; color: #888;">{{ t('profilo.caricamento_richieste') }}</p>
         </div>
     </div>
 </div>
@@ -1325,6 +1287,126 @@
 {% block extra_js %}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.js"></script>
 <script>
+    const UI = {
+        caratteri: {{ t('profilo.caratteri')|tojson }},
+        descrizioneOk: {{ t('profilo.descrizione_ok')|tojson }},
+        descrizioneMancano: {{ t('profilo.descrizione_mancano')|tojson }},
+        genera: {{ t('profilo.genera_ai')|tojson }},
+        aiTra: {{ t('profilo.ai_tra')|tojson }},
+        aiMin: {{ t('profilo.ai_min50')|tojson }},
+        aiCorso: {{ t('profilo.ai_corso')|tojson }},
+        aiAnalizza: {{ t('profilo.ai_analizza')|tojson }},
+        aiOk: {{ t('profilo.ai_ok')|tojson }},
+        aiErrore: {{ t('profilo.ai_errore')|tojson }},
+        aiRete: {{ t('profilo.ai_rete')|tojson }},
+        erroreSalva: {{ t('profilo.errore_salvataggio')|tojson }},
+        erroreRete: {{ t('profilo.errore_rete')|tojson }},
+        stripeOk: {{ t('profilo.stripe_ok')|tojson }},
+        stripeDash: {{ t('profilo.stripe_dashboard')|tojson }},
+        stripeCompleta: {{ t('profilo.stripe_completa')|tojson }},
+        stripeCompletaBtn: {{ t('profilo.stripe_completa_btn')|tojson }},
+        stripeIban: {{ t('profilo.stripe_iban')|tojson }},
+        stripeCollega: {{ t('profilo.stripe_collega')|tojson }},
+        stripeAvvio: {{ t('profilo.stripe_avvio')|tojson }},
+        conChi: {{ t('profilo.con_chi')|tojson }},
+        richiestaDa: {{ t('profilo.richiesta_da')|tojson }},
+        rifiuta: {{ t('profilo.rifiuta')|tojson }},
+        accetta: {{ t('profilo.accetta')|tojson }},
+        entra: {{ t('profilo.entra')|tojson }},
+        attesaAltro: {{ t('profilo.attesa_altro')|tojson }},
+        pronto: {{ t('profilo.pronto')|tojson }},
+        partecipa: {{ t('profilo.partecipa')|tojson }},
+        ePronto: {{ t('profilo.e_pronto')|tojson }},
+        scaduta: {{ t('profilo.richiesta_scaduta')|tojson }},
+        scadutaTesto: {{ t('profilo.richiesta_scaduta_testo')|tojson }},
+        daConfermare: {{ t('profilo.da_confermare')|tojson }},
+        daConfermareTesto: {{ t('profilo.da_confermare_testo')|tojson }},
+        inAttesa: {{ t('profilo.in_attesa')|tojson }},
+        inAttesaTesto: {{ t('profilo.in_attesa_testo')|tojson }},
+        contestazioneTu: {{ t('profilo.contestazione_tu')|tojson }},
+        contestazioneAltro: {{ t('profilo.contestazione_altro')|tojson }},
+        recensioneTu: {{ t('profilo.recensione_tu')|tojson }},
+        recensioneAltro: {{ t('profilo.recensione_altro')|tojson }},
+        iniziaTra: {{ t('profilo.inizia_tra')|tojson }},
+        mancato: {{ t('profilo.mancato')|tojson }},
+        ilConsulente: {{ t('profilo.il_consulente')|tojson }},
+        ilCliente: {{ t('profilo.il_cliente')|tojson }},
+        nonPartecipato: {{ t('profilo.non_partecipato')|tojson }},
+        nonSvolta: {{ t('profilo.non_svolta')|tojson }},
+        rifiutaTitolo: {{ t('profilo.rifiuta_titolo')|tojson }},
+        rifiutaSicuro: {{ t('profilo.rifiuta_sicuro')|tojson }},
+        rifiutaNotaRichiesta: {{ t('profilo.rifiuta_nota_richiesta')|tojson }},
+        rifiutaNotaPagata: {{ t('profilo.rifiuta_nota_pagata')|tojson }},
+        motivoRifiuto: {{ t('profilo.motivo_rifiuto')|tojson }},
+        confermaCorso: {{ t('profilo.conferma_corso')|tojson }},
+        accettata: {{ t('profilo.accettata')|tojson }},
+        accettaErrore: {{ t('profilo.accetta_errore')|tojson }},
+        reteRiprova: {{ t('profilo.rete_riprova')|tojson }},
+        rifiutata: {{ t('profilo.rifiutata')|tojson }},
+        scegliLingua: {{ t('profilo.scegli_lingua')|tojson }},
+        statoCompletata: {{ t('profilo.stato_completata')|tojson }},
+        statoAnnullata: {{ t('profilo.stato_annullata')|tojson }},
+        statoConfermare: {{ t('profilo.stato_confermare')|tojson }},
+        statoAssente: {{ t('profilo.stato_assente')|tojson }},
+        statoConfermata: {{ t('profilo.stato_confermata')|tojson }},
+        statoAttesa: {{ t('profilo.stato_attesa')|tojson }},
+        annullataTe: {{ t('profilo.annullata_te')|tojson }},
+        annullataDa: {{ t('profilo.annullata_da')|tojson }},
+        annullataAuto: {{ t('profilo.annullata_auto')|tojson }},
+        importoRimborsato: {{ t('profilo.importo_rimborsato')|tojson }},
+        nessunAddebito: {{ t('profilo.nessun_addebito')|tojson }},
+        motivo: {{ t('profilo.motivo')|tojson }},
+        pagamentoAttesa: {{ t('profilo.pagamento_attesa')|tojson }},
+        recensioneInviata: {{ t('profilo.recensione_inviata')|tojson }},
+        recensione: {{ t('profilo.recensione')|tojson }},
+        contestazioneAperta: {{ t('profilo.contestazione_aperta')|tojson }},
+        inRevisione: {{ t('profilo.in_revisione')|tojson }},
+        risolta: {{ t('profilo.risolta')|tojson }},
+        respinta: {{ t('profilo.respinta')|tojson }},
+        contestazione: {{ t('profilo.contestazione')|tojson }},
+        contesta: {{ t('profilo.contesta')|tojson }},
+        voceConsulenza: {{ t('profilo.voce_consulenza')|tojson }},
+        voceServizio: {{ t('profilo.voce_servizio')|tojson }},
+        rimborsati: {{ t('profilo.rimborsati')|tojson }},
+        caricamento: {{ t('profilo.caricamento')|tojson }},
+        apriContestazione: {{ t('recensione.apri')|tojson }},
+        motivoBreve: {{ t('profilo.motivo_breve')|tojson }},
+        problemaPh: {{ t('profilo.problema_ph')|tojson }},
+        annulla: {{ t('comune.annulla')|tojson }},
+        inviaContestazione: {{ t('recensione.invia_contestazione')|tojson }},
+        minimo: {{ t('recensione.minimo')|tojson }},
+        contestazioneOk: {{ t('profilo.contestazione_ok')|tojson }},
+        contestazioneErrore: {{ t('profilo.contestazione_errore')|tojson }},
+        comeAndata: {{ t('profilo.come_andata')|tojson }},
+        opinione: {{ t('profilo.opinione')|tojson }},
+        aiuto: {{ t('recensione.aiuto')|tojson }},
+        preparato: {{ t('recensione.preparato')|tojson }},
+        comunicativa: {{ t('profilo.comunicativa')|tojson }},
+        commento: {{ t('recensione.commento')|tojson }},
+        commentoPh: {{ t('recensione.commento_ph')|tojson }},
+        inviaRecensione: {{ t('recensione.invia')|tojson }},
+        voto: {{ t('call.voto')|tojson }},
+        invio: {{ t('recensione.invio')|tojson }},
+        grazie: {{ t('profilo.grazie_stella')|tojson }},
+        recensioneErrore: {{ t('profilo.recensione_errore')|tojson }},
+        errore: {{ t('comune.errore')|tojson }},
+        erroreRete: {{ t('comune.errore_rete')|tojson }},
+        reteBreve: {{ t('profilo.rete_breve')|tojson }},
+        rifiutaImpossibile: {{ t('profilo.rifiuta_impossibile')|tojson }},
+        salvaCorso: {{ t('profilo.salva_corso')|tojson }},
+        autoSi: {{ t('profilo.auto_si')|tojson }},
+        autoNo: {{ t('profilo.auto_no')|tojson }},
+        nonSalvato: {{ t('profilo.non_salvato')|tojson }},
+        callContestazione: {{ t('profilo.call_contestazione')|tojson }},
+        callPresto: {{ t('profilo.call_presto')|tojson }},
+        callChiusa: {{ t('profilo.call_chiusa')|tojson }},
+        callRecensione: {{ t('profilo.call_recensione')|tojson }},
+        tornaCall: {{ t('profilo.torna_call')|tojson }},
+        callAltra: {{ t('profilo.call_altra')|tojson }},
+        connessione: {{ t('profilo.connessione')|tojson }},
+        erroreConnessione: {{ t('profilo.errore_connessione')|tojson }}
+    };
+    const LOCALE_UI = {{ ('en-GB' if lingua_ui == 'en' else 'it-IT')|tojson }};
     // ========== PAYPAL EMAIL ==========
     function togglePaypalEdit() {
         const form = document.getElementById('paypalEditForm');
@@ -1351,11 +1433,11 @@
             if (res.ok) {
                 location.reload();
             } else {
-                errorEl.textContent = data.error || 'Errore nel salvataggio';
+                errorEl.textContent = data.error || UI.erroreSalva;
                 errorEl.style.display = 'block';
             }
         } catch (e) {
-            errorEl.textContent = 'Errore di connessione';
+            errorEl.textContent = UI.erroreRete;
             errorEl.style.display = 'block';
         }
     }
@@ -1373,23 +1455,23 @@
             
             if (data.onboarding_complete) {
                 content.innerHTML = `
-                    <p style="color: rgba(255,255,255,.9); font-size: .9em; margin-bottom: 12px;">✅ Account Stripe collegato</p>
+                    <p style="color: rgba(255,255,255,.9); font-size: .9em; margin-bottom: 12px;">✅ ${UI.stripeOk}</p>
                     <button onclick="openStripeDashboard()" style="width: 100%; padding: 12px; background: white; color: #2e7d32; border: none; border-radius: 10px; font-weight: 600; cursor: pointer; font-size: .9em; transition: all .2s;">
-                        📊 Dashboard Pagamenti
+                        📊 ${UI.stripeDash}
                     </button>
                 `;
             } else if (data.connected && !data.onboarding_complete) {
                 content.innerHTML = `
-                    <p style="color: rgba(255,255,255,.9); font-size: .9em; margin-bottom: 12px;">⏳ Completa la configurazione per ricevere pagamenti</p>
+                    <p style="color: rgba(255,255,255,.9); font-size: .9em; margin-bottom: 12px;">⏳ ${UI.stripeCompleta}</p>
                     <button onclick="startStripeOnboarding()" style="width: 100%; padding: 12px; background: white; color: #2e7d32; border: none; border-radius: 10px; font-weight: 600; cursor: pointer; font-size: .9em; transition: all .2s;">
-                        🔗 Completa Configurazione
+                        🔗 ${UI.stripeCompletaBtn}
                     </button>
                 `;
             } else {
                 content.innerHTML = `
-                    <p style="color: rgba(255,255,255,.9); font-size: .9em; margin-bottom: 12px;">Inserisci IBAN e/o carta di credito per ricevere i pagamenti sui tuoi conti tramite Stripe</p>
+                    <p style="color: rgba(255,255,255,.9); font-size: .9em; margin-bottom: 12px;">${UI.stripeIban}</p>
                     <button onclick="startStripeOnboarding()" style="width: 100%; padding: 12px; background: white; color: #2e7d32; border: none; border-radius: 10px; font-weight: 600; cursor: pointer; font-size: .9em; transition: all .2s;">
-                        🔗 Collega Conto Stripe
+                        🔗 ${UI.stripeCollega}
                     </button>
                 `;
             }
@@ -1409,10 +1491,10 @@
             if (data.success && data.url) {
                 window.location.href = data.url;
             } else {
-                alert('Errore: ' + (data.detail || 'Impossibile avviare la configurazione'));
+                alert('Errore: ' + (data.detail || UI.stripeAvvio));
             }
         } catch (e) {
-            alert('Errore di connessione');
+            alert(UI.erroreRete);
         }
     }
 
@@ -1426,7 +1508,7 @@
                 alert('Errore: ' + (data.detail || 'Impossibile aprire la dashboard'));
             }
         } catch (e) {
-            alert('Errore di connessione');
+            alert(UI.erroreRete);
         }
     }
 
@@ -1450,7 +1532,7 @@
         const isSimple = mode === 'simple';
         simpleModeInput.value = isSimple ? 'true' : 'false';
         consultantFields.forEach(el => el.style.display = isSimple ? 'none' : '');
-        editTitle.textContent = isSimple ? '✏️ Modifica Profilo' : '🚀 Diventa Consulente';
+        editTitle.textContent = isSimple ? ('✏️ ' + {{ t('profilo.modifica')|tojson }}) : ('🚀 ' + {{ t('profilo.diventa')|tojson }});
         // In simple mode, remove required from prezzo
         const prezzoInput = profileForm.querySelector('input[name="prezzo_consulenza"]');
         if (prezzoInput) prezzoInput.required = !isSimple;
@@ -1458,12 +1540,12 @@
         if(viewSection) viewSection.style.display = 'none';
         // Update the button that was clicked to show "close"
         if (isSimple && simpleEditBtn) {
-            simpleEditBtn.textContent = '❌ Chiudi senza salvare';
+            simpleEditBtn.textContent = '❌ ' + {{ t('profilo.chiudi_senza')|tojson }};
             simpleEditBtn.style.backgroundColor = '#dc3545';
             simpleEditBtn.style.color = '#ffffff';
         }
         if (!isSimple && editBtn) {
-            editBtn.textContent = '❌ Chiudi senza salvare';
+            editBtn.textContent = '❌ ' + {{ t('profilo.chiudi_senza')|tojson }};
             editBtn.style.backgroundColor = '#dc3545';
             editBtn.style.color = '#ffffff';
         }
@@ -1525,7 +1607,7 @@
             const valore = autoAcceptToggle.checked;
             autoAcceptToggle.disabled = true;
             stato.style.color = '#666';
-            stato.textContent = 'Salvataggio...';
+            stato.textContent = UI.salvaCorso;
             try {
                 const resp = await fetch('/api/user/set-auto-accept', {
                     method: 'POST',
@@ -1534,13 +1616,11 @@
                 });
                 if (!resp.ok) throw new Error(resp.status);
                 stato.style.color = '#2e7d32';
-                stato.textContent = valore
-                    ? 'Salvato: le richieste in arrivo si confermano da sole.'
-                    : 'Salvato: le richieste in arrivo restano in sospeso finché non le accetti.';
+                stato.textContent = valore ? UI.autoSi : UI.autoNo;
             } catch (e) {
                 autoAcceptToggle.checked = !valore;
                 stato.style.color = '#d32f2f';
-                stato.textContent = 'Non salvato: controlla la connessione e riprova.';
+                stato.textContent = UI.nonSalvato;
             } finally {
                 autoAcceptToggle.disabled = false;
             }
@@ -1558,12 +1638,11 @@
     // chiude e l'avviso compare nel profilo da cui era partita.
     if (urlParams.get('call_closed')) {
         const motiviChiusura = {
-            dispute: 'Non puoi rientrare in call: su questa consulenza è stata aperta una contestazione.',
-            presto: 'La videochiamata si apre 10 minuti prima dell\'orario prenotato.',
-            chiusa: 'Il tempo di questa consulenza è finito: non si può più entrare.',
+            dispute: UI.callContestazione,
+            presto: UI.callPresto,
+            chiusa: UI.callChiusa,
         };
-        const avviso = motiviChiusura[urlParams.get('call_closed')]
-            || 'Non puoi rientrare in call perché hai già rilasciato una recensione.';
+        const avviso = motiviChiusura[urlParams.get('call_closed')] || UI.callRecensione;
         history.replaceState(null, '', window.location.pathname);
         let chiusa = false;
         try {
@@ -1613,7 +1692,7 @@
 
         // Almeno una lingua: senza, il profilo non compare in nessun filtro
         if (langCodes.length === 0) {
-            errorDiv.textContent = 'Scegli almeno una lingua in cui puoi fare consulenze.';
+            errorDiv.textContent = UI.scegliLingua;
             errorDiv.style.display = 'block';
             document.querySelector('input[name="lang_it"]')?.scrollIntoView({ block: 'center', behavior: 'smooth' });
             return;
@@ -1767,7 +1846,7 @@
                     alert(data.error || 'Errore durante l\'upload');
                 }
             } catch (error) {
-                alert('Errore di connessione');
+                alert(UI.erroreRete);
                 console.error(error);
             }
         }, 'image/jpeg', 0.9);
@@ -1790,15 +1869,15 @@
 
     function updateCharCounter() {
         const length = descrizioneTextarea.value.length;
-        charCounter.textContent = `${length}/200 caratteri`;
+        charCounter.textContent = `${length}/200 ${UI.caratteri}`;
         if (length >= 200) {
             charCounter.style.color = '#28a745';
             descrizioneHint.style.color = '#28a745';
-            descrizioneHint.textContent = '✓ La descrizione soddisfa i requisiti per la verifica del profilo.';
+            descrizioneHint.textContent = '✓ ' + UI.descrizioneOk;
         } else {
             charCounter.style.color = '#dc3545';
             descrizioneHint.style.color = '#dc3545';
-            descrizioneHint.textContent = `La descrizione deve essere di almeno 200 caratteri per richiedere la verifica del profilo. (ne mancano ${200 - length})`;
+            descrizioneHint.textContent = UI.descrizioneMancano.replace('{n}', String(200 - length));
         }
     }
 
@@ -1836,14 +1915,14 @@
         const remaining = getAiCooldownRemaining();
         if (remaining > 0 && generateInterestsBtn) {
             generateInterestsBtn.disabled = true;
-            generateInterestsBtn.innerHTML = `🕐 Disponibile tra ${formatCooldownTime(remaining)}`;
+            generateInterestsBtn.innerHTML = '🕐 ' + UI.aiTra.replace('{tempo}', formatCooldownTime(remaining));
             generateInterestsBtn.style.opacity = '0.6';
             generateInterestsBtn.style.cursor = 'not-allowed';
             // Aggiorna il countdown ogni secondo
             setTimeout(applyAiCooldown, 1000);
         } else if (generateInterestsBtn) {
             generateInterestsBtn.disabled = false;
-            generateInterestsBtn.innerHTML = '🤖 Genera con AI';
+            generateInterestsBtn.innerHTML = '🤖 ' + UI.genera;
             generateInterestsBtn.style.opacity = '1';
             generateInterestsBtn.style.cursor = 'pointer';
         }
@@ -1867,17 +1946,17 @@
                 generateInterestsStatus.style.display = 'block';
                 generateInterestsStatus.style.background = '#fff3cd';
                 generateInterestsStatus.style.color = '#856404';
-                generateInterestsStatus.textContent = '⚠️ Scrivi almeno 50 caratteri nella descrizione per generare le aree di interesse.';
+                generateInterestsStatus.textContent = '⚠️ ' + UI.aiMin;
                 return;
             }
 
             // Mostra stato di caricamento
             generateInterestsBtn.disabled = true;
-            generateInterestsBtn.innerHTML = '⏳ Generazione in corso...';
+            generateInterestsBtn.innerHTML = '⏳ ' + UI.aiCorso;
             generateInterestsStatus.style.display = 'block';
             generateInterestsStatus.style.background = '#e8f4fd';
             generateInterestsStatus.style.color = '#0c5460';
-            generateInterestsStatus.textContent = '🤖 L\'AI sta analizzando il tuo profilo...';
+            generateInterestsStatus.textContent = '🤖 ' + UI.aiAnalizza;
 
             try {
                 const response = await fetch('/api/profile/generate-interests', {
@@ -1892,7 +1971,7 @@
                     areeInteresseTextarea.value = data.aree_interesse;
                     generateInterestsStatus.style.background = '#d4edda';
                     generateInterestsStatus.style.color = '#155724';
-                    generateInterestsStatus.textContent = '✅ Aree di interesse generate! Puoi modificarle prima di salvare.';
+                    generateInterestsStatus.textContent = '✅ ' + UI.aiOk;
                     
                     // Salva timestamp per cooldown 24h
                     localStorage.setItem(AI_COOLDOWN_KEY, Date.now().toString());
@@ -1900,17 +1979,17 @@
                 } else {
                     generateInterestsStatus.style.background = '#f8d7da';
                     generateInterestsStatus.style.color = '#721c24';
-                    generateInterestsStatus.textContent = '❌ ' + (data.error || 'Errore durante la generazione.');
+                    generateInterestsStatus.textContent = '❌ ' + (data.error || UI.aiErrore);
                     generateInterestsBtn.disabled = false;
-                    generateInterestsBtn.innerHTML = '🤖 Genera con AI';
+                    generateInterestsBtn.innerHTML = '🤖 ' + UI.genera;
                 }
             } catch (error) {
                 generateInterestsStatus.style.background = '#f8d7da';
                 generateInterestsStatus.style.color = '#721c24';
-                generateInterestsStatus.textContent = '❌ Errore di connessione. Riprova.';
+                generateInterestsStatus.textContent = '❌ ' + UI.aiRete;
                 console.error('Error:', error);
                 generateInterestsBtn.disabled = false;
-                generateInterestsBtn.innerHTML = '🤖 Genera con AI';
+                generateInterestsBtn.innerHTML = '🤖 ' + UI.genera;
             }
         });
     }
@@ -1975,15 +2054,15 @@
                 ${gruppoRichiesteHTML(richieste)}
                 <div class="upcoming-appointments">
                     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
-                        <h3 style="margin:0;"><i class="fas fa-calendar-check"></i> Prossimi Appuntamenti</h3>
+                        <h3 style="margin:0;"><i class="fas fa-calendar-check"></i> {{ t('profilo.appuntamenti') }}</h3>
                         <button type="button" class="history-toggle" onclick="toggleStorico()"
                                 aria-expanded="${storicoAperto}" aria-controls="storicoLista"
-                                title="${storicoAperto ? 'Nascondi le consulenze passate' : 'Mostra le consulenze passate'}">
+                                title='${storicoAperto ? {{ t("profilo.nascondi_storico")|tojson }} : {{ t("profilo.mostra_storico")|tojson }}}'>
                             <i class="fas fa-${storicoAperto ? 'minus' : 'plus'}"></i>
-                            <span><i class="fas fa-history"></i> Storico</span>
+                            <span><i class="fas fa-history"></i> {{ t('profilo.storico') }}</span>
                         </button>
                     </div>
-                    ${bookingsHTML || '<p style="color:#6b7280;margin:0;">Nessuna consulenza in programma.</p>'}
+                    ${bookingsHTML || '<p style="color:#6b7280;margin:0;">{{ t("profilo.nessuna_consulenza") }}</p>'}
                     ${storicoHTML()}
                 </div>
             `;
@@ -2012,8 +2091,8 @@
             date = new Date();
         }
         
-        const dateStr = date.toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric', month: 'long' });
-        const roleLabel = booking.role === 'client' ? 'Consulenza con' : 'Consulenza richiesta da';
+        const dateStr = date.toLocaleDateString(LOCALE_UI, { weekday: 'long', day: 'numeric', month: 'long' });
+        const roleLabel = booking.role === 'client' ? UI.conChi : UI.richiestaDa;
         
         const minutiLimiteAnnullamento = {{ ore_limite_annullamento }} * 60;
         // Gli orari sono italiani. time_until_minutes e can_join arrivano dal
@@ -2031,61 +2110,57 @@
         // Bottone Rifiuta
         let refuseButtonHTML = '';
         if (booking.role === 'consultant' && booking.status && booking.status !== 'completed' && booking.status !== 'cancelled' && booking.status !== 'no_show' && timeUntilMinutes > -10 && timeUntilMinutes >= minutiLimiteAnnullamento) {
-            refuseButtonHTML = `<button class="btn-refuse" onclick="openRefuseModal(${booking.id}, '${escapeJsString(otherUser.name)}')"><i class="fas fa-times-circle"></i> Rifiuta</button>`;
+            refuseButtonHTML = `<button class="btn-refuse" onclick="openRefuseModal(${booking.id}, '${escapeJsString(otherUser.name)}')"><i class="fas fa-times-circle"></i> ${UI.rifiuta}</button>`;
         }
         
         if (booking.awaiting_acceptance) {
             // Richiesta pagata (importo solo bloccato) che il consulente deve accettare
             const scadenza = booking.acceptance_deadline
-                ? new Date(booking.acceptance_deadline).toLocaleString('it-IT', {
+                ? new Date(booking.acceptance_deadline).toLocaleString(LOCALE_UI, {
                     timeZone: 'Europe/Rome', weekday: 'short', day: 'numeric', month: 'short',
                     hour: '2-digit', minute: '2-digit' })
                 : '';
             refuseButtonHTML = '';
             if (booking.acceptance_expired) {
-                statusHTML = `<div class="appointment-request"><i class="fas fa-hourglass-end"></i><p><strong>Richiesta scaduta.</strong> Non è arrivata una risposta in tempo: la richiesta viene annullata e al cliente non viene addebitato nulla.</p></div>`;
+                statusHTML = `<div class="appointment-request"><i class="fas fa-hourglass-end"></i><p><strong>${UI.scaduta}</strong> ${UI.scadutaTesto}</p></div>`;
             } else if (booking.role === 'consultant') {
-                statusHTML = `<div class="appointment-request"><i class="fas fa-inbox"></i><p><strong>Richiesta da confermare</strong> entro ${escapeHtml(scadenza)}. L'importo del cliente è bloccato e viene addebitato solo se accetti.</p></div>`;
-                actionsHTML = `<button class="btn-accept" onclick="acceptBooking(${booking.id})" id="accept-btn-${booking.id}"><i class="fas fa-check"></i> Accetta</button>`;
-                refuseButtonHTML = `<button class="btn-refuse" onclick="openRefuseModal(${booking.id}, '${escapeJsString(otherUser.name)}', true)"><i class="fas fa-times-circle"></i> Rifiuta</button>`;
+                statusHTML = `<div class="appointment-request"><i class="fas fa-inbox"></i><p><strong>${UI.daConfermare}</strong> ${UI.daConfermareTesto.replace('{quando}', escapeHtml(scadenza))}</p></div>`;
+                actionsHTML = `<button class="btn-accept" onclick="acceptBooking(${booking.id})" id="accept-btn-${booking.id}"><i class="fas fa-check"></i> ${UI.accetta}</button>`;
+                refuseButtonHTML = `<button class="btn-refuse" onclick="openRefuseModal(${booking.id}, '${escapeJsString(otherUser.name)}', true)"><i class="fas fa-times-circle"></i> ${UI.rifiuta}</button>`;
             } else {
-                statusHTML = `<div class="appointment-request"><i class="fas fa-hourglass-half"></i><p><strong>In attesa di conferma.</strong> ${escapeHtml(otherUser.name)} ha tempo fino a ${escapeHtml(scadenza)} per accettare. L'importo è solo bloccato: ti viene addebitato quando accetta.</p></div>`;
+                statusHTML = `<div class="appointment-request"><i class="fas fa-hourglass-half"></i><p><strong>${UI.inAttesa}</strong> ${UI.inAttesaTesto.replace('{nome}', escapeHtml(otherUser.name)).replace('{quando}', escapeHtml(scadenza))}</p></div>`;
             }
         } else if (booking.closed_by_review || booking.closed_by_dispute) {
             // Dopo la recensione o una contestazione la call non si riapre (il
             // server rimanda al profilo): mostrare "Entra in call" apriva solo
             // un duplicato del sito.
             const testo = booking.closed_by_dispute
-                ? (booking.role === 'client'
-                    ? 'Hai aperto una contestazione: non puoi più rientrare in questa call.'
-                    : 'Il cliente ha aperto una contestazione: la call non è più accessibile.')
-                : (booking.role === 'client'
-                    ? 'Hai già lasciato una recensione: non puoi più rientrare in questa call.'
-                    : 'Il cliente ha lasciato la recensione: la consulenza è conclusa.');
+                ? (booking.role === 'client' ? UI.contestazioneTu : UI.contestazioneAltro)
+                : (booking.role === 'client' ? UI.recensioneTu : UI.recensioneAltro);
             statusHTML = `<div class="appointment-closed"><i class="fas fa-check-circle"></i><p>${testo}</p></div>`;
         } else if (timeUntilMinutes > 10) {
             const hours = Math.floor(minutesUntil / 60);
             const mins = minutesUntil % 60;
             const timeText = hours > 0 ? `${hours}h ${mins}min` : `${mins}min`;
-            statusHTML = `<div class="time-until"><i class="fas fa-clock"></i> Inizia tra ${timeText}</div>`;
+            statusHTML = `<div class="time-until"><i class="fas fa-clock"></i> ${UI.iniziaTra.replace('{tempo}', timeText)}</div>`;
         } else if (siPuoEntrare) {
             if (booking.can_start_call) {
-                actionsHTML = `<button class="btn-start-call" onclick="startCall(${booking.id})" id="call-btn-${booking.id}"><i class="fas fa-phone-alt"></i> Entra in Call</button>`;
+                actionsHTML = `<button class="btn-start-call" onclick="startCall(${booking.id})" id="call-btn-${booking.id}"><i class="fas fa-phone-alt"></i> ${UI.entra}</button>`;
             } else if (booking.has_joined) {
-                statusHTML = `<div class="waiting-indicator"><i class="fas fa-hourglass-half"></i> In attesa dell'altro partecipante...</div>`;
-                actionsHTML = `<button class="btn-join" disabled><i class="fas fa-check"></i> Pronto</button>`;
+                statusHTML = `<div class="waiting-indicator"><i class="fas fa-hourglass-half"></i> ${UI.attesaAltro}</div>`;
+                actionsHTML = `<button class="btn-join" disabled><i class="fas fa-check"></i> ${UI.pronto}</button>`;
             } else {
-                actionsHTML = `<button class="btn-join" onclick="joinAppointment(${booking.id})" id="join-btn-${booking.id}"><i class="fas fa-sign-in-alt"></i> Partecipa</button>`;
-                if (booking.other_joined) statusHTML = `<div class="waiting-indicator"><i class="fas fa-user-check"></i> ${escapeHtml(otherUser.name)} è pronto</div>`;
+                actionsHTML = `<button class="btn-join" onclick="joinAppointment(${booking.id})" id="join-btn-${booking.id}"><i class="fas fa-sign-in-alt"></i> ${UI.partecipa}</button>`;
+                if (booking.other_joined) statusHTML = `<div class="waiting-indicator"><i class="fas fa-user-check"></i> ${UI.ePronto.replace('{nome}', escapeHtml(otherUser.name))}</div>`;
             }
         } else if (!siPuoEntrare) {
             if (booking.has_joined && !booking.other_joined) {
-                const whoMissed = booking.role === 'client' ? 'il consulente' : 'il cliente';
-                statusHTML = `<div class="appointment-missed"><i class="fas fa-times-circle"></i><p>Siamo spiacenti ma ${whoMissed} non ha partecipato alla call programmata.</p></div>`;
+                const whoMissed = booking.role === 'client' ? UI.ilConsulente : UI.ilCliente;
+                statusHTML = `<div class="appointment-missed"><i class="fas fa-times-circle"></i><p>${UI.mancato.replace('{chi}', whoMissed)}</p></div>`;
             } else if (!booking.has_joined && booking.other_joined) {
-                statusHTML = `<div class="appointment-missed"><i class="fas fa-exclamation-circle"></i><p>Non hai partecipato a questa consulenza.</p></div>`;
+                statusHTML = `<div class="appointment-missed"><i class="fas fa-exclamation-circle"></i><p>${UI.nonPartecipato}</p></div>`;
             } else if (!booking.has_joined && !booking.other_joined) {
-                statusHTML = `<div class="appointment-missed"><i class="fas fa-ban"></i><p>Questa consulenza non si è svolta.</p></div>`;
+                statusHTML = `<div class="appointment-missed"><i class="fas fa-ban"></i><p>${UI.nonSvolta}</p></div>`;
             }
         }
         
@@ -2113,27 +2188,25 @@
     }
 
     function openRefuseModal(bookingId, clientName, isRequest = false) {
-        const notaPagamento = isRequest
-            ? "Il cliente riceverà una notifica e una mail. Non gli viene addebitato nulla: il blocco dell'importo viene annullato."
-            : "Il cliente riceverà una notifica e una mail. Se già pagato, gli sarà rimborsato l'importo.";
+        const notaPagamento = isRequest ? UI.rifiutaNotaRichiesta : UI.rifiutaNotaPagata;
         const modal = document.createElement('div');
         modal.className = 'modal-overlay';
         modal.id = `refuse-modal-${bookingId}`;
         modal.innerHTML = `
             <div class="modal-content">
                 <div class="modal-header">
-                    <h3>Rifiuta Consulenza</h3>
+                    <h3>${UI.rifiutaTitolo}</h3>
                     <button class="close-btn" onclick="this.closest('.modal-overlay').remove()">✕</button>
                 </div>
                 <div class="modal-body">
-                    <p>Sei sicuro di voler rifiutare questa consulenza con <strong>${escapeHtml(clientName)}</strong>?</p>
+                    <p>${UI.rifiutaSicuro} <strong>${escapeHtml(clientName)}</strong>?</p>
                     <p style="color: #666; font-size: 0.9em;">${notaPagamento}</p>
-                    <textarea id="refuse-reason-${bookingId}" placeholder="Motivo del rifiuto (opzionale)" 
+                    <textarea id="refuse-reason-${bookingId}" placeholder="${UI.motivoRifiuto}" 
                               style="width: 100%; min-height: 80px; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-family: inherit;"></textarea>
                 </div>
                 <div class="modal-footer">
-                    <button class="btn btn-secondary" onclick="this.closest('.modal-overlay').remove()">Annulla</button>
-                    <button class="btn btn-danger" onclick="refuseBooking(${bookingId})"><i class="fas fa-times"></i> Rifiuta Consulenza</button>
+                    <button class="btn btn-secondary" onclick="this.closest('.modal-overlay').remove()">{{ t('comune.annulla') }}</button>
+                    <button class="btn btn-danger" onclick="refuseBooking(${bookingId})"><i class="fas fa-times"></i> ${UI.rifiutaTitolo}</button>
                 </div>
             </div>
         `;
@@ -2143,20 +2216,20 @@
 
     async function acceptBooking(bookingId) {
         const btn = document.getElementById(`accept-btn-${bookingId}`);
-        if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Conferma...'; }
+        if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> ' + UI.confermaCorso; }
         try {
             const response = await fetch(`/api/booking/${bookingId}/accept`, { method: 'POST' });
             const data = await response.json().catch(() => ({}));
             if (response.ok) {
-                showSuccess('✅ Consulenza accettata: il cliente è stato avvisato.');
+                showSuccess('✅ ' + UI.accettata);
                 loadUpcomingAppointments();
                 return;
             }
-            alert(data.detail || 'Non è stato possibile accettare la richiesta.');
+            alert(data.detail || UI.accettaErrore);
         } catch (error) {
-            alert('Errore di connessione: riprova.');
+            alert(UI.reteRiprova);
         }
-        if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-check"></i> Accetta'; }
+        if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-check"></i> ' + UI.accetta; }
     }
 
     async function refuseBooking(bookingId) {
@@ -2169,15 +2242,15 @@
             });
             const data = await response.json();
             if (data.success) {
-                showSuccess('✅ Consulenza rifiutata con successo!');
+                showSuccess('✅ ' + UI.rifiutata);
                 document.getElementById(`refuse-modal-${bookingId}`).remove();
                 setTimeout(() => location.reload(), 1500);
             } else {
-                alert('Errore: ' + (data.detail || 'Impossibile rifiutare la consulenza'));
+                alert(UI.errore + ': ' + (data.detail || UI.rifiutaImpossibile));
             }
         } catch (error) {
             console.error('Errore:', error);
-            alert('Errore di connessione');
+            alert(UI.erroreRete);
         }
     }
 
@@ -2203,10 +2276,10 @@
 
     function storicoVoceHTML(b) {
         const otherUser = b.other_user;
-        const roleLabel = b.role === 'client' ? 'Consulenza con' : 'Consulenza richiesta da';
+        const roleLabel = b.role === 'client' ? UI.conChi : UI.richiestaDa;
         let dateParts = b.date.split('-');
         const dateObj = new Date(dateParts[0], dateParts[1] - 1, dateParts[2]);
-        const dateStr = dateObj.toLocaleDateString('it-IT', { weekday: 'short', day: 'numeric', month: 'long', year: 'numeric' });
+        const dateStr = dateObj.toLocaleDateString(LOCALE_UI, { weekday: 'short', day: 'numeric', month: 'long', year: 'numeric' });
         
         const avatarHTML = otherUser.picture
             ? `<img src="${otherUser.picture}" style="width:32px;height:32px;border-radius:50%;object-fit:cover;border:2px solid #2e7d32;">`
@@ -2217,12 +2290,12 @@
             : `<span style="font-weight:600;">${escapeHtml(otherUser.name)}</span>`;
 
         const statusMap = {
-            'completed': '<span style="color:#2e7d32;font-size:0.8rem;"><i class="fas fa-check-circle"></i> Completata</span>',
-            'cancelled': '<span style="color:#dc3545;font-size:0.8rem;"><i class="fas fa-times-circle"></i> Annullata</span>',
-            'awaiting_acceptance': '<span style="color:#b45309;font-size:0.8rem;"><i class="fas fa-inbox"></i> Da confermare</span>',
-            'no_show': '<span style="color:#f59e0b;font-size:0.8rem;"><i class="fas fa-exclamation-circle"></i> Non presentato</span>',
-            'confirmed': '<span style="color:#6b7280;font-size:0.8rem;"><i class="fas fa-clock"></i> Confermata</span>',
-            'pending': '<span style="color:#6b7280;font-size:0.8rem;"><i class="fas fa-hourglass-half"></i> In attesa</span>'
+            'completed': `<span style="color:#2e7d32;font-size:0.8rem;"><i class="fas fa-check-circle"></i> ${UI.statoCompletata}</span>`,
+            'cancelled': `<span style="color:#dc3545;font-size:0.8rem;"><i class="fas fa-times-circle"></i> ${UI.statoAnnullata}</span>`,
+            'awaiting_acceptance': `<span style="color:#b45309;font-size:0.8rem;"><i class="fas fa-inbox"></i> ${UI.statoConfermare}</span>`,
+            'no_show': `<span style="color:#f59e0b;font-size:0.8rem;"><i class="fas fa-exclamation-circle"></i> ${UI.statoAssente}</span>`,
+            'confirmed': `<span style="color:#6b7280;font-size:0.8rem;"><i class="fas fa-clock"></i> ${UI.statoConfermata}</span>`,
+            'pending': `<span style="color:#6b7280;font-size:0.8rem;"><i class="fas fa-hourglass-half"></i> ${UI.statoAttesa}</span>`
         };
         const statusHTML = statusMap[b.status] || '';
 
@@ -2230,44 +2303,44 @@
         let cancelHTML = '';
         if (b.status === 'cancelled') {
             const chi = {
-                'tu': 'Annullata da te',
-                'other': `Annullata da ${escapeHtml(otherUser.name)}`,
-                'system': 'Annullata automaticamente'
-            }[b.cancelled_by] || 'Annullata';
+                'tu': UI.annullataTe,
+                'other': UI.annullataDa.replace('{nome}', escapeHtml(otherUser.name)),
+                'system': UI.annullataAuto
+            }[b.cancelled_by] || UI.statoAnnullata;
             const pagamento = {
-                'refunded': ' · importo rimborsato',
-                'voided': ' · nessun addebito',
+                'refunded': ' · ' + UI.importoRimborsato,
+                'voided': ' · ' + UI.nessunAddebito,
             }[b.payment_status] || '';
             const motivo = b.cancellation_reason
-                ? `<div style="font-size:0.75rem;color:#6b7280;">Motivo: ${escapeHtml(b.cancellation_reason)}</div>`
+                ? `<div style="font-size:0.75rem;color:#6b7280;">${UI.motivo} ${escapeHtml(b.cancellation_reason)}</div>`
                 : '';
             cancelHTML = `<div style="font-size:0.75rem;color:#dc3545;margin-top:2px;">${chi}${pagamento}</div>${motivo}`;
         }
 
         const pagamentoInAttesa = b.payment_status === 'held'
-            ? `<div style="font-size:0.75rem;color:#b45309;margin-top:2px;">Pagamento in attesa</div>`
+            ? `<div style="font-size:0.75rem;color:#b45309;margin-top:2px;">${UI.pagamentoAttesa}</div>`
             : '';
 
         // Review indicator/button
         let reviewHTML = '';
         if (b.has_review) {
-            reviewHTML = `<div style="font-size:0.75rem;color:#2e7d32;margin-top:2px;"><i class="fas fa-star"></i> Recensione inviata</div>`;
+            reviewHTML = `<div style="font-size:0.75rem;color:#2e7d32;margin-top:2px;"><i class="fas fa-star"></i> ${UI.recensioneInviata}</div>`;
         } else if (b.can_review) {
-            reviewHTML = `<button onclick="openHistoryReview(${b.id})" style="margin-top:4px;margin-right:6px;padding:4px 10px;background:#f59e0b;color:white;border:none;border-radius:6px;font-size:0.75rem;font-weight:600;cursor:pointer;transition:all .2s;">⭐ Recensione</button>`;
+            reviewHTML = `<button onclick="openHistoryReview(${b.id})" style="margin-top:4px;margin-right:6px;padding:4px 10px;background:#f59e0b;color:white;border:none;border-radius:6px;font-size:0.75rem;font-weight:600;cursor:pointer;transition:all .2s;">${UI.recensione}</button>`;
         }
 
         // Dispute button HTML
         let disputeHTML = '';
         if (b.has_dispute) {
             const disputeStatusMap = {
-                'open': '📋 Contestazione aperta',
-                'in_review': '🔍 In revisione',
-                'resolved': '✅ Risolta',
-                'rejected': '❌ Respinta'
+                'open': '📋 ' + UI.contestazioneAperta,
+                'in_review': '🔍 ' + UI.inRevisione,
+                'resolved': '✅ ' + UI.risolta,
+                'rejected': '❌ ' + UI.respinta
             };
-            disputeHTML = `<div style="font-size:0.75rem;color:#f59e0b;margin-top:2px;"><i class="fas fa-exclamation-triangle"></i> ${disputeStatusMap[b.dispute_status] || 'Contestazione'}</div>`;
+            disputeHTML = `<div style="font-size:0.75rem;color:#f59e0b;margin-top:2px;"><i class="fas fa-exclamation-triangle"></i> ${disputeStatusMap[b.dispute_status] || UI.contestazione}</div>`;
         } else if (b.can_dispute) {
-            disputeHTML = `<button onclick="openHistoryDispute(${b.id})" style="margin-top:4px;padding:4px 10px;background:#dc3545;color:white;border:none;border-radius:6px;font-size:0.75rem;font-weight:600;cursor:pointer;transition:all .2s;">⚠️ Contesta</button>`;
+            disputeHTML = `<button onclick="openHistoryDispute(${b.id})" style="margin-top:4px;padding:4px 10px;background:#dc3545;color:white;border:none;border-radius:6px;font-size:0.75rem;font-weight:600;cursor:pointer;transition:all .2s;">${UI.contesta}</button>`;
         }
 
         return `
@@ -2303,10 +2376,10 @@
         if (!b.total_paid) return '';
 
         const dettaglio = b.service_fee
-            ? `<div style="color:#6b7280;font-size:0.74rem;">consulenza ${euro(b.price)} + servizio ${euro(b.service_fee)}</div>`
+            ? `<div style="color:#6b7280;font-size:0.74rem;">${UI.voceConsulenza} ${euro(b.price)} + ${UI.voceServizio} ${euro(b.service_fee)}</div>`
             : '';
         const rimborso = b.refund_amount
-            ? `<div style="color:#2e7d32;font-size:0.74rem;">rimborsati ${euro(b.refund_amount)}</div>`
+            ? `<div style="color:#2e7d32;font-size:0.74rem;">${UI.rimborsati} ${euro(b.refund_amount)}</div>`
             : '';
         return `
             <div style="color:#1a202c;font-weight:600;">${euro(b.total_paid)}</div>
@@ -2326,10 +2399,10 @@
     function storicoHTML() {
         if (!storicoAperto) return '';
         if (storicoVoci === null) {
-            return '<div id="storicoLista" style="padding:12px 0;color:#6b7280;"><i class="fas fa-spinner fa-spin"></i> Caricamento…</div>';
+            return `<div id="storicoLista" style="padding:12px 0;color:#6b7280;"><i class="fas fa-spinner fa-spin"></i> ${UI.caricamento}</div>`;
         }
         if (storicoVoci.length === 0) {
-            return '<div id="storicoLista" style="padding:12px 0;color:#6b7280;">Nessuna consulenza passata o annullata.</div>';
+            return '<div id="storicoLista" style="padding:12px 0;color:#6b7280;">{{ t("profilo.nessuno_storico") }}</div>';
         }
         return `<div id="storicoLista" style="margin-top:4px;">${storicoVoci.map(storicoVoceHTML).join('')}</div>`;
     }
@@ -2373,21 +2446,21 @@
         overlay.innerHTML = `
             <div style="background:white;border-radius:12px;padding:24px;max-width:500px;width:90%;box-shadow:0 8px 32px rgba(0,0,0,0.2);">
                 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
-                    <h3 style="margin:0;font-size:1.1rem;">⚠️ Apri una contestazione</h3>
+                    <h3 style="margin:0;font-size:1.1rem;">⚠️ ${UI.apriContestazione}</h3>
                     <button onclick="closeHistoryDispute()" style="background:none;border:none;font-size:1.3rem;cursor:pointer;color:#666;">✕</button>
                 </div>
-                <p style="font-size:0.85rem;color:#6b7280;margin-bottom:12px;">Descrivi il motivo della contestazione. Il nostro team esaminerà la tua segnalazione.</p>
+                <p style="font-size:0.85rem;color:#6b7280;margin-bottom:12px;">${UI.motivoBreve}</p>
                 <textarea id="historyDisputeDescription" maxlength="5000" rows="5"
                     style="width:100%;padding:10px;border:1px solid #d1d5db;border-radius:8px;font-size:0.9rem;resize:vertical;box-sizing:border-box;"
-                    placeholder="Descrivi il problema riscontrato (minimo 20 caratteri)..."
+                    placeholder="${UI.problemaPh}"
                     oninput="updateHistoryDisputeCount()"></textarea>
                 <div style="text-align:right;font-size:0.75rem;color:#9ca3af;margin-top:4px;">
                     <span id="historyDisputeCharCount">0</span>/5000
                 </div>
                 <div id="historyDisputeError" style="display:none;color:#dc3545;font-size:0.82rem;margin-top:8px;"></div>
                 <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:16px;">
-                    <button onclick="closeHistoryDispute()" style="padding:8px 16px;background:#f3f4f6;color:#374151;border:none;border-radius:8px;font-size:0.9rem;cursor:pointer;">Annulla</button>
-                    <button onclick="submitHistoryDispute()" style="padding:8px 16px;background:#dc3545;color:white;border:none;border-radius:8px;font-size:0.9rem;font-weight:600;cursor:pointer;">Invia contestazione</button>
+                    <button onclick="closeHistoryDispute()" style="padding:8px 16px;background:#f3f4f6;color:#374151;border:none;border-radius:8px;font-size:0.9rem;cursor:pointer;">${UI.annulla}</button>
+                    <button onclick="submitHistoryDispute()" style="padding:8px 16px;background:#dc3545;color:white;border:none;border-radius:8px;font-size:0.9rem;font-weight:600;cursor:pointer;">${UI.inviaContestazione}</button>
                 </div>
             </div>
         `;
@@ -2412,7 +2485,7 @@
         errorDiv.style.display = 'none';
 
         if (description.length < 20) {
-            errorDiv.textContent = 'La descrizione deve contenere almeno 20 caratteri.';
+            errorDiv.textContent = UI.minimo;
             errorDiv.style.display = 'block';
             return;
         }
@@ -2428,14 +2501,14 @@
                 closeHistoryDispute();
                 // Refresh the history to show updated dispute status
                 aggiornaStorico();
-                showSuccess('Contestazione inviata con successo');
+                showSuccess(UI.contestazioneOk);
             } else {
-                errorDiv.textContent = data.detail || 'Errore durante l\'invio della contestazione.';
+                errorDiv.textContent = data.detail || UI.contestazioneErrore;
                 errorDiv.style.display = 'block';
             }
         } catch (error) {
             console.error('Error submitting dispute:', error);
-            errorDiv.textContent = 'Errore di connessione. Riprova.';
+            errorDiv.textContent = UI.reteBreve;
             errorDiv.style.display = 'block';
         }
     }
@@ -2454,34 +2527,34 @@
         overlay.innerHTML = `
             <div style="background:white;border-radius:12px;padding:24px;max-width:500px;width:90%;box-shadow:0 8px 32px rgba(0,0,0,0.2);max-height:90vh;overflow-y:auto;">
                 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
-                    <h3 style="margin:0;font-size:1.1rem;">⭐ Come è andata la consulenza?</h3>
+                    <h3 style="margin:0;font-size:1.1rem;">⭐ ${UI.comeAndata}</h3>
                     <button onclick="closeHistoryReview()" style="background:none;border:none;font-size:1.3rem;cursor:pointer;color:#666;">✕</button>
                 </div>
-                <p style="font-size:0.85rem;color:#6b7280;margin-bottom:16px;">La tua opinione aiuta altri utenti a scegliere il consulente giusto.</p>
+                <p style="font-size:0.85rem;color:#6b7280;margin-bottom:16px;">${UI.opinione}</p>
 
                 <div style="margin-bottom:14px;">
-                    <label style="display:block;font-weight:600;margin-bottom:6px;font-size:0.9rem;">Ti ha aiutato concretamente?</label>
+                    <label style="display:block;font-weight:600;margin-bottom:6px;font-size:0.9rem;">${UI.aiuto}</label>
                     <div class="history-star-rating" data-field="helpful">${buildStarHTML('hr_helpful')}</div>
                 </div>
                 <div style="margin-bottom:14px;">
-                    <label style="display:block;font-weight:600;margin-bottom:6px;font-size:0.9rem;">Era preparato sull'argomento?</label>
+                    <label style="display:block;font-weight:600;margin-bottom:6px;font-size:0.9rem;">${UI.preparato}</label>
                     <div class="history-star-rating" data-field="prepared">${buildStarHTML('hr_prepared')}</div>
                 </div>
                 <div style="margin-bottom:14px;">
-                    <label style="display:block;font-weight:600;margin-bottom:6px;font-size:0.9rem;">Capacità comunicativa?</label>
+                    <label style="display:block;font-weight:600;margin-bottom:6px;font-size:0.9rem;">${UI.comunicativa}</label>
                     <div class="history-star-rating" data-field="communication">${buildStarHTML('hr_communication')}</div>
                 </div>
 
                 <div style="margin-bottom:14px;">
-                    <label style="display:block;font-weight:600;margin-bottom:8px;font-size:0.9rem;">Commento (opzionale)</label>
-                    <textarea id="historyReviewComment" placeholder="Racconta la tua esperienza..." maxlength="2000" rows="3"
+                    <label style="display:block;font-weight:600;margin-bottom:8px;font-size:0.9rem;">${UI.commento}</label>
+                    <textarea id="historyReviewComment" placeholder="${UI.commentoPh}" maxlength="2000" rows="3"
                         style="width:100%;padding:10px;border:1px solid #d1d5db;border-radius:8px;font-size:0.9rem;resize:vertical;box-sizing:border-box;"></textarea>
                 </div>
 
                 <div id="historyReviewError" style="display:none;color:#dc3545;font-size:0.82rem;margin-top:8px;"></div>
                 <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:16px;">
-                    <button onclick="closeHistoryReview()" style="padding:8px 16px;background:#f3f4f6;color:#374151;border:none;border-radius:8px;font-size:0.9rem;cursor:pointer;">Annulla</button>
-                    <button id="historyReviewSubmitBtn" onclick="submitHistoryReview()" style="padding:8px 16px;background:#f59e0b;color:white;border:none;border-radius:8px;font-size:0.9rem;font-weight:600;cursor:pointer;">Invia Recensione</button>
+                    <button onclick="closeHistoryReview()" style="padding:8px 16px;background:#f3f4f6;color:#374151;border:none;border-radius:8px;font-size:0.9rem;cursor:pointer;">${UI.annulla}</button>
+                    <button id="historyReviewSubmitBtn" onclick="submitHistoryReview()" style="padding:8px 16px;background:#f59e0b;color:white;border:none;border-radius:8px;font-size:0.9rem;font-weight:600;cursor:pointer;">${UI.inviaRecensione}</button>
                 </div>
             </div>
         `;
@@ -2536,14 +2609,14 @@
         errorDiv.style.display = 'none';
 
         if (!helpful || !prepared || !communication) {
-            errorDiv.textContent = 'Per favore, seleziona un voto per ogni domanda.';
+            errorDiv.textContent = UI.voto;
             errorDiv.style.display = 'block';
             return;
         }
 
         const btn = document.getElementById('historyReviewSubmitBtn');
         btn.disabled = true;
-        btn.textContent = 'Invio in corso...';
+        btn.textContent = UI.invio;
 
         try {
             const response = await fetch(`/api/booking/${historyReviewBookingId}/review`, {
@@ -2560,19 +2633,19 @@
             if (response.ok) {
                 closeHistoryReview();
                 aggiornaStorico();
-                showSuccess('Grazie per la tua recensione! ⭐');
+                showSuccess(UI.grazie);
             } else {
-                errorDiv.textContent = data.detail || 'Errore nell\'invio della recensione.';
+                errorDiv.textContent = data.detail || UI.recensioneErrore;
                 errorDiv.style.display = 'block';
                 btn.disabled = false;
-                btn.textContent = 'Invia Recensione';
+                btn.textContent = UI.inviaRecensione;
             }
         } catch (error) {
             console.error('Error submitting review:', error);
-            errorDiv.textContent = 'Errore di connessione. Riprova.';
+            errorDiv.textContent = UI.reteBreve;
             errorDiv.style.display = 'block';
             btn.disabled = false;
-            btn.textContent = 'Invia Recensione';
+            btn.textContent = UI.inviaRecensione;
         }
     }
 
@@ -2580,7 +2653,7 @@
         const btn = document.getElementById(`join-btn-${bookingId}`);
         if (!btn) return;
         btn.disabled = true;
-        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Connessione...';
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> ' + UI.connessione;
         try {
             const response = await fetch(`/api/booking/${bookingId}/join`, {
                 method: 'POST',
@@ -2591,20 +2664,20 @@
                 if (data.can_start_call) {
                     loadUpcomingAppointments();
                 } else {
-                    btn.innerHTML = '<i class="fas fa-check"></i> Pronto';
+                    btn.innerHTML = '<i class="fas fa-check"></i> ' + UI.pronto;
                     const card = document.getElementById(`appointment-${bookingId}`);
                     card.querySelector('.appointment-actions').insertAdjacentHTML('beforebegin', 
-                        '<div class="waiting-indicator"><i class="fas fa-hourglass-half"></i> In attesa dell\'altro partecipante...</div>');
+                        '<div class="waiting-indicator"><i class="fas fa-hourglass-half"></i> ' + UI.attesaAltro + '</div>');
                 }
             } else {
-                alert('Errore durante la connessione');
+                alert(UI.erroreConnessione);
                 btn.disabled = false;
-                btn.innerHTML = '<i class="fas fa-sign-in-alt"></i> Partecipa';
+                btn.innerHTML = '<i class="fas fa-sign-in-alt"></i> ' + UI.partecipa;
             }
         } catch (error) {
-            alert('Errore di connessione');
+            alert(UI.erroreRete);
             btn.disabled = false;
-            btn.innerHTML = '<i class="fas fa-sign-in-alt"></i> Partecipa';
+            btn.innerHTML = '<i class="fas fa-sign-in-alt"></i> ' + UI.partecipa;
         }
     }
     
@@ -2652,12 +2725,12 @@
             }
             if (callStatus.call_has_started && !callStatus.is_expired) {
                 btn.className = 'btn-resume-call';
-                btn.innerHTML = '<i class="fas fa-phone-alt"></i> Entra in Call';
+                btn.innerHTML = '<i class="fas fa-phone-alt"></i> ' + UI.entra;
             }
             if (await callApertaAltrove(bookingId)) {
                 btn.className = 'btn-resume-call';
-                btn.innerHTML = '<i class="fas fa-external-link-alt"></i> Torna alla call';
-                btn.title = 'La call è già aperta in un\'altra scheda';
+                btn.innerHTML = '<i class="fas fa-external-link-alt"></i> ' + UI.tornaCall;
+                btn.title = UI.callAltra;
             }
         } catch (error) {
             console.error(`Errore call status ${bookingId}:`, error);
@@ -3059,15 +3132,15 @@
             } else {
                 statusDiv.style.background = '#f8d7da';
                 statusDiv.style.color = '#721c24';
-                statusDiv.textContent = '❌ ' + (data.error || 'Errore durante la generazione.');
+                statusDiv.textContent = '❌ ' + (data.error || UI.aiErrore);
             }
         } catch (error) {
             statusDiv.style.background = '#f8d7da';
             statusDiv.style.color = '#721c24';
-            statusDiv.textContent = '❌ Errore di connessione. Riprova.';
+            statusDiv.textContent = '❌ ' + UI.aiRete;
         } finally {
             btn.disabled = false;
-            btn.innerHTML = '🤖 Genera con AI';
+            btn.innerHTML = '🤖 ' + UI.genera;
         }
     }
     
@@ -3110,7 +3183,7 @@
             }
         } catch (error) {
             console.error('Error saving question:', error);
-            alert('Errore di connessione');
+            alert(UI.erroreRete);
         } finally {
             if (saveBtn) {
                 saveBtn.innerHTML = originalText;
@@ -3429,7 +3502,7 @@
     if (openCategoryRequestsBtn) {
         openCategoryRequestsBtn.addEventListener('click', async () => {
             categoryRequestsModal.style.display = 'block';
-            categoryRequestsContent.innerHTML = '<p style="text-align: center; color: #888;">Caricamento richieste...</p>';
+            categoryRequestsContent.innerHTML = '<p style="text-align: center; color: #888;">{{ t('profilo.caricamento_richieste') }}</p>';
             try {
                 await fetch('/api/category-requests/mark-as-read', { method: 'POST' });
                 loadCategoryRequestsBadge();

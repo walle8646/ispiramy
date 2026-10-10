@@ -1,63 +1,40 @@
 {% extends "static_page_base.html" %}
-{% block title %}Termini di Servizio - Ispiramy{% endblock %}
+{% block title %}{{ t('termini.titolo') }} - Ispiramy{% endblock %}
 {% block page_content %}
-<h1>Termini di Servizio</h1>
-<p class="updated">Ultimo aggiornamento: {{ current_year or 2026 }}</p>
+<h1>{{ t('termini.titolo') }}</h1>
+<p class="updated">{{ t('termini.aggiornato') }} {{ current_year or 2026 }}</p>
 
 <div class="draft-note">
-    ⚠️ <strong>Bozza da completare.</strong> Questo testo è un segnaposto. Prima della pubblicazione
-    ufficiale va rivisto da un consulente legale.
+    ⚠️ <strong>{{ t('legale.bozza') }}</strong> {{ t('termini.bozza') }}
 </div>
 
-<p>
-    Utilizzando Ispiramy accetti i presenti Termini di Servizio. Ti invitiamo a leggerli con attenzione.
-</p>
+<p>{{ t('termini.accetti') }}</p>
 
-<h2>1. Il servizio</h2>
-<p>
-    Ispiramy è una piattaforma che mette in contatto utenti ("clienti") con professionisti
-    ("consulenti") per consulenze in videochiamata. Ispiramy agisce come intermediario e non è
-    parte del rapporto di consulenza tra cliente e consulente.
-</p>
+<h2>{{ t('termini.s1') }}</h2>
+<p>{{ t('termini.s1_testo') }}</p>
 
-<h2>2. Account</h2>
-<p>
-    Per usare il servizio devi registrarti fornendo dati veritieri. Sei responsabile della
-    riservatezza delle tue credenziali e delle attività svolte con il tuo account.
-</p>
+<h2>{{ t('termini.s2') }}</h2>
+<p>{{ t('termini.s2_testo') }}</p>
 
-<h2>3. Prenotazioni e pagamenti</h2>
+<h2>{{ t('termini.s3') }}</h2>
 <ul>
-    <li>Le consulenze si prenotano e si pagano tramite la piattaforma (Stripe/PayPal).</li>
-    <li>Ispiramy trattiene una commissione sul valore della consulenza.</li>
+    <li>{{ t('termini.s3_a') }}</li>
+    <li>{{ t('termini.s3_b') }}</li>
     <li>{{ t('pagamenti.termini') }}</li>
 </ul>
 
-<h2>4. Obblighi dei consulenti</h2>
-<p>
-    I consulenti si impegnano a fornire consulenze professionali e a rispettare gli appuntamenti
-    presi. Le informazioni di profilo devono essere accurate.
-</p>
+<h2>{{ t('termini.s4') }}</h2>
+<p>{{ t('termini.s4_testo') }}</p>
 
-<h2>5. Contestazioni e rimborsi</h2>
-<p>
-    Se in prenotazione hai scelto di registrare la consulenza, entro 48 ore dalla fine puoi
-    aprire una contestazione. Senza registrazione la contestazione non è disponibile.
-    Ispiramy valuterà il caso tramite la registrazione e deciderà su eventuali rimborsi.
-</p>
+<h2>{{ t('termini.s5') }}</h2>
+<p>{{ t('termini.s5_testo') }}</p>
 
-<h2>6. Condotta</h2>
-<p>
-    Non è consentito utilizzare la piattaforma per attività illecite, offensive o ingannevoli.
-    Ispiramy può sospendere gli account che violano questi termini.
-</p>
+<h2>{{ t('termini.s6') }}</h2>
+<p>{{ t('termini.s6_testo') }}</p>
 
-<h2>7. Limitazione di responsabilità</h2>
-<p>
-    Ispiramy non è responsabile della qualità o dell'esito delle consulenze fornite dai consulenti,
-    che agiscono in autonomia.
-</p>
+<h2>{{ t('termini.s7') }}</h2>
+<p>{{ t('termini.s7_testo') }}</p>
 
-<h2>8. Contatti</h2>
-<p>Per domande sui presenti termini: <a href="mailto:info@ispiramy.com">info@ispiramy.com</a>.</p>
+<h2>{{ t('termini.s8') }}</h2>
+<p>{{ t('termini.s8_a') }} <a href="mailto:info@ispiramy.com">info@ispiramy.com</a>.</p>
 {% endblock %}

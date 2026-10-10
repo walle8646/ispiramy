@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Prenota con {{ consultant.nome }} {{ consultant.cognome }}{% endblock %}
+{% block title %}{{ t('prenota.titolo') }} {{ consultant.nome }} {{ consultant.cognome }}{% endblock %}
 
 {% block content %}
 <style>
@@ -720,14 +720,14 @@
                 <h1>{{ consultant.nome }} {{ consultant.cognome }}</h1>
                 {% if consultant.prezzo_consulenza %}
                 <div class="price-badge">
-                    <i class="fas fa-euro-sign"></i> {{ consultant.prezzo_consulenza }}/ora
+                    <i class="fas fa-euro-sign"></i> {{ consultant.prezzo_consulenza }}{{ t('home.all_ora') }}
                 </div>
                 {% endif %}
             </div>
-            <p class="consultant-role">{{ consultant.professione or 'Consulente' }}</p>
+            <p class="consultant-role">{{ consultant.professione or t('prenota.consulente') }}</p>
             {% if consultant_category %}
-            <div class="consultant-cat-pill">{{ consultant_category.icon }} {{ consultant_category.name }}
-                {% if categoria_verificata %}<span class="badge-verificato-categoria">Verificato</span>{% endif %}
+            <div class="consultant-cat-pill">{{ consultant_category.icon }} {{ nc(consultant_category.name) }}
+                {% if categoria_verificata %}<span class="badge-verificato-categoria">{{ t('comune.verificato') }}</span>{% endif %}
             </div>
             {% endif %}
             {% if consultant_skills %}
@@ -744,8 +744,8 @@
     <div style="background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%); color: white; padding: 1.2rem 1.5rem; border-radius: 10px; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 12px; font-size: 0.95rem;">
         <span style="font-size: 1.5rem;">⚠️</span>
         <div>
-            <strong>Prenotazione non disponibile</strong><br>
-            Il consulente non ha ancora configurato un metodo di pagamento. Non è possibile procedere con la prenotazione al momento.
+            <strong>{{ t('prenota.non_disponibile') }}</strong><br>
+            {{ t('prenota.non_disponibile_testo') }}
         </div>
     </div>
     {% endif %}
@@ -754,30 +754,30 @@
     <div class="top-row" {% if not consultant_has_payment %}style="opacity: 0.5; pointer-events: none;"{% endif %}>
         <!-- Selettore Durata -->
         <div class="booking-section">
-            <h3><i class="fas fa-clock"></i> Durata Consulenza</h3>
+            <h3><i class="fas fa-clock"></i> {{ t('prenota.durata') }}</h3>
             <div class="duration-selector">
                 <label class="duration-option selected" data-duration="60">
                     <input type="radio" name="duration" value="60" checked>
                     <div class="duration-time">60'</div>
-                    <div class="duration-label">un'ora</div>
+                    <div class="duration-label">{{ t('prenota.un_ora') }}</div>
                 </label>
                 <label class="duration-option" data-duration="90">
                     <input type="radio" name="duration" value="90">
                     <div class="duration-time">90'</div>
-                    <div class="duration-label">un'ora e mezza</div>
+                    <div class="duration-label">{{ t('prenota.un_ora_mezza') }}</div>
                 </label>
                 <label class="duration-option" data-duration="120">
                     <input type="radio" name="duration" value="120">
                     <div class="duration-time">120'</div>
-                    <div class="duration-label">due ore</div>
+                    <div class="duration-label">{{ t('prenota.due_ore') }}</div>
                 </label>
             </div>
         </div>
         
         <!-- Calendario -->
         <div class="booking-section">
-            <h3><i class="fas fa-calendar-alt"></i> Seleziona Settimana</h3>
-            <p style="color: #666; font-size: 0.9rem; margin-top: 0.5rem;">Clicca su un giorno per vedere la settimana</p>
+            <h3><i class="fas fa-calendar-alt"></i> {{ t('prenota.settimana') }}</h3>
+            <p style="color: #666; font-size: 0.9rem; margin-top: 0.5rem;">{{ t('prenota.clicca_giorno') }}</p>
             <div class="calendar-nav">
                 <button id="prevMonth"><i class="fas fa-chevron-left"></i></button>
                 <h4 id="currentMonthYear"></h4>
@@ -790,14 +790,14 @@
     <!-- Weekly Slots Section -->
     <div class="weekly-slots-section">
         <div class="booking-section">
-            <h3><i class="fas fa-calendar-week"></i> Orari Disponibili - Prossimi 7 Giorni</h3>
+            <h3><i class="fas fa-calendar-week"></i> {{ t('prenota.orari') }}</h3>
             <p id="notaFusoPrenotazione" style="color:#546e7a; font-size:.9rem; margin:.35rem 0 0;">
-                <span id="nomeFusoPrenotazione">Orari in ora italiana.</span>
+                <span id="nomeFusoPrenotazione">{{ t('prenota.orari_nota') }}</span>
             </p>
             <div class="weekly-slots-grid" id="weeklySlots">
                 <div class="loading-spinner">
                     <i class="fas fa-spinner fa-spin fa-2x"></i>
-                    <p>Caricamento...</p>
+                    <p>{{ t('comune.caricamento') }}</p>
                 </div>
             </div>
         </div>
@@ -807,26 +807,26 @@
     <div class="bottom-row">
         <!-- Slot Selezionato -->
         <div class="booking-section">
-            <h3><i class="fas fa-check-circle"></i> Orario Selezionato</h3>
+            <h3><i class="fas fa-check-circle"></i> {{ t('prenota.orario_scelto') }}</h3>
             <div id="selectedSlotDisplay" style="padding: 2rem; text-align: center; color: #999;">
                 <i class="fas fa-hand-pointer fa-3x" style="margin-bottom: 1rem;"></i>
-                <p>Seleziona una fascia oraria dai 7 giorni qui sopra</p>
+                <p>{{ t('prenota.scegli_fascia') }}</p>
             </div>
         </div>
         
         <!-- Note e Descrizione -->
         <div class="booking-section notes-section">
-            <h3><i class="fas fa-sticky-note"></i> Note (opzionale)</h3>
-            <textarea id="clientNotes" placeholder="Scrivi qui eventuali note per il consulente..."></textarea>
+            <h3><i class="fas fa-sticky-note"></i> {{ t('prenota.note') }}</h3>
+            <textarea id="clientNotes" placeholder="{{ t('prenota.note_ph') }}"></textarea>
         </div>
     </div>
     
     <!-- Associa Domanda Community (opzionale) -->
     {% if client_questions %}
     <div class="booking-section" {% if not consultant_has_payment %}style="opacity: 0.5; pointer-events: none;"{% endif %}>
-        <h3><i class="fas fa-comments"></i> Associa una Domanda dalla Community</h3>
+        <h3><i class="fas fa-comments"></i> {{ t('prenota.associa') }}</h3>
         <p style="color: #666; font-size: 0.9rem; margin-bottom: 1rem;">
-            Se hai già pubblicato una domanda nella community, puoi associarla a questa consulenza. In questo caso la descrizione diventerà facoltativa.
+            {{ t('prenota.associa_testo') }}
         </p>
         <input type="hidden" id="communityQuestionSelect" value="">
         <div id="questionCardsList" style="max-height: 340px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; padding-right: 4px;">
@@ -857,7 +857,7 @@
             {% endfor %}
         </div>
         <button type="button" id="clearQuestionBtn" onclick="clearQuestionSelection()" style="display: none; margin-top: 10px; background: none; border: 1px solid #ccc; border-radius: 6px; padding: 6px 14px; font-size: 0.85rem; color: #666; cursor: pointer;">
-            <i class="fas fa-times"></i> Rimuovi selezione
+            <i class="fas fa-times"></i> {{ t('prenota.rimuovi') }}
         </button>
         <style>
             .question-select-card {
@@ -885,50 +885,50 @@
 
     <!-- Descrizione Consulenza -->
     <div class="booking-section" id="descriptionSection" {% if not consultant_has_payment %}style="opacity: 0.5; pointer-events: none;"{% endif %}>
-        <h3><i class="fas fa-file-alt"></i> Descrizione della Consulenza <span id="descriptionRequired" style="color: #ff4757;">*</span></h3>
+        <h3><i class="fas fa-file-alt"></i> {{ t('prenota.descrizione') }} <span id="descriptionRequired" style="color: #ff4757;">*</span></h3>
         <p style="color: #666; font-size: 0.9rem; margin-bottom: 1rem;">
-            Descrivi in dettaglio quello che vuoi discutere durante la consulenza. Questo aiuta il consulente a prepararsi meglio e a fornirti un servizio più efficace.
+            {{ t('prenota.descrizione_testo') }}
         </p>
         <textarea 
             id="consultationDescription" 
-            placeholder="Es: Voglio discutere di come ottimizzare il mio CV e strategie di ricerca lavoro nel settore IT. Ho 5 anni di esperienza..."
+            placeholder="{{ t('prenota.descrizione_ph') }}"
             style="width: 100%; min-height: 150px; padding: 1rem; border: 2px solid #e0e0e0; border-radius: 8px; font-family: inherit; resize: vertical;"
             required
         ></textarea>
         <div id="descriptionError" style="color: #ff4757; font-size: 0.9rem; margin-top: 0.5rem; display: none;">
-            La descrizione della consulenza è obbligatoria
+            {{ t('prenota.descrizione_obbligatoria') }}
         </div>
     </div>
     
     <!-- Riepilogo e Conferma -->
     <div class="booking-summary" id="bookingSummary" style="display: none;{% if not consultant_has_payment %} opacity: 0.5; pointer-events: none;{% endif %}">
-        <h3><i class="fas fa-check-circle"></i> Riepilogo Prenotazione</h3>
+        <h3><i class="fas fa-check-circle"></i> {{ t('prenota.riepilogo') }}</h3>
         <div class="summary-row">
-            <span>Consulente:</span>
+            <span>{{ t('prenota.consulente') }}:</span>
             <span>{{ consultant.nome }} {{ consultant.cognome }}</span>
         </div>
         <div class="summary-row">
-            <span>Data:</span>
+            <span>{{ t('prenota.data') }}:</span>
             <span id="summaryDate">-</span>
         </div>
         <div class="summary-row">
-            <span>Orario:</span>
+            <span>{{ t('prenota.orario') }}:</span>
             <span id="summaryTime">-</span>
         </div>
         <div class="summary-row">
-            <span>Durata:</span>
+            <span>{{ t('prenota.durata_breve') }}:</span>
             <span id="summaryDuration">-</span>
         </div>
         <div class="summary-row">
-            <span>Consulenza:</span>
+            <span>{{ t('prenota.voce_consulenza') }}:</span>
             <span id="summaryConsultationPrice">€ -</span>
         </div>
         <div class="summary-row">
-            <span>Spese di servizio:</span>
+            <span>{{ t('prenota.spese') }}:</span>
             <span id="summaryServiceFee">€ -</span>
         </div>
         <div class="summary-row">
-            <span>Totale:</span>
+            <span>{{ t('prenota.totale') }}:</span>
             <span id="summaryPrice">€ -</span>
         </div>
         
@@ -936,32 +936,31 @@
         <div class="recording-choice" style="margin-top: 18px; padding: 16px; background: #f8f9fa; border-radius: 10px; border: 1px solid #e0e0e0;">
             <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
                 <i class="fas fa-video" style="color: #2e7d32; font-size: 1.1em;"></i>
-                <strong style="font-size: 0.95rem; color: #1a202c;">Registrazione della consulenza</strong>
+                <strong style="font-size: 0.95rem; color: #1a202c;">{{ t('prenota.registrazione') }}</strong>
             </div>
             <p style="font-size: 0.85rem; color: #555; margin: 0 0 12px 0; line-height: 1.5;">
-                La registrazione ti permette di aprire una contestazione in caso di problemi. 
-                Senza registrazione perdi questa possibilità.
+                {{ t('prenota.registrazione_testo') }}
             </p>
             <div class="recording-options" style="display: flex; gap: 10px;">
                 <label style="flex: 1; display: flex; align-items: center; gap: 8px; padding: 10px 14px; border-radius: 8px; border: 2px solid #2e7d32; background: #e8f5e9; cursor: pointer; font-size: 0.9rem; font-weight: 600; color: #1a202c; transition: all 0.2s;" id="recordYesLabel">
                     <input type="radio" name="recordingChoice" value="yes" checked style="accent-color: #2e7d32;" onchange="updateRecordingChoice()">
-                    <i class="fas fa-check-circle" style="color: #2e7d32;"></i> Sì, registra
+                    <i class="fas fa-check-circle" style="color: #2e7d32;"></i> {{ t('prenota.si_registra') }}
                 </label>
                 <label style="flex: 1; display: flex; align-items: center; gap: 8px; padding: 10px 14px; border-radius: 8px; border: 2px solid #e0e0e0; background: #fff; cursor: pointer; font-size: 0.9rem; font-weight: 600; color: #666; transition: all 0.2s;" id="recordNoLabel">
                     <input type="radio" name="recordingChoice" value="no" style="accent-color: #e74c3c;" onchange="updateRecordingChoice()">
-                    <i class="fas fa-times-circle" style="color: #999;"></i> No, non registrare
+                    <i class="fas fa-times-circle" style="color: #999;"></i> {{ t('prenota.no_registra') }}
                 </label>
             </div>
             <p id="recordingWarning" style="display: none; font-size: 0.82rem; color: #e74c3c; margin: 10px 0 0 0; font-weight: 500;">
-                ⚠️ Senza registrazione non potrai aprire una contestazione dopo la consulenza.
+                ⚠️ {{ t('prenota.senza_registrazione') }}
             </p>
         </div>
         
         {% if requires_acceptance %}
         <!-- Il consulente conferma a mano: il cliente deve saperlo prima di pagare -->
         <div style="background: #fff8e1; border: 1px solid #f5c26b; border-radius: 10px; padding: 12px 16px; margin-bottom: 16px; font-size: 0.9rem; line-height: 1.5; color: #7c4a03;">
-            <strong><i class="fas fa-user-check"></i> Questo consulente conferma le prenotazioni a mano.</strong><br>
-            Al pagamento l'importo viene solo bloccato e ti viene addebitato quando accetta. Risponde entro 24 ore, e comunque entro un'ora dall'inizio: se rifiuta o non risponde in tempo, la richiesta si annulla e non ti viene addebitato nulla.
+            <strong><i class="fas fa-user-check"></i> {{ t('prenota.conferma_mano') }}</strong><br>
+            {{ t('prenota.conferma_mano_testo') }}
         </div>
         {% endif %}
 
@@ -969,13 +968,13 @@
         <div style="background: #f8f9fa; border-radius: 10px; padding: 14px 16px; margin-bottom: 16px; border: 1px solid #e0e0e0;">
             <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
                 <i class="fas fa-credit-card" style="color: #2e7d32;"></i>
-                <strong style="font-size: 0.95rem; color: #1a202c;">Metodo di pagamento</strong>
+                <strong style="font-size: 0.95rem; color: #1a202c;">{{ t('prenota.metodo') }}</strong>
             </div>
             <div class="payment-method-options" style="display: flex; gap: 10px;">
                 {% if stripe_available %}
                 <label style="flex: 1; display: flex; align-items: center; gap: 8px; padding: 10px 14px; border-radius: 8px; border: 2px solid {% if stripe_available and not paypal_available %}#635bff{% else %}#635bff{% endif %}; background: {% if stripe_available %}#f0efff{% else %}#fff{% endif %}; cursor: pointer; font-size: 0.9rem; font-weight: 600; color: #1a202c; transition: all 0.2s;" id="payStripeLabel">
                     <input type="radio" name="paymentMethod" value="stripe" {% if stripe_available %}checked{% endif %} style="accent-color: #635bff;" onchange="updatePaymentMethod()">
-                    <i class="fab fa-cc-stripe" style="color: #635bff; font-size: 1.2rem;"></i> Carta di credito
+                    <i class="fab fa-cc-stripe" style="color: #635bff; font-size: 1.2rem;"></i> {{ t('prenota.carta') }}
                 </label>
                 {% endif %}
                 {% if paypal_available %}
@@ -988,14 +987,34 @@
         </div>
         
         <button class="btn-book" id="confirmBookingBtn" disabled>
-            <i class="fas fa-calendar-check"></i> {{ 'Invia richiesta' if requires_acceptance else 'Conferma Prenotazione' }}
+            <i class="fas fa-calendar-check"></i> {{ t('prenota.invia_richiesta') if requires_acceptance else t('prenota.conferma') }}
         </button>
     </div>
 </div>
 
 <script>
     window.DEBUG_MODE = {{ debug_mode|default(false)|tojson }};
-    const ETICHETTA_CONFERMA = {{ ('Invia richiesta' if requires_acceptance else 'Conferma Prenotazione')|tojson }};
+    const ETICHETTA_CONFERMA = {{ (t('prenota.invia_richiesta') if requires_acceptance else t('prenota.conferma'))|tojson }};
+    const LOCALE_UI = (document.documentElement.lang || 'it').toLowerCase().indexOf('en') === 0 ? 'en-GB' : 'it-IT';
+    const GIORNI_CORTI = [{{ t('agenda.lun')|tojson }}, {{ t('agenda.mar')|tojson }}, {{ t('agenda.mer')|tojson }}, {{ t('agenda.gio')|tojson }}, {{ t('agenda.ven')|tojson }}, {{ t('agenda.sab')|tojson }}, {{ t('agenda.dom')|tojson }}];
+    const SLOT_L = {
+        data: {{ t('prenota.data')|tojson }},
+        orario: {{ t('prenota.orario')|tojson }},
+        durata: {{ t('prenota.durata_breve')|tojson }},
+        minuti: {{ t('home.minuti')|tojson }},
+        consulenza: {{ t('prenota.voce_consulenza')|tojson }},
+        spese: {{ t('prenota.spese')|tojson }},
+        totale: {{ t('prenota.totale')|tojson }},
+        caricamento: {{ t('comune.caricamento')|tojson }},
+        settimana: {{ t('prenota.scegli_settimana')|tojson }},
+        nessunGiorno: {{ t('prenota.nessun_giorno')|tojson }},
+        nessuna: {{ t('prenota.nessuna_disponibilita')|tojson }},
+        verifica: {{ t('prenota.verifica')|tojson }},
+        corso: {{ t('prenota.in_corso')|tojson }},
+        errore: {{ t('prenota.errore')|tojson }},
+        rete: {{ t('prenota.errore_rete')|tojson }},
+        nonValida: {{ t('prenota.descrizione_non_valida')|tojson }}
+    };
     const consultantId = {{ consultant.id }};
     const pricePerHour = {{ consultant.prezzo_consulenza or 0 }};
     // Le spese di servizio le somma il server al momento del pagamento: qui
@@ -1209,7 +1228,7 @@
         const month = currentDate.getMonth();
         
         document.getElementById('currentMonthYear').textContent = 
-            new Date(year, month, 1).toLocaleDateString('it-IT', { month: 'long', year: 'numeric' });
+            new Date(year, month, 1).toLocaleDateString(LOCALE_UI, { month: 'long', year: 'numeric' });
         
         const firstDay = new Date(year, month, 1).getDay();
         const daysInMonth = new Date(year, month + 1, 0).getDate();
@@ -1220,7 +1239,7 @@
         grid.innerHTML = '';
         
         // Giorni della settimana
-        ['Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab', 'Dom'].forEach(day => {
+        GIORNI_CORTI.forEach(day => {
             const dayName = document.createElement('div');
             dayName.className = 'calendar-day-name';
             dayName.textContent = day;
@@ -1294,10 +1313,10 @@
     // Carica slot per la settimana selezionata (7 giorni)
     async function loadWeeklySlots() {
         const container = document.getElementById('weeklySlots');
-        container.innerHTML = '<div class="loading-spinner"><i class="fas fa-spinner fa-spin fa-2x"></i><p>Caricamento...</p></div>';
+        container.innerHTML = '<div class="loading-spinner"><i class="fas fa-spinner fa-spin fa-2x"></i><p>' + SLOT_L.caricamento + '</p></div>';
         
         if (!selectedWeekStart) {
-            container.innerHTML = '<div class="no-slots"><p>Seleziona una settimana dal calendario</p></div>';
+            container.innerHTML = '<div class="no-slots"><p>' + SLOT_L.settimana + '</p></div>';
             return;
         }
         
@@ -1337,7 +1356,7 @@
         container.innerHTML = '';
         
         if (daysData.length === 0) {
-            container.innerHTML = '<div class="no-slots"><p>Nessun giorno disponibile in questa settimana</p></div>';
+            container.innerHTML = '<div class="no-slots"><p>' + SLOT_L.nessunGiorno + '</p></div>';
             return;
         }
         
@@ -1348,8 +1367,8 @@
             const dayHeader = document.createElement('div');
             dayHeader.className = 'day-header';
             dayHeader.innerHTML = `
-                <div>${dayData.date.toLocaleDateString('it-IT', { weekday: 'short' })}</div>
-                <div class="day-date">${dayData.date.getDate()} ${dayData.date.toLocaleDateString('it-IT', { month: 'short' })}</div>
+                <div>${dayData.date.toLocaleDateString(LOCALE_UI, { weekday: 'short' })}</div>
+                <div class="day-date">${dayData.date.getDate()} ${dayData.date.toLocaleDateString(LOCALE_UI, { month: 'short' })}</div>
             `;
             dayColumn.appendChild(dayHeader);
             
@@ -1357,7 +1376,7 @@
             daySlotsContainer.className = 'day-slots';
             
             if (dayData.slots.length === 0) {
-                daySlotsContainer.innerHTML = '<div class="no-availability">Nessuna disponibilità</div>';
+                daySlotsContainer.innerHTML = '<div class="no-availability">' + SLOT_L.nessuna + '</div>';
             } else {
                 dayData.slots.forEach(slot => {
                     const slotElement = document.createElement('div');
@@ -1390,13 +1409,13 @@
         const display = document.getElementById('selectedSlotDisplay');
         display.innerHTML = `
             <div style="text-align: left;">
-                <p style="margin: 0.5rem 0;"><strong>Data:</strong> ${date.toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</p>
-                <p style="margin: 0.5rem 0;"><strong>Orario:</strong> ${fascia.principale}${rigaItaliana}</p>
-                <p style="margin: 0.5rem 0;"><strong>Durata:</strong> ${selectedDuration} minuti</p>
+                <p style="margin: 0.5rem 0;"><strong>${SLOT_L.data}:</strong> ${date.toLocaleDateString(LOCALE_UI, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</p>
+                <p style="margin: 0.5rem 0;"><strong>${SLOT_L.orario}:</strong> ${fascia.principale}${rigaItaliana}</p>
+                <p style="margin: 0.5rem 0;"><strong>${SLOT_L.durata}:</strong> ${selectedDuration} ${SLOT_L.minuti}</p>
                 <hr style="margin: 1rem 0;">
-                <p style="margin: 0.5rem 0;"><strong>Consulenza:</strong> € ${((pricePerHour / 60) * selectedDuration).toFixed(2)}</p>
-                <p style="margin: 0.5rem 0; color: #666;"><strong>Spese di servizio:</strong> € ${speseServizio.toFixed(2)}</p>
-                <p style="margin: 0.5rem 0; font-size: 1.2rem;"><strong>Totale:</strong> <span style="color: #43a047;">€ ${((pricePerHour / 60) * selectedDuration + speseServizio).toFixed(2)}</span></p>
+                <p style="margin: 0.5rem 0;"><strong>${SLOT_L.consulenza}:</strong> € ${((pricePerHour / 60) * selectedDuration).toFixed(2)}</p>
+                <p style="margin: 0.5rem 0; color: #666;"><strong>${SLOT_L.spese}:</strong> € ${speseServizio.toFixed(2)}</p>
+                <p style="margin: 0.5rem 0; font-size: 1.2rem;"><strong>${SLOT_L.totale}:</strong> <span style="color: #43a047;">€ ${((pricePerHour / 60) * selectedDuration + speseServizio).toFixed(2)}</span></p>
             </div>
         `;
         
@@ -1416,7 +1435,7 @@
         summary.style.display = 'block';
         
         document.getElementById('summaryDate').textContent = 
-            new Date(dateStr).toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+            new Date(dateStr).toLocaleDateString(LOCALE_UI, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
         const fascia = fasciaDi(dateStr, slot.start_time, slot.end_time);
         document.getElementById('summaryTime').textContent = fascia.secondaria
             ? `${fascia.principale} · ${fascia.secondaria}`
@@ -1505,7 +1524,7 @@
         // Validazione AI della descrizione (solo se scritta manualmente, non da community)
         if (description && !selectedQuestionId) {
             this.disabled = true;
-            this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Verifica descrizione...';
+            this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> ' + SLOT_L.verifica;
             try {
                 const valRes = await fetch('/api/booking/validate-description', {
                     method: 'POST',
@@ -1514,7 +1533,7 @@
                 });
                 const valData = await valRes.json();
                 if (!valData.approved) {
-                    document.getElementById('descriptionError').textContent = valData.reason || 'La descrizione non è valida. Riscrivi qualcosa di pertinente alla consulenza.';
+                    document.getElementById('descriptionError').textContent = valData.reason || SLOT_L.nonValida;
                     document.getElementById('descriptionError').style.display = 'block';
                     document.getElementById('consultationDescription').focus();
                     this.disabled = false;
@@ -1527,7 +1546,7 @@
         }
         
         this.disabled = true;
-        this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Prenotazione in corso...';
+        this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> ' + SLOT_L.corso;
         
         // Calcola il prezzo totale da inviare al backend
         const totalPrice = (pricePerHour / 60) * selectedDuration;
@@ -1566,13 +1585,13 @@
                 // Redirect to Stripe Checkout
                 window.location.href = data.checkout_url;
             } else {
-                alert('❌ Errore: ' + (data.detail || 'Impossibile completare la prenotazione'));
+                alert('❌ ' + (data.detail || SLOT_L.errore));
                 this.disabled = false;
                 this.innerHTML = '<i class="fas fa-calendar-check"></i> ' + ETICHETTA_CONFERMA;
             }
         } catch (error) {
             console.error('Errore:', error);
-            alert('❌ Errore di rete. Riprova.');
+            alert('❌ ' + SLOT_L.rete);
             this.disabled = false;
             this.innerHTML = '<i class="fas fa-calendar-check"></i> ' + ETICHETTA_CONFERMA;
         }

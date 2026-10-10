@@ -8,6 +8,8 @@ from typing import Optional
 from html import escape as html_escape
 from app.logger_config import logger
 from app.utils.email import generate_verification_code
+from app.utils.lingue_ui import lingua_di, traduci
+from app.utils.lingua_profilo import applica_lingua
 from app.utils.password import hash_password, verify_password
 from app.utils.rate_limit import clear_attempts, enforce_rate_limit
 from app.utils.orari import now_italy_naive
@@ -111,14 +113,16 @@ MIN_PASSWORD_LENGTH = 8
 
 # Validità del codice di verifica email: è quella scritta nell'email.
 VALIDITA_CODICE_VERIFICA = timedelta(minutes=15)
+# Il codice di reset è un altro: 10 minuti, scritti anche nell'email.
+VALIDITA_CODICE_RESET = timedelta(minutes=10)
 
 
-def _password_troppo_debole(password: str) -> Optional[str]:
+def _password_troppo_debole(password: str, lingua: str = "it") -> Optional[str]:
     """Ritorna il motivo del rifiuto, oppure None se la password va bene."""
     if not password or len(password) < MIN_PASSWORD_LENGTH:
-        return f"La password deve essere di almeno {MIN_PASSWORD_LENGTH} caratteri"
+        return traduci("password.corta", lingua).replace("{n}", str(MIN_PASSWORD_LENGTH))
     if password.isdigit():
-        return "La password non può essere composta da soli numeri"
+        return traduci("password.solo_numeri", lingua)
     return None
 
 
@@ -172,8 +176,10 @@ async def login(
         request.session["user_nome"] = user.nome or "User"
 
         logger.info(f"✅ User logged in: {user.email}")
-        
-        return RedirectResponse(url="/profile", status_code=303)
+
+        risposta = RedirectResponse(url="/profile", status_code=303)
+        applica_lingua(request, risposta, session, user)
+        return risposta
 
 @router.post("/api/login")
 async def api_login(
@@ -243,7 +249,7 @@ async def api_login(
             logger.info(f"✅ User logged in: {user.nome} ({user.email})")
             logger.debug("Sessione inizializzata per user %s", user.id)
             
-            return JSONResponse({
+            risposta = JSONResponse({
                 "success": True,
                 "message": "Login effettuato con successo",
                 "user": {
@@ -252,6 +258,8 @@ async def api_login(
                     "email": user.email
                 }
             }, status_code=200)
+            applica_lingua(request, risposta, session, user)
+            return risposta
     
     except Exception as e:
         logger.error("Login error: " + str(e).replace("{", "{{").replace("}", "}}"), exc_info=True)
@@ -272,7 +280,7 @@ async def api_register(
     # Creazione account a raffica (e invio email a spese nostre)
     enforce_rate_limit(request, "register", limit=5, window_seconds=3600)
 
-    motivo = _password_troppo_debole(password)
+    motivo = _password_troppo_debole(password, lingua_di(request))
     if motivo:
         return JSONResponse({"error": motivo}, status_code=400)
     try:
@@ -296,7 +304,7 @@ async def api_register(
                     session.commit()
                     
                     # ✅ Ora funziona con 3 parametri
-                    send_verification_email(email, code, existing.nome or "User")
+                    send_verification_email(email, code, existing.nome or "User", lingua_di(request))
                     
                     logger.info(f"♻️ Resent confirmation code to: {email}")
                     
@@ -317,6 +325,7 @@ async def api_register(
                 confirmed=0,
                 confirmation_code=code,
                 confirmation_code_created_at=now_italy_naive(),
+                ui_language=lingua_di(request),
             )
             
             session.add(new_user)
@@ -324,7 +333,7 @@ async def api_register(
             session.refresh(new_user)
             
             # ✅ Ora funziona con 3 parametri
-            email_sent = send_verification_email(email, code, nome)
+            email_sent = send_verification_email(email, code, nome, lingua_di(request))
             
             if not email_sent:
                 logger.warning(f"⚠️ User registered but email failed: {email}")
@@ -368,7 +377,7 @@ async def verify_email(
                 logger.warning(f"❌ Invalid code for {email}")
                 return JSONResponse({"error": "Codice non valido"}, status_code=400)
 
-            # Il codice scade davvero dopo 15 minuti, come dice l'email.
+            # Il codice scade dopo VALIDITA_CODICE_VERIFICA, lo stesso numero dell'email.
             # Senza data di generazione (codici emessi prima di questa modifica)
             # lo si tratta come scaduto: basta chiederne uno nuovo.
             generato = user.confirmation_code_created_at
@@ -430,7 +439,7 @@ async def resend_verification(
             session.add(user)
             session.commit()
             
-            send_verification_email(email, code, user.nome or "User")
+            send_verification_email(email, code, user.nome or "User", lingua_di(request))
             
             logger.info(f"♻️ Resent code to {email}")
             
@@ -486,7 +495,7 @@ async def request_password_reset(
             request.session['reset_timestamp'] = int(time.time())
             
             # Invia email con codice
-            send_reset_password_email(email, user.nome or "Utente", reset_code)
+            send_reset_password_email(email, user.nome or "Utente", reset_code, lingua_di(request))
             
             logger.info(f"🔐 Reset password requested for: {email} - codice inviato via email")
             
@@ -523,7 +532,7 @@ async def reset_password(
     """API: reset password con codice"""
     enforce_rate_limit(request, "reset_submit", limit=10, window_seconds=900, extra_key=email)
 
-    motivo = _password_troppo_debole(new_password)
+    motivo = _password_troppo_debole(new_password, lingua_di(request))
     if motivo:
         return JSONResponse({"error": motivo}, status_code=400)
     try:
@@ -540,9 +549,8 @@ async def reset_password(
             logger.warning(f"❌ Invalid reset code for {email}")
             return JSONResponse({"error": "Codice non valido"}, status_code=400)
         
-        # Verifica timestamp (codice valido 10 minuti = 600 secondi)
         reset_time = request.session.get('reset_timestamp', 0)
-        if int(time.time()) - reset_time > 600:
+        if int(time.time()) - reset_time > VALIDITA_CODICE_RESET.total_seconds():
             return JSONResponse({"error": "Codice scaduto. Richiedi un nuovo reset."}, status_code=400)
         
         # Hash nuova password
@@ -577,30 +585,51 @@ async def reset_password(
 
 # ========== FUNZIONE EMAIL RESET PASSWORD ==========
 
-def send_reset_password_email(email: str, nome: str, reset_code: str) -> bool:
-    """Invia email brandizzata con codice reset password."""
+def corpo_email_reset(nome: str, reset_code: str, lingua: str = "it") -> str:
+    """HTML del codice di reset. I minuti sono gli stessi del controllo sul server."""
     from app.utils.notification_email import _branded_email
-    from app.utils.email_backend import mail_send
-    from sendgrid.helpers.mail import Mail
-    api_key = os.getenv('SENDGRID_API_KEY') or os.getenv('SMTP_PASSWORD')
-    from_email = os.getenv('FROM_EMAIL', 'noreply@ispiramy.com')
+    minuti = int(VALIDITA_CODICE_RESET.total_seconds() // 60)
     code_box = (
         '<div style="font-size:34px;font-weight:800;letter-spacing:8px;color:#2e7d32;'
         'background:#e8f5e9;border-radius:10px;padding:22px;text-align:center;margin:24px 0;">'
-        f'{reset_code}</div>'
+        f'{html_escape(reset_code)}</div>'
     )
-    body = (
-        f"<p>Ciao <strong>{html_escape(nome or '')}</strong>,</p>"
-        "<p>Hai richiesto di reimpostare la tua password su Ispiramy. Ecco il codice di verifica:</p>"
-        + code_box +
-        '<div style="background:#fff8e1;border-left:4px solid #ffb300;padding:14px 18px;'
-        'border-radius:6px;color:#795548;margin:20px 0;">⚠️ Il codice è valido '
-        '<strong>10 minuti</strong>. Se non hai richiesto il reset, ignora questa email.</div>'
-    )
-    html_content = _branded_email("🔑", "Reset Password", "#43a047", "#2e7d32", body)
+    if lingua == "en":
+        body = (
+            f"<p>Hi <strong>{html_escape(nome or '')}</strong>,</p>"
+            "<p>You asked to reset your Ispiramy password. Here is the code:</p>"
+            + code_box +
+            '<div style="background:#fff8e1;border-left:4px solid #ffb300;padding:14px 18px;'
+            'border-radius:6px;color:#795548;margin:20px 0;">The code is valid for '
+            f'<strong>{minuti} minutes</strong>. If you did not ask for this, ignore this email.</div>'
+        )
+        titolo = "Reset your password"
+    else:
+        body = (
+            f"<p>Ciao <strong>{html_escape(nome or '')}</strong>,</p>"
+            "<p>Hai richiesto di reimpostare la tua password su Ispiramy. Ecco il codice di verifica:</p>"
+            + code_box +
+            '<div style="background:#fff8e1;border-left:4px solid #ffb300;padding:14px 18px;'
+            'border-radius:6px;color:#795548;margin:20px 0;">⚠️ Il codice è valido '
+            f'<strong>{minuti} minuti</strong>. Se non hai richiesto il reset, ignora questa email.</div>'
+        )
+        titolo = "Reset Password"
+    return _branded_email("🔑", titolo, "#43a047", "#2e7d32", body), titolo
+
+
+def send_reset_password_email(email: str, nome: str, reset_code: str, lingua: str = "it") -> bool:
+    """Invia email brandizzata con codice reset password."""
+    from app.utils.email_backend import is_backend_available, mail_send
+    from sendgrid.helpers.mail import Mail
+    html_content, titolo = corpo_email_reset(nome, reset_code, lingua)
+    if not is_backend_available():
+        logger.error("Nessun backend email disponibile per il reset password")
+        return False
+    api_key = os.getenv('SENDGRID_API_KEY') or os.getenv('SMTP_PASSWORD')
+    from_email = os.getenv('FROM_EMAIL', 'noreply@ispiramy.com')
     try:
         message = Mail(from_email=from_email, to_emails=email,
-                       subject="Reset Password - Ispiramy", html_content=html_content)
+                       subject=f"{titolo} - Ispiramy", html_content=html_content)
         mail_send(api_key, message)
         logger.info(f"Reset password email sent to {email}")
         return True
@@ -609,7 +638,35 @@ def send_reset_password_email(email: str, nome: str, reset_code: str) -> bool:
         return False
 
 
-def send_verification_email(to_email: str, code: str, nome: str = "User") -> bool:
+def corpo_email_verifica(nome: str, code: str, lingua: str = "it") -> tuple:
+    """HTML e oggetto dell'email di conferma. I minuti sono quelli del server."""
+    from app.utils.notification_email import _branded_email
+    minuti = int(VALIDITA_CODICE_VERIFICA.total_seconds() // 60)
+    code_box = (
+        '<div style="font-size:34px;font-weight:800;letter-spacing:8px;color:#2e7d32;'
+        'background:#e8f5e9;border-radius:10px;padding:22px;text-align:center;margin:24px 0;">'
+        f'{html_escape(code)}</div>'
+    )
+    if lingua == "en":
+        body = (
+            f"<p>Hi <strong>{html_escape(nome or '')}</strong>,</p>"
+            "<p>Thanks for signing up for Ispiramy. Here is your verification code:</p>"
+            + code_box +
+            "<p>Enter it on the sign-up page to finish. "
+            f"The code is valid for <strong>{minuti} minutes</strong>.</p>"
+        )
+        return _branded_email("✨", "Confirm your email", "#43a047", "#2e7d32", body), "Ispiramy verification code"
+    body = (
+        f"<p>Ciao <strong>{html_escape(nome or '')}</strong>,</p>"
+        "<p>Grazie per esserti registrato su Ispiramy! Ecco il tuo codice di verifica:</p>"
+        + code_box +
+        "<p>Inseriscilo nella pagina di registrazione per completare la verifica. "
+        f"Il codice è valido <strong>{minuti} minuti</strong>.</p>"
+    )
+    return _branded_email("✨", "Conferma la tua email", "#43a047", "#2e7d32", body), "Codice di Verifica Ispiramy"
+
+
+def send_verification_email(to_email: str, code: str, nome: str = "User", lingua: str = "it") -> bool:
     """
     Invia email di verifica usando SendGrid API (HTTP).
     
@@ -644,26 +701,13 @@ def send_verification_email(to_email: str, code: str, nome: str = "User") -> boo
         # ========== STEP 2: Costruisci messaggio HTML ==========
         logger.info("📝 STEP 2: Costruzione messaggio...")
         
-        from app.utils.notification_email import _branded_email
-        _code_box = (
-            '<div style="font-size:34px;font-weight:800;letter-spacing:8px;color:#2e7d32;'
-            'background:#e8f5e9;border-radius:10px;padding:22px;text-align:center;margin:24px 0;">'
-            f'{code}</div>'
-        )
-        _body = (
-            f"<p>Ciao <strong>{html_escape(nome or '')}</strong>,</p>"
-            "<p>Grazie per esserti registrato su Ispiramy! Ecco il tuo codice di verifica:</p>"
-            + _code_box +
-            "<p>Inseriscilo nella pagina di registrazione per completare la verifica. "
-            "Il codice è valido <strong>10 minuti</strong>.</p>"
-        )
-        html_content = _branded_email("✨", "Conferma la tua email", "#43a047", "#2e7d32", _body)
-        
+        html_content, oggetto = corpo_email_verifica(nome, code, lingua)
+
         # ========== STEP 3: Crea messaggio SendGrid ==========
         message = Mail(
             from_email=from_email,
             to_emails=to_email,
-            subject='Codice di Verifica Ispiramy',
+            subject=oggetto,
             html_content=html_content
         )
         

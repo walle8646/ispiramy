@@ -22,7 +22,7 @@ from app.routes.auth import verify_token
 from app.logger_config import logger
 from app.utils.notification_service import send_notification
 from app.utils_user import has_payment_method
-from app.utils.orari import ORE_PREAVVISO_PRENOTAZIONE, scadenza_compenso_senza_recensione
+from app.utils.orari import ORE_PREAVVISO_PRENOTAZIONE, ore_reali_fino_a, scadenza_compenso_senza_recensione
 from app.scheduler import schedule_booking_reminders, schedule_payment_release, schedule_noshow_check
 
 router = APIRouter()
@@ -30,7 +30,7 @@ ITALY_TZ = ZoneInfo("Europe/Rome")
 DEBUG_MODE = os.getenv("DEBUG", "false").lower() == "true"
 
 
-from app.routes.booking import BLOCKING_BOOKING_STATUSES, slot_gia_prenotato  # noqa: E402
+from app.routes.booking import blocca_agenda, slot_gia_prenotato  # noqa: E402
 
 
 def get_current_user(request: Request):
@@ -81,6 +81,7 @@ async def create_booking_paypal(request: Request):
         raise HTTPException(status_code=400, detail="Non puoi prenotare con te stesso")
     
     with Session(engine) as session:
+        blocca_agenda(session, consultant_id)
         consultant = session.get(User, consultant_id)
         if not consultant:
             raise HTTPException(status_code=404, detail="Consulente non trovato")
@@ -95,24 +96,15 @@ async def create_booking_paypal(request: Request):
         
         if not DEBUG_MODE:
             booking_datetime = datetime.strptime(f"{booking_date_str} {start_time}", '%Y-%m-%d %H:%M')
-            # Gli orari di prenotazione sono ora italiana: confrontarli con utcnow()
-            # rendeva il vincolo di 4 ore un vincolo di 2 ore in ora legale.
-            now_italy = datetime.now(ITALY_TZ).replace(tzinfo=None)
-            time_until = (booking_datetime - now_italy).total_seconds() / 3600
+            # Ore vere, non la differenza sull'orologio: il cambio ora le separa.
+            time_until = ore_reali_fino_a(booking_datetime)
             if time_until < ORE_PREAVVISO_PRENOTAZIONE:
                 raise HTTPException(
                     status_code=400,
                     detail=f"La consulenza deve essere prenotata almeno {ORE_PREAVVISO_PRENOTAZIONE} ore nel futuro",
                 )
         
-        existing = session.exec(
-            select(Booking)
-            .where(func.date(Booking.booking_date) == booking_date_str)
-            .where(Booking.consultant_user_id == consultant_id)
-            .where(Booking.start_time == start_time)
-            .where(Booking.status.in_(BLOCKING_BOOKING_STATUSES))
-        ).first()
-        if existing:
+        if slot_gia_prenotato(session, consultant_id, booking_date_str, start_time, end_time):
             raise HTTPException(status_code=409, detail="Questo slot è già stato prenotato")
         
         if not price or price <= 0:
@@ -229,6 +221,7 @@ async def create_consultation_paypal(offer_id: int, request: Request):
         raise HTTPException(status_code=400, detail="Dati slot mancanti")
     
     with Session(engine) as session:
+        blocca_agenda(session)
         offer = session.get(ConsultationOffer, offer_id)
         if not offer:
             raise HTTPException(status_code=404, detail="Offerta non trovata")
@@ -249,7 +242,8 @@ async def create_consultation_paypal(offer_id: int, request: Request):
         if not has_payment_method(consultant):
             raise HTTPException(status_code=400, detail="Il consulente non ha configurato un metodo di pagamento. Non è possibile prenotare.")
 
-        if slot_gia_prenotato(session, offer.consultant_user_id, selected_date, start_time):
+        blocca_agenda(session, offer.consultant_user_id)
+        if slot_gia_prenotato(session, offer.consultant_user_id, selected_date, start_time, end_time):
             raise HTTPException(status_code=409, detail="Questo slot è già stato prenotato")
 
         booking_dt = datetime.strptime(f"{selected_date} {start_time}", "%Y-%m-%d %H:%M")
