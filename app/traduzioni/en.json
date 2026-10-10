@@ -788,5 +788,6 @@
   "profilo.accetta_errore": "The request could not be accepted.",
   "profilo.rete_riprova": "Connection error: try again.",
   "profilo.rifiutata": "Consultation declined.",
-  "profilo.scegli_lingua": "Pick at least one language you can consult in."
+  "profilo.scegli_lingua": "Pick at least one language you can consult in.",
+  "piede.seguici": "Follow us"
 }

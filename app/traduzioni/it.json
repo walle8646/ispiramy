@@ -788,5 +788,6 @@
   "profilo.accetta_errore": "Non è stato possibile accettare la richiesta.",
   "profilo.rete_riprova": "Errore di connessione: riprova.",
   "profilo.rifiutata": "Consulenza rifiutata con successo!",
-  "profilo.scegli_lingua": "Scegli almeno una lingua in cui puoi fare consulenze."
+  "profilo.scegli_lingua": "Scegli almeno una lingua in cui puoi fare consulenze.",
+  "piede.seguici": "Seguici"
 }
