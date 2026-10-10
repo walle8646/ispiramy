@@ -37,10 +37,10 @@ MINUTI_ANTICIPO_INGRESSO = 10
 MINUTI_MARGINE_FINE_CALL = 5
 
 # Se il cliente non lascia la recensione, il compenso del consulente parte
-# comunque dopo questi giorni dalla fine della consulenza. Una contestazione
+# comunque dopo queste ore dalla fine della consulenza. Una contestazione
 # aperta lo ferma in ogni caso, finché non viene chiusa. È l'unico punto in
 # cui è scritto questo numero: prenotazioni, job e testi lo leggono da qui.
-GIORNI_RILASCIO_SENZA_RECENSIONE = 7
+ORE_RILASCIO_SENZA_RECENSIONE = 48
 
 
 # Come si scrive un orario a chi lo legge. Il sito lavora in ora italiana:
@@ -120,7 +120,7 @@ def finestra_ingresso(booking, adesso: Optional[datetime] = None) -> str:
 
 def scadenza_compenso_senza_recensione(fine: datetime) -> datetime:
     """Quando il compenso parte se il cliente non ha lasciato la recensione."""
-    return fine + timedelta(days=GIORNI_RILASCIO_SENZA_RECENSIONE)
+    return fine + timedelta(hours=ORE_RILASCIO_SENZA_RECENSIONE)
 
 
 def now_italy_naive() -> datetime:

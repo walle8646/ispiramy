@@ -7,7 +7,7 @@ import os
 from sendgrid import SendGridAPIClient
 from sendgrid.helpers.mail import Mail, Email, To, Content
 from app.logger_config import logger
-from app.utils.orari import GIORNI_RILASCIO_SENZA_RECENSIONE
+from app.utils.orari import ORE_RILASCIO_SENZA_RECENSIONE
 from typing import Dict, Optional
 
 
@@ -80,16 +80,16 @@ def nota_compenso() -> str:
     Le email non seguono la lingua del sito: la regola sta in tutte e due,
     così chi legge in inglese la trova comunque.
     """
-    giorni = GIORNI_RILASCIO_SENZA_RECENSIONE
+    ore = ORE_RILASCIO_SENZA_RECENSIONE
     return (
         '<div style="background:#f1f8f0;border-left:4px solid #43a047;border-radius:6px;'
         'padding:14px 18px;margin:20px 0;">'
         "<p style='margin:0 0 8px;'>Il compenso del consulente resta trattenuto finché il cliente "
         "lascia la recensione e non c'è una contestazione aperta. Se la recensione non arriva, "
-        f"parte {giorni} giorni dopo la fine della consulenza.</p>"
+        f"parte {ore} ore dopo la fine della consulenza.</p>"
         "<p style='margin:0;color:#546e7a;font-size:13px;'>The consultant's payout stays on hold "
         "until the client leaves a review and there is no open dispute. If they never review, "
-        f"it is sent {giorni} days after the consultation ends.</p></div>"
+        f"it is sent {ore} hours after the consultation ends.</p></div>"
     )
 
 
@@ -263,12 +263,12 @@ def generate_email_html(template_name: str, data: Dict[str, str]) -> Optional[st
                 + '<div style="background:#fff8e1;border-left:4px solid #f39c12;border-radius:6px;padding:14px 18px;margin:20px 0;">'
                   "<p style='margin:0 0 8px;'>Il compenso di questa consulenza resta trattenuto finché la contestazione "
                   "non è chiusa. Senza contestazione, parte quando il cliente lascia la recensione, oppure "
-                  f"{GIORNI_RILASCIO_SENZA_RECENSIONE} giorni dopo la fine se la recensione non arriva. "
+                  f"{ORE_RILASCIO_SENZA_RECENSIONE} ore dopo la fine se la recensione non arriva. "
                   "Ti contatteremo se servono chiarimenti: se la consulenza era registrata, "
                   "la registrazione viene usata per verificare cosa è successo.</p>"
                   "<p style='margin:0;color:#546e7a;font-size:13px;'>This payout stays on hold until the dispute is closed. "
                   "With no open dispute, it is sent when the client leaves a review, or "
-                  f"{GIORNI_RILASCIO_SENZA_RECENSIONE} days after the consultation ends if they never review. "
+                  f"{ORE_RILASCIO_SENZA_RECENSIONE} hours after the consultation ends if they never review. "
                   "We will contact you if we need more detail. If the consultation was recorded, "
                   "the recording is used to check what happened.</p></div>"
             )

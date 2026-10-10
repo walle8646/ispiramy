@@ -180,7 +180,7 @@
   "piede.chi_siamo": "About us",
   "piede.faq": "FAQ",
   "piede.privacy": "Privacy Policy",
-  "pagamenti.termini": "The consultant is paid when the client leaves a review, if there is no open dispute. If no review is left, the payout is sent 7 days after the consultation ends.",
-  "pagamenti.faq": "Payments are handled securely by Stripe and PayPal. The consultant is paid when the client leaves a review, if there is no open dispute. If no review is left, the payout is sent 7 days after the consultation ends.",
-  "pagamenti.incassi": "The payout reaches your Stripe or PayPal account when the client leaves a review. If they never review, it is sent 7 days after the consultation ends, as long as there is no open dispute. We keep 20%, which pays for the platform."
+  "pagamenti.termini": "The consultant is paid when the client leaves a review, if there is no open dispute. If no review is left, the payout is sent 48 hours after the consultation ends.",
+  "pagamenti.faq": "Payments are handled securely by Stripe and PayPal. The consultant is paid when the client leaves a review, if there is no open dispute. If no review is left, the payout is sent 48 hours after the consultation ends.",
+  "pagamenti.incassi": "The payout reaches your Stripe or PayPal account when the client leaves a review. If they never review, it is sent 48 hours after the consultation ends, as long as there is no open dispute. We keep 20%, which pays for the platform."
 }

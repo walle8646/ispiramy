@@ -180,7 +180,7 @@
   "piede.chi_siamo": "Chi Siamo",
   "piede.faq": "FAQ",
   "piede.privacy": "Privacy Policy",
-  "pagamenti.termini": "Il compenso del consulente parte quando il cliente lascia la recensione, se non c'è una contestazione aperta. Se la recensione non arriva, parte 7 giorni dopo la fine della consulenza.",
-  "pagamenti.faq": "I pagamenti sono sicuri e gestiti tramite Stripe e PayPal. Il compenso del consulente parte quando il cliente lascia la recensione, se non c'è una contestazione aperta. Se la recensione non arriva, parte 7 giorni dopo la fine della consulenza.",
-  "pagamenti.incassi": "Il compenso arriva sul tuo conto Stripe o PayPal quando il cliente lascia la recensione. Se non la lascia, arriva 7 giorni dopo la fine, purché non ci sia una contestazione aperta. A noi resta il 20%, che tiene in piedi la piattaforma."
+  "pagamenti.termini": "Il compenso del consulente parte quando il cliente lascia la recensione, se non c'è una contestazione aperta. Se la recensione non arriva, parte 48 ore dopo la fine della consulenza.",
+  "pagamenti.faq": "I pagamenti sono sicuri e gestiti tramite Stripe e PayPal. Il compenso del consulente parte quando il cliente lascia la recensione, se non c'è una contestazione aperta. Se la recensione non arriva, parte 48 ore dopo la fine della consulenza.",
+  "pagamenti.incassi": "Il compenso arriva sul tuo conto Stripe o PayPal quando il cliente lascia la recensione. Se non la lascia, arriva 48 ore dopo la fine, purché non ci sia una contestazione aperta. A noi resta il 20%, che tiene in piedi la piattaforma."
 }

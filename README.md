@@ -73,7 +73,7 @@ Il sistema supporta sia SQLite (sviluppo) che PostgreSQL (produzione) ed è cont
 - **Compenso dopo la recensione**: l'importo resta alla piattaforma e viene
   trasferito al consulente (meno la commissione, default 20%) quando il cliente
   lascia la recensione, se non c'è una contestazione aperta. Se la recensione
-  non arriva, parte 7 giorni dopo la fine della consulenza
+  non arriva, parte 48 ore dopo la fine della consulenza
 - **Rimborso automatico** se il consulente rifiuta o non si presenta
 - **Stripe Connect** per l'onboarding dei consulenti; PayPal Payout in alternativa
 

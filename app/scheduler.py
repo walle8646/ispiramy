@@ -20,7 +20,7 @@ from app.database import engine, DATABASE_URL
 from app.models import Notification, Booking, User, Review, Dispute
 from app.logger_config import logger
 from app.utils.orari import (
-    GIORNI_RILASCIO_SENZA_RECENSIONE,
+    ORE_RILASCIO_SENZA_RECENSIONE,
     con_fuso,
     fine_consulenza,
     now_italy_naive,
@@ -275,12 +275,12 @@ def _ha_recensione(session, booking_id: int) -> bool:
 
 
 def _attesa_senza_recensione_finita(booking) -> bool:
-    """Sono passati i giorni di riserva dalla fine, quindi si paga anche senza recensione."""
+    """Sono passate le ore di riserva dalla fine, quindi si paga anche senza recensione."""
     try:
         fine = fine_consulenza(booking)
     except (TypeError, ValueError):
         return False
-    return now_italy_naive() >= fine + timedelta(days=GIORNI_RILASCIO_SENZA_RECENSIONE)
+    return now_italy_naive() >= fine + timedelta(hours=ORE_RILASCIO_SENZA_RECENSIONE)
 
 
 def release_booking_payment(booking_id: int, forza: bool = False):
@@ -288,7 +288,7 @@ def release_booking_payment(booking_id: int, forza: bool = False):
     Rilascia il compenso trattenuto al consulente.
 
     Parte quando il cliente ha lasciato la recensione, oppure
-    GIORNI_RILASCIO_SENZA_RECENSIONE giorni dopo la fine se la recensione non
+    ORE_RILASCIO_SENZA_RECENSIONE ore dopo la fine se la recensione non
     arriva. Una contestazione aperta blocca sempre, finché non è chiusa.
     `forza` serve solo all'amministrazione: contestazione respinta, il
     consulente va pagato anche senza recensione e prima di quei giorni.
@@ -335,7 +335,7 @@ def release_booking_payment(booking_id: int, forza: bool = False):
             if not forza and not _ha_recensione(session, booking_id) and not _attesa_senza_recensione_finita(booking):
                 logger.info(
                     f"⏳ Booking {booking_id}: in attesa della recensione "
-                    f"(o dei {GIORNI_RILASCIO_SENZA_RECENSIONE} giorni), rilascio non ancora dovuto"
+                    f"(o delle {ORE_RILASCIO_SENZA_RECENSIONE} ore), rilascio non ancora dovuto"
                 )
                 return
             
@@ -462,14 +462,14 @@ def riprova_rilascio(booking_id: int) -> None:
 def schedule_payment_release(booking_id: int, consultation_end_datetime: datetime):
     """
     Schedula il rilascio di riserva: se il cliente non recensisce, il compenso
-    parte GIORNI_RILASCIO_SENZA_RECENSIONE giorni dopo la fine. La recensione,
+    parte ORE_RILASCIO_SENZA_RECENSIONE ore dopo la fine. La recensione,
     se arriva prima, lo fa partire subito.
     """
     try:
         if consultation_end_datetime.tzinfo is None:
             consultation_end_datetime = consultation_end_datetime.replace(tzinfo=ITALY_TZ)
         
-        release_time = consultation_end_datetime + timedelta(days=GIORNI_RILASCIO_SENZA_RECENSIONE)
+        release_time = consultation_end_datetime + timedelta(hours=ORE_RILASCIO_SENZA_RECENSIONE)
         
         scheduler.add_job(
             release_booking_payment,
@@ -763,7 +763,7 @@ def recover_stuck_bookings():
                     
                     end_dt = datetime.combine(booking.booking_date, end_time).replace(tzinfo=ITALY_TZ)
                     noshow_due = end_dt + timedelta(minutes=15)
-                    release_due = end_dt + timedelta(days=GIORNI_RILASCIO_SENZA_RECENSIONE)
+                    release_due = end_dt + timedelta(hours=ORE_RILASCIO_SENZA_RECENSIONE)
                     ha_recensione = _ha_recensione(session, booking.id)
 
                     def rilascia_se_tocca():
@@ -789,7 +789,7 @@ def recover_stuck_bookings():
                         rilascia_se_tocca()
                             
                     elif now >= release_due or ha_recensione:
-                        # Recensione già arrivata, oppure sono passati i giorni di riserva
+                        # Recensione già arrivata, oppure sono passate le ore di riserva
                         logger.info(f"🔄 Recovery booking {booking.id}: eseguo rilascio pagamento mancato")
                         release_booking_payment(booking.id)
                         

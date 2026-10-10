@@ -443,13 +443,25 @@ class TestRilascioERimborso:
         assert chiamate == []
         assert _stato(booking_id)[1] == "held"
 
-    def test_dopo_sette_giorni_senza_recensione_il_compenso_parte(self, persone, monkeypatch):
-        booking_id = _crea(persone, -(7 * 24 * 60 + 180))
+    def test_prima_delle_48_ore_senza_recensione_il_compenso_resta_fermo(self, persone, monkeypatch):
+        """La fine è da 47 ore: manca ancora un'ora alle 48."""
+        booking_id = _crea(persone, -(48 * 60))
+        chiamate = []
+        import stripe
+        monkeypatch.setattr(stripe.Transfer, "create", lambda **kw: chiamate.append(kw))
+
+        release_booking_payment(booking_id)
+
+        assert chiamate == []
+        assert _stato(booking_id)[1] == "held"
+
+    def test_dopo_48_ore_senza_recensione_il_compenso_parte(self, persone, monkeypatch):
+        booking_id = _crea(persone, -(50 * 60))
         chiamate = []
 
         def crea(**kwargs):
             chiamate.append(kwargs)
-            return SimpleNamespace(id="tr_sette_giorni")
+            return SimpleNamespace(id="tr_48_ore")
 
         import stripe
         monkeypatch.setattr(stripe.Transfer, "create", crea)
@@ -459,8 +471,8 @@ class TestRilascioERimborso:
         assert len(chiamate) == 1
         assert _stato(booking_id)[1] == "released"
 
-    def test_dopo_sette_giorni_una_contestazione_blocca_ancora(self, persone, monkeypatch):
-        booking_id = _crea(persone, -(8 * 24 * 60))
+    def test_dopo_48_ore_una_contestazione_blocca_ancora(self, persone, monkeypatch):
+        booking_id = _crea(persone, -(50 * 60))
         with Session(engine) as s:
             s.add(Dispute(
                 booking_id=booking_id,
@@ -520,34 +532,33 @@ class TestRilascioERimborso:
         from zoneinfo import ZoneInfo
 
         from app.scheduler import schedule_payment_release, scheduler
-        from app.utils.orari import GIORNI_RILASCIO_SENZA_RECENSIONE
+        from app.utils.orari import ORE_RILASCIO_SENZA_RECENSIONE
 
-        assert GIORNI_RILASCIO_SENZA_RECENSIONE == 7
+        assert ORE_RILASCIO_SENZA_RECENSIONE == 48
         booking_id = _crea(persone, 24 * 60)
         fine = datetime(2026, 10, 20, 18, 0)
         schedule_payment_release(booking_id, fine)
         job = scheduler.get_job(f"payment_release_{booking_id}")
-        atteso = fine.replace(tzinfo=ZoneInfo("Europe/Rome")) + timedelta(days=7)
+        atteso = fine.replace(tzinfo=ZoneInfo("Europe/Rome")) + timedelta(hours=48)
         assert job is not None
         assert abs((job.next_run_time - atteso).total_seconds()) < 2
 
 
 def test_pagine_e_mail_raccontano_la_regola_nuova(client):
-    """Termini, faq e email non parlano più delle 48 ore per il compenso."""
+    """Termini, faq e email dicono 48 ore / 48 hours se la recensione non arriva."""
     from app.utils.notification_email import generate_email_html
-    from app.utils.orari import GIORNI_RILASCIO_SENZA_RECENSIONE
+    from app.utils.orari import ORE_RILASCIO_SENZA_RECENSIONE
 
-    giorni = str(GIORNI_RILASCIO_SENZA_RECENSIONE)
+    ore = str(ORE_RILASCIO_SENZA_RECENSIONE)
     italiano = client.get("/terms").text
-    assert "recensione" in italiano and f"{giorni} giorni" in italiano
-    assert "48 ore" not in italiano
+    assert "recensione" in italiano and f"{ore} ore" in italiano
     inglese = client.get("/terms", cookies={"ispiramy_lingua": "en"}).text
-    assert "leaves a review" in inglese and f"{giorni} days" in inglese
+    assert "leaves a review" in inglese and f"{ore} hours" in inglese
 
     faq_en = client.get("/faq", cookies={"ispiramy_lingua": "en"}).text
-    assert f"{giorni} days" in faq_en
+    assert f"{ore} hours" in faq_en
     come = client.get("/come-funziona").text
-    assert f"{giorni} giorni" in come and "contestazione" in come
+    assert f"{ore} ore" in come and "contestazione" in come
 
     dati = {
         "consultant_name": "Anna", "client_name": "Mario", "user_name": "Mario",
@@ -558,6 +569,5 @@ def test_pagine_e_mail_raccontano_la_regola_nuova(client):
     for nome in ("booking_confirmed.html", "review_request.html", "review_reminder.html", "dispute_opened.html"):
         html = generate_email_html(nome, dati)
         assert html, nome
-        assert f"{giorni} giorni" in html
-        assert f"{giorni} days" in html
-        assert "48 ore" not in html and "48 hours" not in html
+        assert f"{ore} ore" in html
+        assert f"{ore} hours" in html
