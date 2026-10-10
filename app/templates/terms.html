@@ -1,40 +1,120 @@
 {% extends "static_page_base.html" %}
 {% block title %}{{ t('termini.titolo') }} - Ispiramy{% endblock %}
 {% block page_content %}
+<style>
+    /* Solo su telefono: il titolo e i paragrafi restano larghi quanto lo schermo.
+       Sopra i 768px vale lo stile delle altre pagine statiche. */
+    @media (max-width: 768px) {
+        .static-page {
+            margin: 16px auto 28px;
+            padding: 0 16px;
+        }
+        .static-page h1 {
+            font-size: 1.55rem;
+            line-height: 1.25;
+            overflow-wrap: break-word;
+        }
+        .static-page h2 {
+            font-size: 1.15rem;
+            margin-top: 22px;
+            overflow-wrap: break-word;
+        }
+        .static-page p,
+        .static-page li {
+            font-size: 1rem;
+            overflow-wrap: break-word;
+        }
+    }
+</style>
 <h1>{{ t('termini.titolo') }}</h1>
-<p class="updated">{{ t('termini.aggiornato') }} {{ current_year or 2026 }}</p>
+<p class="updated">{{ t('termini.quando') }}</p>
 
 <div class="draft-note">
-    ⚠️ <strong>{{ t('legale.bozza') }}</strong> {{ t('termini.bozza') }}
+    <strong>{{ t('legale.bozza') }}</strong> {{ t('termini.bozza') }}
+    <p style="margin: 12px 0 0;"><strong>{{ t('termini.manca_titolo') }}</strong></p>
+    <p style="margin: 4px 0 0;">{{ t('termini.manca_ragione') }}</p>
+    <p style="margin: 4px 0 0;">{{ t('termini.manca_sede') }}</p>
+    <p style="margin: 4px 0 0;">{{ t('termini.manca_iva') }}</p>
 </div>
 
 <p>{{ t('termini.accetti') }}</p>
 
-<h2>{{ t('termini.s1') }}</h2>
-<p>{{ t('termini.s1_testo') }}</p>
+<h2>{{ t('termini.cose') }}</h2>
+<p>{{ t('termini.cose_testo') }}</p>
+<p>{{ t('termini.cose_parte') }}</p>
 
-<h2>{{ t('termini.s2') }}</h2>
-<p>{{ t('termini.s2_testo') }}</p>
+<h2>{{ t('termini.eta') }}</h2>
+<p>{{ t('termini.eta_testo') }}</p>
 
-<h2>{{ t('termini.s3') }}</h2>
-<ul>
-    <li>{{ t('termini.s3_a') }}</li>
-    <li>{{ t('termini.s3_b') }}</li>
-    <li>{{ t('pagamenti.termini') }}</li>
-</ul>
+<h2>{{ t('termini.account') }}</h2>
+<p>{{ t('termini.account_testo') }}</p>
+<p>{{ t('termini.account_dati') }}</p>
+<p>{{ t('termini.account_avvisi') }}</p>
 
-<h2>{{ t('termini.s4') }}</h2>
-<p>{{ t('termini.s4_testo') }}</p>
+<h2>{{ t('termini.pubblichi') }}</h2>
+<p>{{ t('termini.pubblichi_testo') }}</p>
+<p>{{ t('termini.pubblichi_filtro') }}</p>
 
-<h2>{{ t('termini.s5') }}</h2>
-<p>{{ t('termini.s5_testo') }}</p>
+<h2>{{ t('termini.segnala') }}</h2>
+<p>{{ t('termini.segnala_community') }}</p>
+<p>
+    {{ t('termini.segnala_mail') }}
+    <a href="mailto:admin@ispiramy.com">admin@ispiramy.com</a>.
+</p>
 
-<h2>{{ t('termini.s6') }}</h2>
-<p>{{ t('termini.s6_testo') }}</p>
+<h2>{{ t('termini.condotta') }}</h2>
+<p>{{ t('termini.condotta_testo') }}</p>
 
-<h2>{{ t('termini.s7') }}</h2>
-<p>{{ t('termini.s7_testo') }}</p>
+<h2>{{ t('termini.prezzo') }}</h2>
+<p>{{ t('termini.prezzo_intro') }}</p>
+<p>{{ t('termini.prezzo_min').split('{n}')[0] }}{{ prezzo_orario_minimo }}{{ t('termini.prezzo_min').split('{n}')[1] }}</p>
+<p>{{ t('termini.prezzo_spese').split('{n}')[0] }}{{ spese_servizio_euro }}{{ t('termini.prezzo_spese').split('{n}')[1] }}</p>
+<p>{{ t('termini.offerte') }}</p>
+<p>{{ t('termini.anticipo').split('{n}')[0] }}{{ ore_preavviso }}{{ t('termini.anticipo').split('{n}')[1] }}</p>
 
-<h2>{{ t('termini.s8') }}</h2>
-<p>{{ t('termini.s8_a') }} <a href="mailto:info@ispiramy.com">info@ispiramy.com</a>.</p>
+<h2>{{ t('termini.paga') }}</h2>
+<p>{{ t('termini.paga_metodo') }}</p>
+<p>{{ t('termini.paga_auto') }}</p>
+<p>{{ t('termini.paga_mano').split('{n}')[0] }}{{ ore_per_rispondere }}{{ t('termini.paga_mano').split('{n}')[1] }}</p>
+<p>{{ t('termini.paga_interrompi') }}</p>
+<p>{{ t('termini.commissione').split('{n}')[0] }}{{ commissione_percentuale }}{{ t('termini.commissione').split('{n}')[1] }}</p>
+<p>{{ t('termini.compenso').split('{n}')[0] }}{{ ore_rilascio }}{{ t('termini.compenso').split('{n}')[1] }}</p>
+
+<h2>{{ t('termini.annulla') }}</h2>
+<p>{{ t('termini.annulla_fino').split('{n}')[0] }}{{ ore_limite_annullamento }}{{ t('termini.annulla_fino').split('{n}')[1] }}</p>
+<p>{{ t('termini.rimborso') }}</p>
+<p>{{ t('termini.ritira') }}</p>
+<p>{{ t('termini.dopo').split('{n}')[0] }}{{ ore_limite_annullamento }}{{ t('termini.dopo').split('{n}')[1] }}</p>
+<p>{{ t('termini.assente') }}</p>
+<p>{{ t('termini.contestazione').split('{n}')[0] }}{{ ore_contestazione }}{{ t('termini.contestazione').split('{n}')[1] }}</p>
+<p>{{ t('termini.decisione') }}</p>
+<p>{{ t('termini.consumatore') }}</p>
+
+<h2>{{ t('termini.non_noi') }}</h2>
+<p>{{ t('termini.non_noi_testo') }}</p>
+
+<h2>{{ t('termini.responsabilita') }}</h2>
+<p>{{ t('termini.responsabilita_testo') }}</p>
+
+<h2>{{ t('termini.privacy') }}</h2>
+<p>{{ t('termini.privacy_prima') }}<a href="/privacy">{{ t('termini.privacy_link') }}</a>.</p>
+
+<h2>{{ t('termini.cambiamo') }}</h2>
+<p>{{ t('termini.cambiamo_testo') }}</p>
+
+<h2>{{ t('termini.cessione') }}</h2>
+<p>{{ t('termini.cessione_testo') }}</p>
+
+<h2>{{ t('termini.frase') }}</h2>
+<p>{{ t('termini.frase_testo') }}</p>
+
+<h2>{{ t('termini.legge') }}</h2>
+<p>{{ t('termini.legge_testo') }}</p>
+
+<h2>{{ t('termini.prima') }}</h2>
+<p>
+    {{ t('termini.prima_testo') }}
+    <a href="mailto:admin@ispiramy.com">admin@ispiramy.com</a>
+    {{ t('termini.prima_dopo') }}
+</p>
 {% endblock %}

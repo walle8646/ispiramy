@@ -89,7 +89,14 @@
             {{ t('registrazione.google') }}
         </a>
 
-        <p style="text-align: center; margin-top: 24px; color: #666;">
+        <p style="text-align: center; margin-top: 24px; color: #666; font-size: 14px; line-height: 1.5;">
+            {{ t('registrazione.accetti') }}
+            <a href="/terms" style="color: #43a047; font-weight: 600;">{{ t('registrazione.termini_link') }}</a>
+            {{ t('registrazione.e_privacy') }}
+            <a href="/privacy" style="color: #43a047; font-weight: 600;">{{ t('registrazione.privacy_link') }}</a>.
+        </p>
+
+        <p style="text-align: center; margin-top: 16px; color: #666;">
             {{ t('registrazione.hai_account') }} <a href="/login" style="color: #43a047; font-weight: 600; text-decoration: none;">{{ t('registrazione.accedi') }}</a>
         </p>
     </div>

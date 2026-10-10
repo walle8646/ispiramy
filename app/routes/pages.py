@@ -7,9 +7,12 @@ from fastapi import APIRouter, Form, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 
 from app.logger_config import logger
+from app.models import User
 from app.routes.auth import verify_token
+from app.utils.booking_requests import ORE_PER_RISPONDERE
 from app.utils.email import send_email
 from app.utils.lingue_ui import COOKIE, GIORNI_MEMORIA, lingua_di, lingua_valida, traduci
+from app.utils.orari import ORE_FINESTRA_CONTESTAZIONE, ORE_RILASCIO_SENZA_RECENSIONE
 from app.utils.rate_limit import enforce_rate_limit
 
 router = APIRouter()
@@ -137,7 +140,15 @@ async def privacy(request: Request):
 
 @router.get("/terms", response_class=HTMLResponse)
 async def terms(request: Request):
-    return request.app.state.templates.TemplateResponse("terms.html", {"request": request})
+    # Le cifre arrivano dal codice, come in "Come funziona": se cambiano la
+    # regola, la pagina non resta a raccontare il numero vecchio.
+    return request.app.state.templates.TemplateResponse("terms.html", {
+        "request": request,
+        "ore_per_rispondere": ORE_PER_RISPONDERE,
+        "commissione_percentuale": User.model_fields["platform_fee_percent"].default,
+        "ore_rilascio": ORE_RILASCIO_SENZA_RECENSIONE,
+        "ore_contestazione": ORE_FINESTRA_CONTESTAZIONE,
+    })
 
 
 @router.get("/lingua/{codice}", include_in_schema=False)
