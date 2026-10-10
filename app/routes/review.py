@@ -12,7 +12,7 @@ import secrets
 import os
 
 from app.database import engine
-from app.models import Review, Booking, User
+from app.models import Review, Booking, User, Dispute
 from app.routes.auth import get_current_user
 from app.logger_config import logger
 from app.utils.notification_service import send_notification
@@ -263,7 +263,20 @@ async def review_page(token: str, request: Request):
             return _render(already_reviewed=True)
 
         consultant = session.get(User, booking.consultant_user_id)
-        return _render(booking=booking, consultant=consultant)
+        from app.routes.dispute import motivo_blocco_contestazione
+        gia_contestata = session.exec(
+            select(Dispute).where(Dispute.booking_id == booking.id)
+        ).first()
+        if gia_contestata:
+            motivo = "Hai già aperto una contestazione per questa consulenza."
+        else:
+            motivo = motivo_blocco_contestazione(booking)
+        return _render(
+            booking=booking,
+            consultant=consultant,
+            puo_contestare=motivo is None,
+            motivo_contestazione=motivo,
+        )
 
 
 @router.post("/api/review/{token}/submit")

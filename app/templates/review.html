@@ -362,6 +362,7 @@
         </div>
 
         <button class="review-btn-submit" id="reviewSubmitBtn" onclick="submitReview()">Invia Recensione</button>
+        {% if puo_contestare %}
         <button class="review-btn-dispute" onclick="toggleDisputeForm()">⚠️ Apri una contestazione</button>
 
         <!-- Form contestazione (nascosto) -->
@@ -373,6 +374,11 @@
             <button class="dispute-btn-submit" id="disputeSubmitBtn" onclick="submitDispute()">Invia contestazione</button>
             <button class="dispute-btn-cancel" onclick="toggleDisputeForm()">Annulla</button>
         </div>
+        {% elif motivo_contestazione %}
+        <p style="font-size:0.82rem;color:#999;margin-top:8px;text-align:center;">
+            <i class="fas fa-info-circle"></i> {{ motivo_contestazione }}
+        </p>
+        {% endif %}
 
         <div id="reviewMsg" class="review-msg" style="display:none;"></div>
         {% endif %}

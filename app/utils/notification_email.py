@@ -274,6 +274,18 @@ def generate_email_html(template_name: str, data: Dict[str, str]) -> Optional[st
             )
             return _fill(_branded_email("⚠️", "Contestazione aperta", AMBER, AMBER_D, body, "Vai al tuo profilo", "{action_url}"), data)
 
+        if template_name == 'dispute_decided.html':
+            body = (
+                "<p>Ciao <strong>{user_name}</strong>,</p>"
+                "<p>Abbiamo chiuso la contestazione sulla consulenza del <strong>{date}</strong>"
+                " alle <strong>{time}</strong>.</p>"
+                + '<div style="background:#f1f8f0;border-left:4px solid #43a047;border-radius:6px;'
+                  'padding:14px 18px;margin:20px 0;">'
+                "<p style='margin:0 0 8px;'>{outcome_it}</p>"
+                "<p style='margin:0;color:#546e7a;font-size:13px;'>{outcome_en}</p></div>"
+            )
+            return _fill(_branded_email("⚖️", "Decisione sulla contestazione", GREEN, GREEN_D, body, "Vai al tuo profilo", "{action_url}"), data)
+
         if template_name == 'booking_request.html':
             body = (
                 "<p>Ciao <strong>{consultant_name}</strong>,</p>"

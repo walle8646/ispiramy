@@ -446,7 +446,10 @@
             <div class="info-item">
                 <label>Pagamento</label>
                 <div class="value">
-                    {% if dispute.booking.price > 0 %}&euro;{{ "%.2f"|format(dispute.booking.price) }}{% else %}-{% endif %}
+                    {% if dispute.booking.total_paid > 0 %}&euro;{{ "%.2f"|format(dispute.booking.total_paid) }}{% elif dispute.booking.price > 0 %}&euro;{{ "%.2f"|format(dispute.booking.price) }}{% else %}-{% endif %}
+                    {% if dispute.booking.service_fee and dispute.booking.service_fee > 0 %}
+                    <br><small style="color:#888;">consulenza &euro;{{ "%.2f"|format(dispute.booking.price) }} + servizio &euro;{{ "%.2f"|format(dispute.booking.service_fee) }}</small>
+                    {% endif %}
                     <br><small style="color:#888;">Stato: {{ dispute.booking.payment_status or '-' }}</small>
                 </div>
             </div>
@@ -461,13 +464,16 @@
             <div class="info-item">
                 <label>Registrazione</label>
                 <div class="value">
-                    {% if dispute.booking.recording_filename %}
+                    {% if dispute.booking.recording_filename and current_user.user_type_id >= 3 %}
                     <button class="download-btn" onclick="downloadRecording({{ dispute.booking_id }}, this)">
                         <i class="fas fa-download"></i> Scarica MP4
                     </button>
+                    {% elif dispute.booking.recording_filename %}
+                    <span style="color: #999;">Il video è riservato agli amministratori</span>
                     {% else %}
                     <span style="color: #999;"><i class="fas fa-video-slash"></i> Nessun video</span>
                     {% endif %}
+                    <br><small style="color:#888;">Registrazione in prenotazione: {% if dispute.booking.recording_requested %}sì{% else %}no{% endif %}</small>
                 </div>
             </div>
         </div>
@@ -501,7 +507,7 @@
             <div class="ai-comment">{{ dispute.ai_comment }}</div>
             <div class="ai-timestamp">Analisi eseguita il {{ dispute.ai_analyzed_at.strftime('%d/%m/%Y alle %H:%M') if dispute.ai_analyzed_at else '' }}</div>
         </div>
-        {% if dispute.booking.recording_filename %}
+        {% if dispute.booking.recording_filename and current_user.user_type_id >= 3 %}
         <button class="ai-btn" style="margin-top: 14px; background: #6b7280;" onclick="runAiAnalysis(this)">
             <i class="fas fa-redo"></i> Ripeti Analisi
         </button>
@@ -509,11 +515,13 @@
         {% else %}
         <!-- Nessuna analisi ancora -->
         <div id="aiResult"></div>
-        {% if dispute.booking.recording_filename %}
+        {% if dispute.booking.recording_filename and current_user.user_type_id >= 3 %}
         <p style="color: #666; font-size: 0.9rem; margin-bottom: 14px;">Avvia l'analisi AI per verificare automaticamente se la contestazione è giustificata analizzando il video della consulenza.</p>
         <button class="ai-btn" id="aiBtn" onclick="runAiAnalysis(this)">
             <i class="fas fa-brain"></i> Avvia Analisi AI
         </button>
+        {% elif dispute.booking.recording_filename %}
+        <p style="color: #999; font-size: 0.9rem;">L'analisi AI la avvia un amministratore.</p>
         {% else %}
         <p style="color: #999; font-size: 0.9rem;"><i class="fas fa-video-slash"></i> Nessun video disponibile per l'analisi.</p>
         {% endif %}
@@ -537,7 +545,8 @@
             <i class="fas fa-hand-holding-usd" style="color:#2e7d32; margin-right:6px;"></i> Rimborso al cliente
         </h3>
         <p style="color:#666; font-size:0.9rem; margin-bottom:16px;">
-            Specifica la percentuale di rimborso. Il restante verrà trasferito al consulente (meno la commissione piattaforma).
+            Il rimborso al cliente è calcolato sul totale pagato, spese di servizio comprese.
+            Al consulente resta la quota della sola consulenza, meno la commissione.
         </p>
         <div style="display:flex; align-items:center; gap:16px; margin-bottom:12px;">
             <input type="range" id="refundSlider" min="0" max="100" value="100" step="5" 
@@ -549,7 +558,7 @@
                 <span style="font-weight:600; color:#333;">%</span>
             </div>
         </div>
-        {% set price_val = dispute.booking.price|float if dispute.booking.price else 0 %}
+        {% set price_val = dispute.booking.total_paid|float if dispute.booking.total_paid else (dispute.booking.price|float if dispute.booking.price else 0) %}
         <div id="refundPreview" style="background:#f8f9fa; border-radius:10px; padding:16px; margin-bottom:16px;">
             <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
                 <div>
@@ -652,7 +661,8 @@
         btn.disabled = false;
     }
 
-    const BOOKING_PRICE = {{ dispute.booking.price|float if dispute.booking.price else 0 }};
+    const PREZZO_CONSULENZA = {{ dispute.booking.price|float if dispute.booking.price else 0 }};
+    const TOTALE_PAGATO = {{ dispute.booking.total_paid|float if dispute.booking.total_paid else (dispute.booking.price|float if dispute.booking.price else 0) }};
     const PLATFORM_FEE_PCT = {{ dispute.consultant.platform_fee_percent or 20 }};
 
     function showRefundPanel() {
@@ -671,8 +681,9 @@
             input.value = slider.value;
         }
         const pct = parseInt(slider.value);
-        const refundAmount = BOOKING_PRICE * pct / 100;
-        const remaining = BOOKING_PRICE - refundAmount;
+        const refundAmount = TOTALE_PAGATO * pct / 100;
+        const quotaConsulenza = PREZZO_CONSULENZA * pct / 100;
+        const remaining = PREZZO_CONSULENZA - quotaConsulenza;
         const consultantAmount = remaining - (remaining * PLATFORM_FEE_PCT / 100);
         
         document.getElementById('refundAmountDisplay').textContent = '€' + refundAmount.toFixed(2);

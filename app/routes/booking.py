@@ -901,14 +901,13 @@ async def get_booking_history(request: Request):
                 select(Review).where(Review.booking_id == booking.id)
             ).first()
             
-            # Can dispute: client, within 48h, recording was requested, no existing dispute
-            hours_since_end = (now - end_datetime).total_seconds() / 3600
+            # Stessa regola dell'API: cliente, registrazione accesa, entro 48 ore
+            # dalla fine, nessuna contestazione già aperta, non annullata.
+            from app.routes.dispute import motivo_blocco_contestazione
             can_dispute = (
-                not annullata
-                and is_client
-                and hours_since_end <= 48
-                and booking.recording_requested
+                is_client
                 and existing_dispute is None
+                and motivo_blocco_contestazione(booking) is None
             )
             
             # Can review: client, no existing review, booking completed
