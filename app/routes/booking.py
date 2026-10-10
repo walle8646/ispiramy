@@ -18,7 +18,7 @@ from app.utils_user import has_payment_method
 from app.utils.verifica_categorie import id_categorie_verificate
 from app.utils.orari import (
     ORE_LIMITE_ANNULLAMENTO, ORE_PREAVVISO_PRENOTAZIONE, con_fuso, data_consulenza,
-    iso_ora_italiana, now_italy_naive,
+    finestra_ingresso, iso_ora_italiana, now_italy_naive,
 )
 from app.utils.booking_requests import (
     RichiestaNonValida, accetta_richiesta, annulla_blocco, avvisa_annullamento,
@@ -787,8 +787,12 @@ async def get_upcoming_bookings(request: Request):
             other_user_id = booking.consultant_user_id if is_client else booking.client_user_id
             other_user = session.get(User, other_user_id)
             
-            # Determina lo stato per l'UI
-            can_join = time_until <= 10 and time_until >= -10  # Da 10 min prima a 10 min dopo inizio
+            # Si entra da 10 minuti prima dell'inizio fino a 5 minuti dopo la
+            # fine, non solo nei primi 10 minuti di call: una consulenza dura
+            # un'ora e chi arriva al quarto d'ora deve ancora poter entrare.
+            # Recensione e contestazione chiudono la call anche dentro l'orario.
+            motivo_chiusura = motivo_chiusura_call(session, booking.id)
+            can_join = finestra_ingresso(booking, now) == "aperta" and motivo_chiusura is None
             has_joined = booking.client_joined_at is not None if is_client else booking.consultant_joined_at is not None
             other_joined = booking.consultant_joined_at is not None if is_client else booking.client_joined_at is not None
             can_start_call = has_joined and other_joined
@@ -800,8 +804,6 @@ async def get_upcoming_bookings(request: Request):
                 other_joined = True
                 can_start_call = True
             
-            motivo_chiusura = motivo_chiusura_call(session, booking.id)
-
             in_attesa = booking.status == 'awaiting_acceptance'
             elenco = richieste if in_attesa else upcoming
             if len(elenco) >= (MAX_RICHIESTE_PROFILO if in_attesa else MAX_APPUNTAMENTI_PROFILO):
@@ -984,6 +986,18 @@ async def join_booking(booking_id: int, request: Request):
             if motivo_chiusura_call(session, booking_id):
                 raise HTTPException(status_code=403, detail="Questa consulenza è chiusa")
 
+            # La presenza (joined_at) decide rimborso e compenso. Segnarla fuori
+            # orario — anche solo chiamando questo indirizzo — faceva risultare
+            # presente chi non c'era, oppure permetteva di entrare ore prima.
+            fase = finestra_ingresso(booking)
+            if fase == "presto":
+                raise HTTPException(
+                    status_code=403,
+                    detail="Puoi entrare nella videochiamata da 10 minuti prima dell'inizio",
+                )
+            if fase == "chiusa":
+                raise HTTPException(status_code=403, detail="Il tempo della consulenza è scaduto")
+
             # Determina il ruolo e salva il timestamp
             is_client = booking.client_user_id == current_user.id
             now = now_italy_naive()
@@ -1112,10 +1126,14 @@ async def get_agora_token(booking_id: int, request: Request):
 
         # La finestra della call va verificata anche qui, non solo dal browser:
         # senza questo controllo il token si poteva ottenere (e rientrare nel
-        # canale) a consulenza finita, chiamando l'endpoint direttamente.
-        end_time_obj = datetime.strptime(booking.end_time, "%H:%M").time()
-        call_deadline = datetime.combine(data_consulenza(booking.booking_date), end_time_obj) + timedelta(minutes=5)
-        if now_italy_naive() >= call_deadline:
+        # canale) a consulenza finita, o anche ore prima dell'orario.
+        fase = finestra_ingresso(booking)
+        if fase == "presto":
+            raise HTTPException(
+                status_code=403,
+                detail="Puoi entrare nella videochiamata da 10 minuti prima dell'inizio",
+            )
+        if fase == "chiusa":
             raise HTTPException(status_code=403, detail="Il tempo della consulenza è scaduto")
 
         # Recensione o contestazione chiudono la call (stessa regola di
@@ -1211,6 +1229,13 @@ async def call_page(booking_id: int, request: Request):
         motivo = motivo_chiusura_call(session, booking_id)
         if motivo:
             return RedirectResponse(url=f"/profile?call_closed={motivo}", status_code=303)
+
+        # Fuori orario la pagina non si apre: la home e un link diretto non
+        # devono far partire microfono e videocamera un giorno prima, né dopo
+        # la fine. Dentro la fascia (10 minuti prima, 5 dopo la fine) si entra.
+        fase = finestra_ingresso(booking)
+        if fase != "aperta":
+            return RedirectResponse(url=f"/profile?call_closed={fase}", status_code=303)
 
         # Recupera nomi reali per i label video
         client_user = session.get(User, booking.client_user_id)

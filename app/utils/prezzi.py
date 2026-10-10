@@ -21,6 +21,11 @@ SPESE_SERVIZIO = Decimal("1.99")
 # Tariffa oraria minima che un consulente puo' impostare
 PREZZO_ORARIO_MINIMO = 20
 
+# Commissione della piattaforma sul valore della consulenza, se il consulente
+# non ne ha una sua. Le spese di servizio non c'entrano: restano a Ispiramy
+# per intero, oltre a questa percentuale.
+COMMISSIONE_DEFAULT = 20
+
 CENTESIMO = Decimal("0.01")
 
 
@@ -50,3 +55,28 @@ def totale_pagato(booking) -> Decimal:
 def centesimi(importo) -> int:
     """L'importo in centesimi, come lo vogliono Stripe e i calcoli interni."""
     return int(_decimale(importo) * 100)
+
+
+def percentuale_commissione(consulente, default: int = COMMISSIONE_DEFAULT) -> int:
+    """Percentuale trattenuta da Ispiramy. Se manca, il 20%.
+
+    Zero è una percentuale vera (nessuna commissione): non va scambiata per
+    "non impostata", altrimenti un consulente a commissione zero pagherebbe
+    comunque il 20%.
+    """
+    valore = getattr(consulente, "platform_fee_percent", None) if consulente is not None else None
+    if valore is None:
+        return default
+    return int(valore)
+
+
+def compenso_consulente_centesimi(prezzo, percentuale: int = COMMISSIONE_DEFAULT) -> int:
+    """Quanto trasferire al consulente, in centesimi.
+
+    Si calcola sul valore della consulenza, mai sulle spese di servizio.
+    I centesimi passano da Decimal: `int(float(19.99) * 100)` vale 1998 e
+    il consulente si ritrovava un centesimo in meno a ogni compenso.
+    """
+    lordo = centesimi(prezzo)
+    commissione = (lordo * int(percentuale)) // 100
+    return lordo - commissione

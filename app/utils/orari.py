@@ -10,7 +10,7 @@ database in UTC (il default di Render) le 15:30 italiane diventano 13:30.
 SQLite invece toglie semplicemente il fuso: in locale e nei test il problema
 non si vede.
 """
-from datetime import date, datetime
+from datetime import date, datetime, time, timedelta
 from typing import Optional
 from zoneinfo import ZoneInfo
 
@@ -28,6 +28,13 @@ ORE_PREAVVISO_PRENOTAZIONE = 2
 # Fino a quando cliente e consulente possono annullare una consulenza gia'
 # confermata (dopo, chi non si presenta viene gestito dal controllo assenze).
 ORE_LIMITE_ANNULLAMENTO = 2
+
+# La videochiamata si apre 10 minuti prima dell'orario prenotato e resta
+# aperta fino a 5 minuti dopo la fine: lo stesso margine con cui la call si
+# chiude da sola. Fuori da questa fascia non si entra e non si segna la
+# presenza (è quella che decide rimborsi e compenso).
+MINUTI_ANTICIPO_INGRESSO = 10
+MINUTI_MARGINE_FINE_CALL = 5
 
 
 # Come si scrive un orario a chi lo legge. Il sito lavora in ora italiana:
@@ -57,6 +64,52 @@ def data_consulenza(valore) -> date:
     if isinstance(valore, datetime):
         return valore.date()
     return valore
+
+
+def _come_orario(valore) -> time:
+    """Un orario di prenotazione, che dal database può arrivare stringa o time."""
+    if isinstance(valore, time):
+        return valore.replace(microsecond=0)
+    testo = str(valore).strip()
+    for formato in ("%H:%M:%S", "%H:%M"):
+        try:
+            return datetime.strptime(testo, formato).time()
+        except ValueError:
+            continue
+    raise ValueError(f"orario non valido: {valore}")
+
+
+def inizio_consulenza(booking) -> datetime:
+    """Inizio della consulenza, in ora italiana senza fuso."""
+    return datetime.combine(data_consulenza(booking.booking_date), _come_orario(booking.start_time))
+
+
+def fine_consulenza(booking) -> datetime:
+    """Fine della consulenza. Se l'orario di fine è dopo la mezzanotte, è il giorno dopo."""
+    if getattr(booking, "end_time", None):
+        inizio = inizio_consulenza(booking)
+        fine = datetime.combine(data_consulenza(booking.booking_date), _come_orario(booking.end_time))
+        if fine <= inizio:
+            fine += timedelta(days=1)
+        return fine
+    return inizio_consulenza(booking) + timedelta(minutes=int(getattr(booking, "duration_minutes", None) or 60))
+
+
+def finestra_ingresso(booking, adesso: Optional[datetime] = None) -> str:
+    """Quando si può entrare in videochiamata: 'presto', 'aperta' o 'chiusa'.
+
+    Aperta da 10 minuti prima dell'inizio fino a 5 minuti dopo la fine.
+    """
+    adesso = adesso or now_italy_naive()
+    if adesso.tzinfo is not None:
+        adesso = adesso.astimezone(ITALY_TZ).replace(tzinfo=None)
+    inizio = inizio_consulenza(booking)
+    fine = fine_consulenza(booking)
+    if adesso < inizio - timedelta(minutes=MINUTI_ANTICIPO_INGRESSO):
+        return "presto"
+    if adesso >= fine + timedelta(minutes=MINUTI_MARGINE_FINE_CALL):
+        return "chiusa"
+    return "aperta"
 
 
 def now_italy_naive() -> datetime:

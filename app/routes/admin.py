@@ -18,7 +18,7 @@ from app.utils.verifica_categorie import id_categorie_verificate, scrivi_categor
 from app.routes.auth import verify_token
 from app.logger_config import logger
 from app.utils.orari import now_italy_naive
-from app.utils.prezzi import centesimi, totale_pagato
+from app.utils.prezzi import centesimi, percentuale_commissione, totale_pagato
 
 router = APIRouter(prefix="/admin")
 
@@ -425,7 +425,7 @@ async def admin_update_dispute_status(dispute_id: int, data: DisputeStatusReques
                     # Due basi diverse: al cliente si rimborsa anche la parte di
                     # spese di servizio che ha pagato, al consulente spetta solo
                     # la quota sul valore della consulenza.
-                    amount_cents = int(float(booking.price) * 100)
+                    amount_cents = centesimi(booking.price)
                     totale_cents = centesimi(totale_pagato(booking))
 
                     if booking.payment_method == "paypal" and booking.paypal_capture_id:
@@ -448,7 +448,7 @@ async def admin_update_dispute_status(dispute_id: int, data: DisputeStatusReques
                                 consultant = session.get(User, booking.consultant_user_id)
                                 
                                 if consultant and consultant.paypal_email:
-                                    fee_pct = consultant.platform_fee_percent if consultant.platform_fee_percent else 20
+                                    fee_pct = percentuale_commissione(consultant)
                                     transfer_amount = remaining_cents - int(remaining_cents * fee_pct / 100)
                                     
                                     if transfer_amount > 0:
@@ -503,7 +503,7 @@ async def admin_update_dispute_status(dispute_id: int, data: DisputeStatusReques
                                 consultant = session.get(User, booking.consultant_user_id)
                                 
                                 if consultant and consultant.stripe_account_id:
-                                    fee_pct = consultant.platform_fee_percent if consultant.platform_fee_percent else 20
+                                    fee_pct = percentuale_commissione(consultant)
                                     transfer_amount = remaining_cents - int(remaining_cents * fee_pct / 100)
                                     
                                     if transfer_amount > 0:

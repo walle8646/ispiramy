@@ -20,6 +20,7 @@ from app.database import engine, DATABASE_URL
 from app.models import Notification, Booking, User, Review, Dispute
 from app.logger_config import logger
 from app.utils.orari import con_fuso, now_italy_naive
+from app.utils.prezzi import compenso_consulente_centesimi, percentuale_commissione
 from app.utils.notification_service import send_notification
 import os
 
@@ -308,18 +309,19 @@ def release_booking_payment(booking_id: int):
             # Recupera consulente
             consultant = session.get(User, booking.consultant_user_id)
             
-            # Calcola importo da trasferire (totale - fee piattaforma)
-            amount_cents = int(float(booking.price) * 100)
-            fee_percent = consultant.platform_fee_percent if consultant.platform_fee_percent else 20
-            transfer_amount = amount_cents - int(amount_cents * fee_percent / 100)
+            # Compenso sul valore della consulenza, spese di servizio escluse.
+            # I centesimi non passano da float: 19,99 € diventerebbero 19,98.
+            fee_percent = percentuale_commissione(consultant)
+            transfer_amount = compenso_consulente_centesimi(booking.price, fee_percent)
             
             if booking.payment_method == "paypal":
                 # === PayPal Payout ===
+                # Senza conto non si segna "paid": il pagamento resta trattenuto
+                # e il prossimo giro (o il riavvio) riprova, quando il consulente
+                # avrà indicato l'email PayPal.
                 if not consultant or not consultant.paypal_email:
                     logger.error(f"❌ Booking {booking_id}: consulente senza email PayPal, impossibile trasferire")
-                    booking.payment_status = "paid"
-                    session.add(booking)
-                    session.commit()
+                    riprova_rilascio(booking_id)
                     return
                 
                 try:
@@ -350,16 +352,19 @@ def release_booking_payment(booking_id: int):
                         )
                     else:
                         logger.error(f"❌ Booking {booking_id}: PayPal payout fallito")
+                        riprova_rilascio(booking_id)
                         
                 except Exception as e:
                     logger.error(f"❌ Booking {booking_id}: errore PayPal Payout: {e}")
+                    riprova_rilascio(booking_id)
             else:
                 # === Stripe Transfer ===
+                # Come per PayPal: senza conto il denaro resta trattenuto e si
+                # riprova. Segnarlo "paid" lo faceva sparire dai recuperi e il
+                # consulente non veniva mai pagato.
                 if not consultant or not consultant.stripe_account_id:
                     logger.error(f"❌ Booking {booking_id}: consulente senza account Stripe, impossibile trasferire")
-                    booking.payment_status = "paid"
-                    session.add(booking)
-                    session.commit()
+                    riprova_rilascio(booking_id)
                     return
                 
                 try:
@@ -393,9 +398,32 @@ def release_booking_payment(booking_id: int):
                     
                 except Exception as e:
                     logger.error(f"❌ Booking {booking_id}: errore Stripe Transfer: {e}")
+                    riprova_rilascio(booking_id)
                 
     except Exception as e:
         logger.error(f"❌ Errore rilascio pagamento booking {booking_id}: {e}")
+
+
+def riprova_rilascio(booking_id: int) -> None:
+    """Il tentativo di oggi non è riuscito: se ne programma un altro fra 6 ore.
+
+    Il rilascio è un appuntamento unico. Se il consulente non ha ancora il
+    conto, senza un nuovo appuntamento il compenso resterebbe fermo fino al
+    prossimo riavvio del server.
+    """
+    try:
+        quando = datetime.now(ITALY_TZ) + timedelta(hours=6)
+        scheduler.add_job(
+            release_booking_payment,
+            trigger=DateTrigger(run_date=quando),
+            args=[booking_id],
+            id=f"payment_release_{booking_id}",
+            replace_existing=True,
+            misfire_grace_time=3600,
+        )
+        logger.info(f"🔁 Rilascio booking {booking_id} riprogrammato per {quando}")
+    except Exception as e:
+        logger.error(f"❌ Impossibile riprovare il rilascio del booking {booking_id}: {e}")
 
 
 def schedule_payment_release(booking_id: int, consultation_end_datetime: datetime):
