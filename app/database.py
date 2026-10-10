@@ -53,6 +53,7 @@ def create_db_and_tables():
     )
     
     SQLModel.metadata.create_all(engine)
+    ensure_tabelle_nuove()
     ensure_added_columns()
     ensure_column_widths()
     ensure_check_constraints()
@@ -236,6 +237,29 @@ def ensure_check_constraints(eng=None) -> list[str]:
                 "Applicare a mano sql_update/migration_add_booking_acceptance_postgres.sql."
             )
     return aggiornati
+
+
+def ensure_tabelle_nuove(eng=None) -> list[str]:
+    """Crea le tabelle arrivate dopo che il database era già in produzione.
+
+    create_all() le crea, ma non lascia traccia: se non lo fa, la segnalazione
+    risponde errore e il conteggio nel menu admin resta a zero senza che si
+    capisca perché. Se la tabella manca ancora, la creiamo e lo scriviamo nel log.
+    """
+    from sqlalchemy import inspect
+
+    from app.models import CommunityReport
+
+    eng = eng or engine
+    nome = CommunityReport.__tablename__
+    if nome in set(inspect(eng).get_table_names()):
+        return []
+    CommunityReport.__table__.create(eng, checkfirst=True)
+    logger.warning(
+        f"🛠️ Schema: creata la tabella mancante {nome} "
+        "(create_all non l'aveva aggiunta al database già esistente)"
+    )
+    return [nome]
 
 
 def ensure_added_columns(eng=None) -> list[str]:
