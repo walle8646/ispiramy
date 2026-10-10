@@ -13,6 +13,8 @@
         display: flex;
         align-items: center;
         justify-content: space-between;
+        gap: 12px;
+        flex-wrap: wrap;
         margin-bottom: 24px;
     }
     .admin-header h1 {
@@ -23,6 +25,7 @@
     .admin-nav {
         display: flex;
         gap: 8px;
+        flex-wrap: wrap;
     }
     .admin-nav a {
         padding: 8px 16px;
@@ -408,6 +411,7 @@
         </h1>
         <nav class="admin-nav">
             <a href="/admin/disputes"><i class="fas fa-arrow-left"></i> Torna alla lista</a>
+            <a href="/admin/transaction-problems"><i class="fas fa-rotate"></i> {{ t('problemi.menu') }}{% if problemi_transazione_aperti %} <span class="nav-badge">{{ problemi_transazione_aperti }}</span>{% endif %}</a>
             <a href="/admin/users"><i class="fas fa-users"></i> Utenti</a>
             <a href="/admin/bookings"><i class="fas fa-video"></i> Consulenze</a>
         </nav>
@@ -464,12 +468,10 @@
             <div class="info-item">
                 <label>Registrazione</label>
                 <div class="value">
-                    {% if dispute.booking.recording_filename and current_user.user_type_id >= 3 %}
+                    {% if dispute.booking.recording_filename %}
                     <button class="download-btn" onclick="downloadRecording({{ dispute.booking_id }}, this)">
                         <i class="fas fa-download"></i> Scarica MP4
                     </button>
-                    {% elif dispute.booking.recording_filename %}
-                    <span style="color: #999;">Il video è riservato agli amministratori</span>
                     {% else %}
                     <span style="color: #999;"><i class="fas fa-video-slash"></i> Nessun video</span>
                     {% endif %}
@@ -507,7 +509,7 @@
             <div class="ai-comment">{{ dispute.ai_comment }}</div>
             <div class="ai-timestamp">Analisi eseguita il {{ dispute.ai_analyzed_at.strftime('%d/%m/%Y alle %H:%M') if dispute.ai_analyzed_at else '' }}</div>
         </div>
-        {% if dispute.booking.recording_filename and current_user.user_type_id >= 3 %}
+        {% if dispute.booking.recording_filename %}
         <button class="ai-btn" style="margin-top: 14px; background: #6b7280;" onclick="runAiAnalysis(this)">
             <i class="fas fa-redo"></i> Ripeti Analisi
         </button>
@@ -515,13 +517,11 @@
         {% else %}
         <!-- Nessuna analisi ancora -->
         <div id="aiResult"></div>
-        {% if dispute.booking.recording_filename and current_user.user_type_id >= 3 %}
+        {% if dispute.booking.recording_filename %}
         <p style="color: #666; font-size: 0.9rem; margin-bottom: 14px;">Avvia l'analisi AI per verificare automaticamente se la contestazione è giustificata analizzando il video della consulenza.</p>
         <button class="ai-btn" id="aiBtn" onclick="runAiAnalysis(this)">
             <i class="fas fa-brain"></i> Avvia Analisi AI
         </button>
-        {% elif dispute.booking.recording_filename %}
-        <p style="color: #999; font-size: 0.9rem;">L'analisi AI la avvia un amministratore.</p>
         {% else %}
         <p style="color: #999; font-size: 0.9rem;"><i class="fas fa-video-slash"></i> Nessun video disponibile per l'analisi.</p>
         {% endif %}

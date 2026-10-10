@@ -461,6 +461,33 @@ class Dispute(SQLModel, table=True):
     updated_at: Optional[datetime] = Field(default=None)
 
 
+class TransactionProblem(SQLModel, table=True):
+    """Un movimento di denaro che non è andato a buon fine e va riprovato.
+
+    Una riga aperta è un compenso, un rimborso o un trasferimento ancora fermo.
+    Quando il movimento riesce, o qualcuno lo chiude a mano con una nota, la
+    riga passa a 'resolved' e non si riprova più: così non si paga due volte.
+    """
+    __tablename__ = "transaction_problems"
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    booking_id: int = Field(foreign_key="booking.id", index=True)
+    # payout = compenso intero, refund = rimborso al cliente, transfer = quota
+    # del consulente rimasta dopo un rimborso parziale
+    kind: str = Field(index=True)
+    status: str = Field(default="open", index=True)  # open, resolved
+    amount_cents: int = Field(default=0)
+    error_reason: str = Field(default="", max_length=2000)
+    attempts: int = Field(default=0)
+    last_attempt_at: Optional[datetime] = Field(default=None)
+    next_attempt_at: Optional[datetime] = Field(default=None)
+    resolution_note: Optional[str] = Field(default=None, max_length=2000)
+    resolved_at: Optional[datetime] = Field(default=None)
+    resolved_by_user_id: Optional[int] = Field(default=None, foreign_key="user.id")
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: Optional[datetime] = Field(default=None)
+
+
 class DisputeMessage(SQLModel, table=True):
     """Messaggi nello scambio di una contestazione"""
     __tablename__ = "dispute_messages"

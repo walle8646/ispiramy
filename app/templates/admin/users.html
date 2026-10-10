@@ -26,6 +26,7 @@
     .admin-nav {
         display: flex;
         gap: 8px;
+        flex-wrap: wrap;
     }
     .admin-nav a {
         padding: 8px 16px;
@@ -275,6 +276,7 @@
         <nav class="admin-nav">
             <a href="/admin"><i class="fas fa-chart-bar"></i> Dashboard</a>
             <a href="/admin/disputes"><i class="fas fa-exclamation-triangle"></i> Contestazioni</a>
+            <a href="/admin/transaction-problems"><i class="fas fa-rotate"></i> {{ t('problemi.menu') }}{% if problemi_transazione_aperti %} <span class="nav-badge">{{ problemi_transazione_aperti }}</span>{% endif %}</a>
             <a href="/admin/social"><i class="fas fa-bullhorn"></i> Social</a>
             <a href="/admin/users" class="active"><i class="fas fa-users"></i> Utenti</a>
             <a href="/admin/bookings"><i class="fas fa-video"></i> Consulenze</a>

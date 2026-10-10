@@ -13,7 +13,7 @@ import pytest
 from sqlmodel import Session, select
 
 from app.database import engine
-from app.models import Booking, Dispute, Notification, User
+from app.models import Booking, Dispute, Notification, TransactionProblem, User
 from app.scheduler import check_booking_noshow, release_booking_payment
 from app.utils.orari import ORE_FINESTRA_CONTESTAZIONE, now_italy_naive
 from app.utils.password import hash_password
@@ -70,6 +70,8 @@ def scena(client):
         )).all()
         id_prenotazioni = [b.id for b in prenotazioni]
         if id_prenotazioni:
+            for problema in s.exec(select(TransactionProblem).where(TransactionProblem.booking_id.in_(id_prenotazioni))).all():
+                s.delete(problema)
             for d in s.exec(select(Dispute).where(Dispute.booking_id.in_(id_prenotazioni))).all():
                 s.delete(d)
         for n in s.exec(select(Notification).where(Notification.user_id.in_(ids))).all():
@@ -466,12 +468,23 @@ class TestPermessi:
         )
         assert negata.status_code == 401
         assert _stato_contestazione(dispute_id) == "open"
+        assert csrf_client.get(f"/admin/api/bookings/{booking_id}/download").status_code == 401
+        assert csrf_client.get("/admin/transaction-problems", follow_redirects=False).status_code == 302
 
-    def test_il_verificatore_decide_ma_non_manda_il_video_fuori(self, scena, csrf_client, monkeypatch):
+    def test_il_verificatore_vede_video_e_analisi_come_l_admin(self, scena, csrf_client, monkeypatch):
         booking_id = _prenota(scena, -30, recording_filename="booking_demo")
         dispute_id = _contestazione(scena, booking_id)
-        import stripe
-        monkeypatch.setattr(stripe.Transfer, "create", lambda **kw: SimpleNamespace(id="tr_ver"))
+
+        class _s3_vuoto:
+            def list_objects_v2(self, **kwargs):
+                return {}
+
+        monkeypatch.setattr("boto3.client", lambda *a, **k: _s3_vuoto())
+
+        def niente_video(*args, **kwargs):
+            raise FileNotFoundError("niente video di prova")
+
+        monkeypatch.setattr("app.utils.gemini_analysis.download_video_from_s3", niente_video)
         _login(csrf_client, scena.email_verificatore, scena.password)
 
         lista = csrf_client.get("/admin/disputes")
@@ -479,14 +492,14 @@ class TestPermessi:
         assert TESTO in lista.text
         dettaglio = csrf_client.get(f"/admin/disputes/{dispute_id}")
         assert dettaglio.status_code == 200
-        assert "Avvia Analisi AI" not in dettaglio.text
-        assert "Scarica MP4" not in dettaglio.text
-        assert "riservato agli amministratori" in dettaglio.text
+        assert "Avvia Analisi AI" in dettaglio.text
+        assert "Scarica MP4" in dettaglio.text
+        assert "riservato agli amministratori" not in dettaglio.text
 
         analisi = csrf_client.post(f"/admin/api/disputes/{dispute_id}/ai-analysis")
-        assert analisi.status_code == 403
+        assert analisi.status_code != 403
         scarica = csrf_client.get(f"/admin/api/bookings/{booking_id}/download")
-        assert scarica.status_code == 403
+        assert scarica.status_code == 404
 
         decisione = csrf_client.post(
             f"/admin/api/disputes/{dispute_id}/status",

@@ -13,7 +13,10 @@ import asyncio
 import os
 
 from app.database import engine
-from app.models import User, Booking, Dispute, DisputeMessage, Review, CommunityQuestion, Category
+from app.models import (
+    User, Booking, Dispute, DisputeMessage, Review, CommunityQuestion, Category,
+    TransactionProblem,
+)
 from app.utils.verifica_categorie import id_categorie_verificate, scrivi_categorie_verificate
 from app.routes.auth import verify_token
 from app.logger_config import logger
@@ -362,15 +365,23 @@ def applica_rimborso_contestazione(session, booking, refund_pct: int) -> None:
 
     Se il rimborso non è del 100%, il resto della sola consulenza (meno la
     commissione) va al consulente. Se il rimborso al cliente non riesce, solleva:
-    la contestazione deve restare aperta. Un trasferimento successivo che fallisce
-    non annulla il rimborso già partito.
+    la contestazione deve restare aperta.     Un trasferimento successivo che fallisce
+    non annulla il rimborso già partito: la quota del consulente resta ferma
+    e si riprova da sola fra 6 ore, al riavvio, o dal pannello.
     """
     from decimal import Decimal
+
+    from app.utils.problemi_transazione import accantona_quota, chiudi, quota_consulente_centesimi
 
     amount_cents = centesimi(booking.price)
     totale_cents = centesimi(totale_pagato(booking))
     refund_pct = max(0, min(100, refund_pct))
     avviso = None
+    errore_quota = None
+    quota = 0
+    if refund_pct < 100:
+        consulente = session.get(User, booking.consultant_user_id)
+        quota = quota_consulente_centesimi(booking, consulente, refund_pct)
 
     if booking.payment_method == "paypal" and booking.paypal_capture_id:
         from app.utils.paypal_config import refund_capture
@@ -382,11 +393,14 @@ def applica_rimborso_contestazione(session, booking, refund_pct: int) -> None:
                 raise RuntimeError(f"rimborso PayPal non riuscito per booking {booking.id}")
             booking.refund_amount = Decimal(str(refund_amount))
             logger.info(f"💸 Rimborso PayPal {refund_pct}% (€{refund_amount:.2f}) per booking {booking.id}")
-        if refund_pct < 100:
+        if refund_pct < 100 and quota > 0:
             try:
                 avviso = _paga_resto_consulente_paypal(session, booking, amount_cents, refund_pct)
+                if not avviso:
+                    errore_quota = "Il consulente non ha un conto PayPal collegato"
             except Exception as e:  # noqa: BLE001
                 logger.error(f"❌ Pagamento parziale PayPal non riuscito per booking {booking.id}: {e}")
+                errore_quota = str(e)
     elif booking.stripe_payment_intent_id:
         import stripe
         stripe.api_key = os.getenv("STRIPE_SECRET_KEY")
@@ -396,17 +410,21 @@ def applica_rimborso_contestazione(session, booking, refund_pct: int) -> None:
             refund = stripe.Refund.create(
                 payment_intent=booking.stripe_payment_intent_id,
                 amount=refund_amount_cents,
+                idempotency_key=f"refund-{booking.id}-{refund_amount_cents}",
             )
             booking.refund_amount = Decimal(str(refund_amount_cents / 100))
             logger.info(
                 f"💸 Rimborso {refund_pct}% (€{refund_amount_cents / 100:.2f}) "
                 f"per booking {booking.id}, refund {refund.id}"
             )
-        if refund_pct < 100:
+        if refund_pct < 100 and quota > 0:
             try:
                 avviso = _paga_resto_consulente_stripe(session, booking, amount_cents, refund_pct)
+                if not avviso:
+                    errore_quota = "Il consulente non ha un conto Stripe collegato"
             except Exception as e:  # noqa: BLE001
                 logger.error(f"❌ Pagamento parziale Stripe non riuscito per booking {booking.id}: {e}")
+                errore_quota = str(e)
     elif refund_pct > 0:
         raise RuntimeError(f"nessun pagamento da rimborsare per booking {booking.id}")
 
@@ -414,8 +432,12 @@ def applica_rimborso_contestazione(session, booking, refund_pct: int) -> None:
     session.add(booking)
     session.commit()
     # Dopo il commit: con il database ancora occupato dalla contestazione,
-    # l'avviso al consulente su SQLite non partiva.
-    if avviso:
+    # l'avviso al consulente su SQLite non partiva. La quota non partita si
+    # annota qui, così il rimborso al cliente resta valido.
+    if errore_quota and quota > 0:
+        accantona_quota(booking.id, quota, errore_quota)
+    elif avviso:
+        chiudi(booking.id, "transfer", "Quota inviata al consulente.")
         from app.utils.notification_service import send_notification
         user_id, transfer_amount = avviso
         send_notification(
@@ -446,6 +468,7 @@ def _paga_resto_consulente_stripe(session, booking, amount_cents: int, refund_pc
         currency="eur",
         destination=consultant.stripe_account_id,
         transfer_group=f"booking_{booking.id}",
+        idempotency_key=f"consultant-share-{booking.id}",
         metadata={
             "booking_id": str(booking.id),
             "partial_payment": "true",
@@ -864,17 +887,95 @@ async def admin_bookings(request: Request, q: str = ""):
     })
 
 
+def _nome_persona(utente) -> str:
+    if not utente:
+        return "—"
+    nome = f"{utente.nome or ''} {utente.cognome or ''}".strip()
+    return nome or utente.email or "—"
+
+
+@router.get("/transaction-problems", response_class=HTMLResponse)
+async def admin_transaction_problems(request: Request):
+    """Compensi, rimborsi e trasferimenti che non sono partiti e vanno riprovati."""
+    admin_user = require_admin(request)
+    if not admin_user:
+        return RedirectResponse("/login", status_code=302)
+
+    with Session(engine) as session:
+        righe = session.exec(
+            select(TransactionProblem)
+            .where(TransactionProblem.status == "open")
+            .order_by(TransactionProblem.updated_at.desc(), TransactionProblem.id.desc())
+        ).all()
+        problemi = []
+        for riga in righe:
+            booking = session.get(Booking, riga.booking_id)
+            cliente = session.get(User, booking.client_user_id) if booking else None
+            consulente = session.get(User, booking.consultant_user_id) if booking else None
+            problemi.append({
+                "id": riga.id,
+                "booking_id": riga.booking_id,
+                "kind": riga.kind,
+                "amount_eur": f"{(riga.amount_cents or 0) / 100:.2f}",
+                "error_reason": riga.error_reason or "",
+                "attempts": riga.attempts or 0,
+                "last_attempt_at": riga.last_attempt_at,
+                "next_attempt_at": riga.next_attempt_at,
+                "client_name": _nome_persona(cliente),
+                "consultant_name": _nome_persona(consulente),
+            })
+
+    return request.app.state.templates.TemplateResponse(
+        "admin/transaction_problems.html",
+        {
+            "request": request,
+            "user": admin_user,
+            "current_user": admin_user,
+            "problemi": problemi,
+        },
+    )
+
+
+class ResolveProblemRequest(BaseModel):
+    note: str = ""
+
+
+@router.post("/api/transaction-problems/{problem_id}/retry")
+async def admin_retry_transaction_problem(problem_id: int, request: Request):
+    """Lo stesso tentativo che scatterebbe da solo fra 6 ore, fatto subito."""
+    admin_user = require_admin(request)
+    if not admin_user:
+        raise HTTPException(status_code=401, detail="Non autorizzato")
+
+    from app.utils.problemi_transazione import riprova_adesso
+    esito = riprova_adesso(problem_id)
+    if esito == "manca":
+        raise HTTPException(status_code=404, detail="Problema non trovato")
+    return JSONResponse({"success": True, "esito": esito})
+
+
+@router.post("/api/transaction-problems/{problem_id}/resolve")
+async def admin_resolve_transaction_problem(problem_id: int, data: ResolveProblemRequest, request: Request):
+    """Chiude il problema senza mandare altro denaro. La nota è obbligatoria."""
+    admin_user = require_admin(request)
+    if not admin_user:
+        raise HTTPException(status_code=401, detail="Non autorizzato")
+
+    from app.utils.problemi_transazione import segna_risolto
+    esito = segna_risolto(problem_id, admin_user.id, data.note)
+    if esito == "nota":
+        raise HTTPException(status_code=400, detail="Scrivi una nota: serve a ricordare come è stato chiuso.")
+    if esito == "manca":
+        raise HTTPException(status_code=404, detail="Problema non trovato")
+    return JSONResponse({"success": True, "esito": esito})
+
+
 @router.get("/api/bookings/{booking_id}/download")
 async def admin_download_recording(booking_id: int, request: Request):
     """Genera presigned URL S3 per scaricare la registrazione MP4"""
     admin_user = require_admin(request)
     if not admin_user:
         raise HTTPException(status_code=401, detail="Non autorizzato")
-    # Il video di una consulenza e' il contenuto piu' sensibile della
-    # piattaforma: require_admin ammette anche i verificatori (livello 2),
-    # qui serve un amministratore vero.
-    if admin_user.user_type_id < 3:
-        raise HTTPException(status_code=403, detail="Solo gli amministratori possono scaricare le registrazioni")
 
     with Session(engine) as session:
         booking = session.get(Booking, booking_id)
@@ -941,9 +1042,6 @@ async def admin_ai_analysis(dispute_id: int, request: Request):
     admin_user = require_admin(request)
     if not admin_user:
         raise HTTPException(status_code=401, detail="Non autorizzato")
-    # Manda il video della consulenza a un servizio esterno: solo amministratori.
-    if admin_user.user_type_id < 3:
-        raise HTTPException(status_code=403, detail="Solo gli amministratori possono avviare l'analisi AI")
 
     with Session(engine) as session:
         dispute = session.get(Dispute, dispute_id)

@@ -47,7 +47,8 @@ def create_db_and_tables():
         Booking,  # ✅ Gestione prenotazioni
         ConsultationOffer,  # ✅ Gestione offerte consulenze
         ConfigurationProperty,  # ✅ Configurazione globale
-        FavoriteConsultant  # ✅ Consulenti preferiti
+        FavoriteConsultant,  # ✅ Consulenti preferiti
+        TransactionProblem,  # ✅ Movimenti di denaro da riprovare
     )
     
     SQLModel.metadata.create_all(engine)
