@@ -18,7 +18,7 @@ import pytest
 from sqlmodel import Session, select
 
 from app.database import engine
-from app.models import Booking, Dispute, User
+from app.models import Booking, Dispute, Review, User
 from app.scheduler import release_booking_payment, check_booking_noshow
 from app.utils.orari import finestra_ingresso, now_italy_naive
 from app.utils.password import hash_password
@@ -120,6 +120,8 @@ def persone(client):
             )).all():
                 for d in s.exec(select(Dispute).where(Dispute.booking_id == b.id)).all():
                     s.delete(d)
+                for r in s.exec(select(Review).where(Review.booking_id == b.id)).all():
+                    s.delete(r)
                 s.delete(b)
             u = s.get(User, uid)
             if u:
@@ -163,6 +165,19 @@ def _crea(persone, minuti_all_inizio, durata=60, **extra):
         s.commit()
         s.refresh(b)
         return b.id
+
+
+def _recensisci(booking_id, persone):
+    with Session(engine) as s:
+        s.add(Review(
+            booking_id=booking_id,
+            reviewer_user_id=persone.cliente,
+            consultant_user_id=persone.consulente,
+            rating_helpful=5,
+            rating_prepared=5,
+            rating_communication=5,
+        ))
+        s.commit()
 
 
 def _stato(booking_id):
@@ -243,6 +258,7 @@ class TestRilascioERimborso:
 
         import stripe
         monkeypatch.setattr(stripe.Transfer, "create", crea)
+        _recensisci(booking_id, persone)
 
         release_booking_payment(booking_id)
 
@@ -265,6 +281,7 @@ class TestRilascioERimborso:
         chiamate = []
         import stripe
         monkeypatch.setattr(stripe.Transfer, "create", lambda **kw: chiamate.append(kw))
+        _recensisci(booking_id, persone)
 
         release_booking_payment(booking_id)
 
@@ -361,3 +378,186 @@ class TestRilascioERimborso:
         assert "amount" not in rimborsi[0]
         assert _stato(booking_id)[0] == "no_show"
         assert _stato(booking_id)[1] == "refunded"
+
+    def test_senza_recensione_il_compenso_resta_fermo(self, persone, monkeypatch):
+        """Prima partiva 48 ore dopo la fine, anche se nessuno aveva recensito."""
+        booking_id = _crea(persone, -24 * 60)
+        chiamate = []
+        import stripe
+        monkeypatch.setattr(stripe.Transfer, "create", lambda **kw: chiamate.append(kw))
+
+        release_booking_payment(booking_id)
+
+        assert chiamate == []
+        assert _stato(booking_id)[1] == "held"
+
+    def test_la_recensione_fa_partire_il_compenso(self, persone, csrf_client, monkeypatch):
+        booking_id = _crea(
+            persone, -120, status="completed", call_started_at=now_italy_naive(),
+        )
+        chiamate = []
+
+        def crea(**kwargs):
+            chiamate.append(kwargs)
+            return SimpleNamespace(id="tr_dopo_recensione")
+
+        import stripe
+        monkeypatch.setattr(stripe.Transfer, "create", crea)
+        _login(csrf_client, persone.email_cliente, persone.password)
+
+        risposta = csrf_client.post(
+            f"/api/booking/{booking_id}/review",
+            json={"rating_helpful": 5, "rating_prepared": 4, "rating_communication": 5, "comment": "Chiara"},
+        )
+
+        assert risposta.status_code == 200, risposta.text
+        assert len(chiamate) == 1
+        assert chiamate[0]["amount"] == 1600
+        assert _stato(booking_id)[1] == "released"
+
+    def test_recensione_con_contestazione_aperta_non_paga(self, persone, csrf_client, monkeypatch):
+        booking_id = _crea(
+            persone, -120, status="completed", call_started_at=now_italy_naive(),
+            recording_requested=True,
+        )
+        with Session(engine) as s:
+            s.add(Dispute(
+                booking_id=booking_id,
+                client_user_id=persone.cliente,
+                consultant_user_id=persone.consulente,
+                description="La consulenza non ha affrontato il tema chiesto",
+                status="open",
+            ))
+            s.commit()
+        chiamate = []
+        import stripe
+        monkeypatch.setattr(stripe.Transfer, "create", lambda **kw: chiamate.append(kw))
+        _login(csrf_client, persone.email_cliente, persone.password)
+
+        risposta = csrf_client.post(
+            f"/api/booking/{booking_id}/review",
+            json={"rating_helpful": 2, "rating_prepared": 2, "rating_communication": 2},
+        )
+
+        assert risposta.status_code == 200, risposta.text
+        assert chiamate == []
+        assert _stato(booking_id)[1] == "held"
+
+    def test_dopo_sette_giorni_senza_recensione_il_compenso_parte(self, persone, monkeypatch):
+        booking_id = _crea(persone, -(7 * 24 * 60 + 180))
+        chiamate = []
+
+        def crea(**kwargs):
+            chiamate.append(kwargs)
+            return SimpleNamespace(id="tr_sette_giorni")
+
+        import stripe
+        monkeypatch.setattr(stripe.Transfer, "create", crea)
+
+        release_booking_payment(booking_id)
+
+        assert len(chiamate) == 1
+        assert _stato(booking_id)[1] == "released"
+
+    def test_dopo_sette_giorni_una_contestazione_blocca_ancora(self, persone, monkeypatch):
+        booking_id = _crea(persone, -(8 * 24 * 60))
+        with Session(engine) as s:
+            s.add(Dispute(
+                booking_id=booking_id,
+                client_user_id=persone.cliente,
+                consultant_user_id=persone.consulente,
+                description="Contestazione ancora aperta",
+                status="in_review",
+            ))
+            s.commit()
+        chiamate = []
+        import stripe
+        monkeypatch.setattr(stripe.Transfer, "create", lambda **kw: chiamate.append(kw))
+
+        release_booking_payment(booking_id)
+
+        assert chiamate == []
+        assert _stato(booking_id)[1] == "held"
+
+    def test_contestazione_respinta_paga_anche_senza_recensione(self, persone, monkeypatch):
+        booking_id = _crea(persone, -30)
+        chiamate = []
+
+        def crea(**kwargs):
+            chiamate.append(kwargs)
+            return SimpleNamespace(id="tr_forza")
+
+        import stripe
+        monkeypatch.setattr(stripe.Transfer, "create", crea)
+
+        release_booking_payment(booking_id, forza=True)
+
+        assert len(chiamate) == 1
+        assert _stato(booking_id)[1] == "released"
+
+    def test_nemmeno_la_decisione_paga_se_la_contestazione_e_ancora_aperta(self, persone, monkeypatch):
+        booking_id = _crea(persone, -30)
+        with Session(engine) as s:
+            s.add(Dispute(
+                booking_id=booking_id,
+                client_user_id=persone.cliente,
+                consultant_user_id=persone.consulente,
+                description="Ancora aperta",
+                status="open",
+            ))
+            s.commit()
+        chiamate = []
+        import stripe
+        monkeypatch.setattr(stripe.Transfer, "create", lambda **kw: chiamate.append(kw))
+
+        release_booking_payment(booking_id, forza=True)
+
+        assert chiamate == []
+        assert _stato(booking_id)[1] == "held"
+
+    def test_la_scadenza_di_riserva_e_il_numero_unico(self, persone):
+        from datetime import datetime
+        from zoneinfo import ZoneInfo
+
+        from app.scheduler import schedule_payment_release, scheduler
+        from app.utils.orari import GIORNI_RILASCIO_SENZA_RECENSIONE
+
+        assert GIORNI_RILASCIO_SENZA_RECENSIONE == 7
+        booking_id = _crea(persone, 24 * 60)
+        fine = datetime(2026, 10, 20, 18, 0)
+        schedule_payment_release(booking_id, fine)
+        job = scheduler.get_job(f"payment_release_{booking_id}")
+        atteso = fine.replace(tzinfo=ZoneInfo("Europe/Rome")) + timedelta(days=7)
+        assert job is not None
+        assert abs((job.next_run_time - atteso).total_seconds()) < 2
+
+
+def test_pagine_e_mail_raccontano_la_regola_nuova(client):
+    """Termini, faq e email non parlano più delle 48 ore per il compenso."""
+    from app.utils.notification_email import generate_email_html
+    from app.utils.orari import GIORNI_RILASCIO_SENZA_RECENSIONE
+
+    giorni = str(GIORNI_RILASCIO_SENZA_RECENSIONE)
+    italiano = client.get("/terms").text
+    assert "recensione" in italiano and f"{giorni} giorni" in italiano
+    assert "48 ore" not in italiano
+    inglese = client.get("/terms", cookies={"ispiramy_lingua": "en"}).text
+    assert "leaves a review" in inglese and f"{giorni} days" in inglese
+
+    faq_en = client.get("/faq", cookies={"ispiramy_lingua": "en"}).text
+    assert f"{giorni} days" in faq_en
+    come = client.get("/come-funziona").text
+    assert f"{giorni} giorni" in come and "contestazione" in come
+
+    dati = {
+        "consultant_name": "Anna", "client_name": "Mario", "user_name": "Mario",
+        "date": "20/10/2026", "time": "10:00", "duration": "60",
+        "action_url": "http://localhost/profile", "review_url": "http://localhost/review/x",
+        "reason_section": "",
+    }
+    for nome in ("booking_confirmed.html", "review_request.html", "review_reminder.html", "dispute_opened.html"):
+        html = generate_email_html(nome, dati)
+        assert html, nome
+        assert f"{giorni} giorni" in html
+        assert f"{giorni} days" in html
+        assert "48 ore" not in html and "48 hours" not in html

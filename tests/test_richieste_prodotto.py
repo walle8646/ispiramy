@@ -143,10 +143,10 @@ def test_la_ricerca_per_tag_ignora_nome_bio_e_aree(csrf_client):
 
 def test_orari_e_community_e_dicitura_nel_sorgente():
     base = _file("app", "templates", "base.html")
-    assert "momentoNelTuoFuso" in base and "etichettaSlot" in base
+    assert "momentoNelTuoFuso" in base and "etichettaSlot" in base and "fasciaSlot" in base
     prenota = _file("app", "templates", "booking.html")
-    assert prenota.count("etichettaFuso") >= 2
-    assert "etichettaSlot" in prenota
+    assert "fasciaSlot" in prenota or "disegnaSlot" in prenota
+    assert "slot-ora" in prenota and "slot-ora-it" in prenota
     assert 'id="nomeFusoPrenotazione"' in prenota
     blocco_telefono = prenota.split("@media (max-width: 768px)", 1)[1].split("@media", 1)[0]
     assert "repeat(2, minmax(0, 1fr))" in blocco_telefono

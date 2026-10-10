@@ -119,6 +119,14 @@ async def submit_review(booking_id: int, review_data: ReviewRequest, request: Re
         except Exception as e:
             logger.error(f"Errore invio notifica recensione al consulente: {e}")
 
+        # Il compenso parte con la recensione, se non c'è una contestazione aperta.
+        # La funzione non paga se il denaro non è più trattenuto o se si discute.
+        try:
+            from app.scheduler import release_booking_payment
+            release_booking_payment(booking_id)
+        except Exception as e:
+            logger.error(f"Errore rilascio compenso dopo recensione booking {booking_id}: {e}")
+
         return JSONResponse({"success": True, "message": "Recensione inviata con successo!"})
 
 
@@ -295,4 +303,11 @@ async def submit_review_by_token(token: str, review_data: ReviewRequest):
         session.commit()
 
         logger.info(f"⭐ Review via token creata per booking {booking.id}")
+
+        try:
+            from app.scheduler import release_booking_payment
+            release_booking_payment(booking.id)
+        except Exception as e:
+            logger.error(f"Errore rilascio compenso dopo recensione booking {booking.id}: {e}")
+
         return JSONResponse({"success": True, "message": "Recensione inviata con successo! Grazie!"})

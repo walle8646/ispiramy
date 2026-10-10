@@ -19,7 +19,12 @@ from sqlmodel import Session, select
 from app.database import engine, DATABASE_URL
 from app.models import Notification, Booking, User, Review, Dispute
 from app.logger_config import logger
-from app.utils.orari import con_fuso, now_italy_naive
+from app.utils.orari import (
+    GIORNI_RILASCIO_SENZA_RECENSIONE,
+    con_fuso,
+    fine_consulenza,
+    now_italy_naive,
+)
 from app.utils.prezzi import compenso_consulente_centesimi, percentuale_commissione
 from app.utils.notification_service import send_notification
 import os
@@ -265,10 +270,28 @@ def schedule_review_reminder(booking_id: int, client_id: int, review_token: str,
         logger.error(f"❌ Errore scheduling promemoria recensione: {e}")
 
 
-def release_booking_payment(booking_id: int):
+def _ha_recensione(session, booking_id: int) -> bool:
+    return session.exec(select(Review).where(Review.booking_id == booking_id)).first() is not None
+
+
+def _attesa_senza_recensione_finita(booking) -> bool:
+    """Sono passati i giorni di riserva dalla fine, quindi si paga anche senza recensione."""
+    try:
+        fine = fine_consulenza(booking)
+    except (TypeError, ValueError):
+        return False
+    return now_italy_naive() >= fine + timedelta(days=GIORNI_RILASCIO_SENZA_RECENSIONE)
+
+
+def release_booking_payment(booking_id: int, forza: bool = False):
     """
-    Rilascia il pagamento trattenuto al consulente dopo 48h dalla fine della consulenza.
-    Verifica che non ci siano contestazioni aperte prima di trasferire.
+    Rilascia il compenso trattenuto al consulente.
+
+    Parte quando il cliente ha lasciato la recensione, oppure
+    GIORNI_RILASCIO_SENZA_RECENSIONE giorni dopo la fine se la recensione non
+    arriva. Una contestazione aperta blocca sempre, finché non è chiusa.
+    `forza` serve solo all'amministrazione: contestazione respinta, il
+    consulente va pagato anche senza recensione e prima di quei giorni.
     """
     try:
         with Session(engine) as session:
@@ -299,10 +322,20 @@ def release_booking_payment(booking_id: int):
                     user_id=booking.consultant_user_id,
                     type_key="payment_hold",
                     title="Pagamento in attesa",
-                    message=f"Il pagamento per la consulenza #{booking_id} è in attesa per una contestazione in corso.",
+                    message=(
+                        f"Il pagamento per la consulenza #{booking_id} è in attesa: c'è una contestazione aperta. "
+                        f"The payout for consultation #{booking_id} is on hold while a dispute is open."
+                    ),
                     related_booking_id=booking_id,
                     action_url=f"/profile#prenotazione-{booking_id}",
                     solo_una_volta=True
+                )
+                return
+
+            if not forza and not _ha_recensione(session, booking_id) and not _attesa_senza_recensione_finita(booking):
+                logger.info(
+                    f"⏳ Booking {booking_id}: in attesa della recensione "
+                    f"(o dei {GIORNI_RILASCIO_SENZA_RECENSIONE} giorni), rilascio non ancora dovuto"
                 )
                 return
             
@@ -428,13 +461,15 @@ def riprova_rilascio(booking_id: int) -> None:
 
 def schedule_payment_release(booking_id: int, consultation_end_datetime: datetime):
     """
-    Schedula il rilascio del pagamento 48h dopo la fine della consulenza.
+    Schedula il rilascio di riserva: se il cliente non recensisce, il compenso
+    parte GIORNI_RILASCIO_SENZA_RECENSIONE giorni dopo la fine. La recensione,
+    se arriva prima, lo fa partire subito.
     """
     try:
         if consultation_end_datetime.tzinfo is None:
             consultation_end_datetime = consultation_end_datetime.replace(tzinfo=ITALY_TZ)
         
-        release_time = consultation_end_datetime + timedelta(hours=48)
+        release_time = consultation_end_datetime + timedelta(days=GIORNI_RILASCIO_SENZA_RECENSIONE)
         
         scheduler.add_job(
             release_booking_payment,
@@ -728,13 +763,22 @@ def recover_stuck_bookings():
                     
                     end_dt = datetime.combine(booking.booking_date, end_time).replace(tzinfo=ITALY_TZ)
                     noshow_due = end_dt + timedelta(minutes=15)
-                    release_due = end_dt + timedelta(hours=48)
+                    release_due = end_dt + timedelta(days=GIORNI_RILASCIO_SENZA_RECENSIONE)
+                    ha_recensione = _ha_recensione(session, booking.id)
+
+                    def rilascia_se_tocca():
+                        """La recensione sblocca subito; altrimenti si aspetta la scadenza."""
+                        if booking.payment_status != "held":
+                            return
+                        schedule_payment_release(booking.id, end_dt)
+                        if ha_recensione or now >= release_due:
+                            release_booking_payment(booking.id)
                     
                     if now < noshow_due:
                         # Consulenza non ancora finita o nel grace period, rischedula normalmente
                         logger.info(f"⏳ Recovery booking {booking.id}: consulenza non ancora finita, rischedulo")
                         schedule_noshow_check(booking.id, end_dt)
-                        schedule_payment_release(booking.id, end_dt)
+                        rilascia_se_tocca()
                         
                     elif now >= noshow_due and booking.status == "confirmed":
                         # No-show check non eseguito, eseguilo ora
@@ -742,13 +786,10 @@ def recover_stuck_bookings():
                         check_booking_noshow(booking.id)
                         # Se dopo il no-show check è ancora held (es. client no-show), schedula il rilascio
                         session.refresh(booking)
-                        if booking.payment_status == "held" and now >= release_due:
-                            release_booking_payment(booking.id)
-                        elif booking.payment_status == "held":
-                            schedule_payment_release(booking.id, end_dt)
+                        rilascia_se_tocca()
                             
-                    elif now >= release_due:
-                        # Rilascio pagamento scaduto, eseguilo ora
+                    elif now >= release_due or ha_recensione:
+                        # Recensione già arrivata, oppure sono passati i giorni di riserva
                         logger.info(f"🔄 Recovery booking {booking.id}: eseguo rilascio pagamento mancato")
                         release_booking_payment(booking.id)
                         

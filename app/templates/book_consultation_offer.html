@@ -341,15 +341,37 @@
     }
     
     .slot-button {
-        padding: 10px 8px;
+        padding: 8px 6px;
         background: white;
         border: 2px solid #ddd;
         border-radius: 8px;
         cursor: pointer;
-        transition: all 0.3s;
+        transition: background 0.2s, border-color 0.2s, color 0.2s;
         font-size: 13px;
         font-weight: 600;
         color: #333;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 1px;
+        line-height: 1.15;
+        min-width: 0;
+    }
+
+    .slot-button .slot-ora {
+        white-space: nowrap;
+        font-variant-numeric: tabular-nums;
+    }
+
+    .slot-button .slot-ora-it {
+        font-size: 11px;
+        font-weight: 500;
+        color: #607d8b;
+        white-space: nowrap;
+    }
+
+    .slot-button.selected .slot-ora-it {
+        color: rgba(255, 255, 255, 0.9);
     }
     
     .slot-button:hover {
@@ -808,6 +830,9 @@
 
     <div class="calendar-section">
         <h3>📅 Seleziona Data e Ora</h3>
+        <p id="notaFusoPrenotazione" style="color:#546e7a; font-size:.9rem; margin:0 0 12px;">
+            <span id="nomeFusoPrenotazione">Orari in ora italiana.</span>
+        </p>
         
         <!-- Week navigation -->
         <div class="week-nav" style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 25px; padding: 15px; background: #f8f9fa; border-radius: 8px; flex-wrap: wrap; gap: 10px;">
@@ -1140,8 +1165,21 @@ function renderWeeklyCalendar(days, availabilities) {
             const slotsContainer = dayCard.querySelector(`#day-slots-${index}`);
             dayAvailability.slots.forEach(slot => {
                 const slotBtn = document.createElement('button');
+                slotBtn.type = 'button';
                 slotBtn.className = 'slot-button';
-                slotBtn.textContent = slot.start_time;
+                const fascia = window.fasciaSlot
+                    ? window.fasciaSlot(dateStr, slot.start_time, slot.end_time)
+                    : { principale: `${slot.start_time}–${slot.end_time}`, secondaria: null };
+                const principale = document.createElement('span');
+                principale.className = 'slot-ora';
+                principale.textContent = fascia.principale;
+                slotBtn.appendChild(principale);
+                if (fascia.secondaria) {
+                    const secondaria = document.createElement('span');
+                    secondaria.className = 'slot-ora-it';
+                    secondaria.textContent = fascia.secondaria;
+                    slotBtn.appendChild(secondaria);
+                }
                 slotBtn.onclick = () => selectWeeklySlot(slot, dateStr, slotBtn);
                 slotsContainer.appendChild(slotBtn);
             });

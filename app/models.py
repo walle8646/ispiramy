@@ -267,9 +267,9 @@ class Booking(SQLModel, table=True):
     acceptance_deadline: Optional[datetime] = None
     paypal_payout_id: Optional[str] = None  # PayPal Payout Batch ID (dopo rilascio fondi)
     
-    # Transfer differito (48h hold)
+    # Transfer differito: parte con la recensione, oppure a payment_held_until se non arriva
     stripe_transfer_id: Optional[str] = None  # Stripe Transfer ID (dopo rilascio fondi)
-    payment_held_until: Optional[datetime] = None  # Quando scade il hold (48h dopo fine consulenza)
+    payment_held_until: Optional[datetime] = None  # Scadenza di riserva se il cliente non recensisce
     payment_released_at: Optional[datetime] = None  # Quando i fondi sono stati trasferiti
     refund_amount: Optional[Decimal] = None  # Importo rimborsato (può essere parziale)
     

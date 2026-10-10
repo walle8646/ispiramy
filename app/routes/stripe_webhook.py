@@ -16,7 +16,7 @@ from app.utils.stripe_config import construct_webhook_event
 from app.logger_config import logger
 from app.scheduler import schedule_booking_reminders, schedule_payment_release, schedule_noshow_check
 from app.utils.booking_requests import conferma_consulenza, metti_in_attesa
-from app.utils.orari import con_fuso
+from app.utils.orari import con_fuso, scadenza_compenso_senza_recensione
 from app.utils.notification_service import send_notification
 
 router = APIRouter()
@@ -194,7 +194,7 @@ async def handle_direct_booking(session_id, payment_intent_id, metadata, amount_
         # Prezzo della consulenza: usa l'importo davvero incassato da Stripe.
         # Prima qui finiva la tariffa ORARIA del consulente, quindi una consulenza
         # da 90 o 120 minuti veniva registrata a un prezzo inferiore a quello
-        # pagato — e il transfer a 48h (calcolato su booking.price) pagava meno
+        # pagato — e il transfer (calcolato su booking.price) pagava meno
         # del dovuto al consulente.
         # Le spese di servizio sono incassate insieme alla consulenza ma non ne
         # fanno parte: vanno tolte dall'importo pagato, altrimenti gonfierebbero
@@ -221,9 +221,9 @@ async def handle_direct_booking(session_id, payment_intent_id, metadata, amount_
         # Parse booking datetime
         booking_datetime = datetime.strptime(f"{booking_date_str} {start_time}", "%Y-%m-%d %H:%M")
         
-        # Calcola fine consulenza + 48h per il hold
+        # Il compenso parte con la recensione; questa data è la riserva se non arriva
         end_datetime = datetime.strptime(f"{booking_date_str} {end_time}", "%Y-%m-%d %H:%M")
-        held_until = end_datetime + timedelta(hours=48)
+        held_until = scadenza_compenso_senza_recensione(end_datetime)
         
         # Create booking
         new_booking = Booking(
@@ -323,9 +323,9 @@ async def handle_consultation_offer_booking(session_id, payment_intent_id, metad
         # Parse booking datetime
         booking_datetime = datetime.strptime(f"{selected_date} {start_time}", "%Y-%m-%d %H:%M")
         
-        # Calcola fine consulenza + 48h per il hold
+        # Il compenso parte con la recensione; questa data è la riserva se non arriva
         end_datetime = datetime.strptime(f"{selected_date} {end_time}", "%Y-%m-%d %H:%M")
-        held_until = end_datetime + timedelta(hours=48)
+        held_until = scadenza_compenso_senza_recensione(end_datetime)
         
         # Create booking
         new_booking = Booking(
