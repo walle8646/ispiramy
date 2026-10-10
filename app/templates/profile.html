@@ -1557,9 +1557,13 @@
     // la recensione. Se questa è la scheda aperta apposta per la call, la si
     // chiude e l'avviso compare nel profilo da cui era partita.
     if (urlParams.get('call_closed')) {
-        const avviso = urlParams.get('call_closed') === 'dispute'
-            ? 'Non puoi rientrare in call: su questa consulenza è stata aperta una contestazione.'
-            : 'Non puoi rientrare in call perché hai già rilasciato una recensione.';
+        const motiviChiusura = {
+            dispute: 'Non puoi rientrare in call: su questa consulenza è stata aperta una contestazione.',
+            presto: 'La videochiamata si apre 10 minuti prima dell\'orario prenotato.',
+            chiusa: 'Il tempo di questa consulenza è finito: non si può più entrare.',
+        };
+        const avviso = motiviChiusura[urlParams.get('call_closed')]
+            || 'Non puoi rientrare in call perché hai già rilasciato una recensione.';
         history.replaceState(null, '', window.location.pathname);
         let chiusa = false;
         try {
@@ -2011,19 +2015,16 @@
         const dateStr = date.toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric', month: 'long' });
         const roleLabel = booking.role === 'client' ? 'Consulenza con' : 'Consulenza richiesta da';
         
-        const now = new Date();
-        const timeUntilMinutes = Math.floor((date - now) / 60000);
         const minutiLimiteAnnullamento = {{ ore_limite_annullamento }} * 60;
-        
-        let endDate = new Date(date);
-        try {
-            const [endHours, endMinutes] = booking.end_time.split(':').map(Number);
-            endDate = new Date(date.getFullYear(), date.getMonth(), date.getDate(), endHours, endMinutes);
-        } catch (e) {
-            if (booking.duration_minutes) endDate = new Date(date.getTime() + booking.duration_minutes * 60000);
-        }
-        const timeUntilEndMinutes = Math.floor((endDate - now) / 60000);
-        
+        // Gli orari sono italiani. time_until_minutes e can_join arrivano dal
+        // server: ricalcolarli col fuso del telefono faceva comparire "Entra
+        // in call" un'ora o due prima (o dopo) a chi non è in Italia, e solo
+        // per i primi dieci minuti invece che per tutta la consulenza.
+        const timeUntilMinutes = Number.isFinite(booking.time_until_minutes)
+            ? booking.time_until_minutes
+            : 0;
+        const siPuoEntrare = booking.can_join === true;
+
         let actionsHTML = '', statusHTML = '';
         const minutesUntil = Math.abs(timeUntilMinutes);
         
@@ -2067,7 +2068,7 @@
             const mins = minutesUntil % 60;
             const timeText = hours > 0 ? `${hours}h ${mins}min` : `${mins}min`;
             statusHTML = `<div class="time-until"><i class="fas fa-clock"></i> Inizia tra ${timeText}</div>`;
-        } else if (timeUntilMinutes <= 10 && timeUntilEndMinutes >= 0) {
+        } else if (siPuoEntrare) {
             if (booking.can_start_call) {
                 actionsHTML = `<button class="btn-start-call" onclick="startCall(${booking.id})" id="call-btn-${booking.id}"><i class="fas fa-phone-alt"></i> Entra in Call</button>`;
             } else if (booking.has_joined) {
@@ -2077,7 +2078,7 @@
                 actionsHTML = `<button class="btn-join" onclick="joinAppointment(${booking.id})" id="join-btn-${booking.id}"><i class="fas fa-sign-in-alt"></i> Partecipa</button>`;
                 if (booking.other_joined) statusHTML = `<div class="waiting-indicator"><i class="fas fa-user-check"></i> ${escapeHtml(otherUser.name)} è pronto</div>`;
             }
-        } else if (timeUntilEndMinutes < 0) {
+        } else if (!siPuoEntrare) {
             if (booking.has_joined && !booking.other_joined) {
                 const whoMissed = booking.role === 'client' ? 'il consulente' : 'il cliente';
                 statusHTML = `<div class="appointment-missed"><i class="fas fa-times-circle"></i><p>Siamo spiacenti ma ${whoMissed} non ha partecipato alla call programmata.</p></div>`;

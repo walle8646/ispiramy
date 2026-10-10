@@ -61,6 +61,16 @@ async def open_dispute(booking_id: int, data: DisputeRequest, request: Request):
 
         logger.info(f"🚨 [dispute] Contestazione #{dispute.id} aperta per booking {booking_id} da user {current_user.id}")
 
+        # Il rilascio automatico a 48 ore non deve partire mentre si discute:
+        # se scattasse nello stesso momento in cui si apre la contestazione,
+        # il compenso partirebbe lo stesso. Resta trattenuto finché un
+        # amministratore non decide.
+        try:
+            from app.scheduler import cancel_payment_release
+            cancel_payment_release(booking_id)
+        except Exception as e:  # noqa: BLE001
+            logger.warning(f"⚠️ Rilascio pagamento non annullato per booking {booking_id}: {e}")
+
         # Il consulente deve saperlo: il suo compenso resta trattenuto e
         # potrebbe dover rispondere. Prima lo vedeva solo l'amministratore.
         avvisa_consulente(session, booking, current_user, data.description)
