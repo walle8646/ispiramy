@@ -321,6 +321,7 @@ def release_booking_payment(booking_id: int):
                 # avrà indicato l'email PayPal.
                 if not consultant or not consultant.paypal_email:
                     logger.error(f"❌ Booking {booking_id}: consulente senza email PayPal, impossibile trasferire")
+                    riprova_rilascio(booking_id)
                     return
                 
                 try:
@@ -351,9 +352,11 @@ def release_booking_payment(booking_id: int):
                         )
                     else:
                         logger.error(f"❌ Booking {booking_id}: PayPal payout fallito")
+                        riprova_rilascio(booking_id)
                         
                 except Exception as e:
                     logger.error(f"❌ Booking {booking_id}: errore PayPal Payout: {e}")
+                    riprova_rilascio(booking_id)
             else:
                 # === Stripe Transfer ===
                 # Come per PayPal: senza conto il denaro resta trattenuto e si
@@ -361,6 +364,7 @@ def release_booking_payment(booking_id: int):
                 # consulente non veniva mai pagato.
                 if not consultant or not consultant.stripe_account_id:
                     logger.error(f"❌ Booking {booking_id}: consulente senza account Stripe, impossibile trasferire")
+                    riprova_rilascio(booking_id)
                     return
                 
                 try:
@@ -394,9 +398,32 @@ def release_booking_payment(booking_id: int):
                     
                 except Exception as e:
                     logger.error(f"❌ Booking {booking_id}: errore Stripe Transfer: {e}")
+                    riprova_rilascio(booking_id)
                 
     except Exception as e:
         logger.error(f"❌ Errore rilascio pagamento booking {booking_id}: {e}")
+
+
+def riprova_rilascio(booking_id: int) -> None:
+    """Il tentativo di oggi non è riuscito: se ne programma un altro fra 6 ore.
+
+    Il rilascio è un appuntamento unico. Se il consulente non ha ancora il
+    conto, senza un nuovo appuntamento il compenso resterebbe fermo fino al
+    prossimo riavvio del server.
+    """
+    try:
+        quando = datetime.now(ITALY_TZ) + timedelta(hours=6)
+        scheduler.add_job(
+            release_booking_payment,
+            trigger=DateTrigger(run_date=quando),
+            args=[booking_id],
+            id=f"payment_release_{booking_id}",
+            replace_existing=True,
+            misfire_grace_time=3600,
+        )
+        logger.info(f"🔁 Rilascio booking {booking_id} riprogrammato per {quando}")
+    except Exception as e:
+        logger.error(f"❌ Impossibile riprovare il rilascio del booking {booking_id}: {e}")
 
 
 def schedule_payment_release(booking_id: int, consultation_end_datetime: datetime):

@@ -270,6 +270,8 @@ class TestRilascioERimborso:
 
         assert chiamate == []
         assert _stato(booking_id)[1] == "held"
+        from app.scheduler import scheduler
+        assert scheduler.get_job(f"payment_release_{booking_id}") is not None
 
     def test_una_contestazione_aperta_blocca_il_compenso(self, persone, monkeypatch):
         booking_id = _crea(persone, -20)
