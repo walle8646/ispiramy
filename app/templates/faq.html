@@ -1,43 +1,30 @@
 {% extends "static_page_base.html" %}
-{% block title %}FAQ - Ispiramy{% endblock %}
+{% block title %}{{ t('faq.titolo') }} - Ispiramy{% endblock %}
 {% block page_content %}
-<h1>Domande Frequenti</h1>
-<p class="updated">Le risposte alle domande più comuni su Ispiramy.</p>
+<h1>{{ t('faq.titolo') }}</h1>
+<p class="updated">{{ t('faq.intro') }}</p>
 
-<h2>Come prenoto una consulenza?</h2>
+<h2>{{ t('faq.come_prenoto') }}</h2>
 <p>
-    Cerca il consulente che fa per te nella sezione <a href="/consultants">Trova Consulenti</a>,
-    apri il suo profilo, scegli data, durata e orario disponibile, e completa il pagamento.
-    Riceverai una conferma via email.
+    {{ t('faq.come_prenoto_a') }} <a href="/consultants">{{ t('faq.trova') }}</a>,
+    {{ t('faq.come_prenoto_b') }}
 </p>
 
-<h2>Quanto dura una consulenza?</h2>
-<p>Le consulenze hanno una durata minima di 60 minuti, con opzioni da 60, 90 o 120 minuti.</p>
+<h2>{{ t('faq.durata') }}</h2>
+<p>{{ t('faq.durata_testo') }}</p>
 
-<h2>Come avviene la videochiamata?</h2>
-<p>
-    La consulenza si svolge direttamente sulla piattaforma tramite videochiamata integrata,
-    senza bisogno di installare programmi esterni. Riceverai un promemoria prima dell'appuntamento.
-</p>
+<h2>{{ t('faq.video') }}</h2>
+<p>{{ t('faq.video_testo') }}</p>
 
-<h2>Come vengono gestiti i pagamenti?</h2>
-<p>
-    I pagamenti sono sicuri e gestiti tramite Stripe e PayPal. L'importo viene trasferito
-    al consulente solo dopo lo svolgimento della consulenza.
-</p>
+<h2>{{ t('faq.pagamenti') }}</h2>
+<p>{{ t('pagamenti.faq') }}</p>
 
-<h2>Posso annullare o avere un rimborso?</h2>
-<p>
-    In caso di problemi con una consulenza puoi aprire una contestazione: il nostro team
-    valuterà la situazione. Se il consulente rifiuta una prenotazione, il rimborso è automatico.
-</p>
+<h2>{{ t('faq.annulla') }}</h2>
+<p>{{ t('faq.annulla_testo') }}</p>
 
-<h2>Come divento consulente?</h2>
-<p>
-    Registrati, completa il tuo profilo con competenze ed esperienza, imposta la tua tariffa
-    e la tua disponibilità. Una volta verificato, potrai ricevere prenotazioni.
-</p>
+<h2>{{ t('faq.diventa') }}</h2>
+<p>{{ t('faq.diventa_testo') }}</p>
 
-<h2>Hai altre domande?</h2>
-<p>Scrivici a <a href="mailto:supporto@ispiramy.com">supporto@ispiramy.com</a> — siamo qui per aiutarti.</p>
+<h2>{{ t('faq.altro') }}</h2>
+<p>{{ t('faq.altro_a') }} <a href="mailto:supporto@ispiramy.com">supporto@ispiramy.com</a> — {{ t('faq.altro_b') }}</p>
 {% endblock %}

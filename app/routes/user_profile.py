@@ -9,6 +9,14 @@ from app.utils.email import send_profile_verification_request
 from app.utils.prezzi import PREZZO_ORARIO_MINIMO
 from app.utils_user import has_payment_method
 from app.utils.ai_service import genera_aree_interesse, genera_tags, valida_profilo, modera_immagine
+from app.utils.file_immagini import tipo_immagine
+from app.utils.verifica_categorie import (
+    categorie_dichiarate,
+    etichette_verificate,
+    id_categorie_verificate,
+    registra_verifica_iniziale,
+    scrivi_categorie_verificate,
+)
 from typing import Optional
 import asyncio
 import os
@@ -109,7 +117,9 @@ async def user_profile(request: Request):
                     "reviews": reviews,
                     "avg_rating": avg_rating,
                     "formatted_created_at": formatted_created_at,
-                    "has_payment_method": has_payment_method(fresh_user)
+                    "has_payment_method": has_payment_method(fresh_user),
+                    "categorie_verificate": etichette_verificate(session, fresh_user),
+                    "categorie_verificate_ids": list(id_categorie_verificate(fresh_user)),
                 }
             )
     
@@ -326,6 +336,16 @@ async def update_profile(
             was_verified_before = db_user.is_verified
             descrizione_originale = (db_user.descrizione or "").strip()
 
+            # Un profilo gia' verificato senza elenco esplicito tiene il badge
+            # sulle categorie dichiarate adesso. Si congela prima di scrivere
+            # la categoria nuova, altrimenti quella nuova risulterebbe verificata.
+            if (
+                was_verified_before
+                and db_user.verified_category_ids is None
+                and (category_id is not None or selected_subcategories is not None)
+            ):
+                scrivi_categorie_verificate(db_user, categorie_dichiarate(db_user))
+
             if nome is not None:
                 db_user.nome = nome
             if cognome is not None:  # ✅ AGGIUNGI questo
@@ -462,6 +482,9 @@ async def update_profile(
                 # Profilo incompleto → salvato ma non verificato
                 db_user.is_verified = False
 
+            if db_user.is_verified:
+                registra_verifica_iniziale(db_user)
+
             session.add(db_user)
             session.commit()
             session.refresh(db_user)
@@ -575,10 +598,6 @@ async def upload_profile_picture(request: Request, file: UploadFile = File(...))
         
         if not user:
             return JSONResponse({"error": "Non autenticato"}, status_code=401)
-        
-        # Verifica che sia un'immagine
-        if file.content_type not in ["image/jpeg", "image/png", "image/webp", "image/gif"]:
-            return JSONResponse({"error": "Formato file non supportato"}, status_code=400)
 
         # Il limite va applicato PRIMA di tenere tutto in memoria: con
         # `await file.read()` secco, un upload da qualche GB veniva caricato per
@@ -591,7 +610,14 @@ async def upload_profile_picture(request: Request, file: UploadFile = File(...))
         contents = await file.read(MAX_UPLOAD + 1)
         if len(contents) > MAX_UPLOAD:
             return JSONResponse({"error": "File troppo grande (max 5MB)"}, status_code=413)
-        
+
+        # Il tipo e il nome arrivano dal browser: un HTML chiamato foto.jpg
+        # con Content-Type image/jpeg non è una foto. Si guarda l'inizio del file.
+        riconosciuto = tipo_immagine(contents)
+        if riconosciuto is None:
+            return JSONResponse({"error": "Il file non è un'immagine valida"}, status_code=400)
+        file_extension, file_mime = riconosciuto
+
         # ========== MODERAZIONE AI ==========
         import base64
         image_b64 = base64.b64encode(contents).decode("utf-8")
@@ -640,7 +666,6 @@ async def upload_profile_picture(request: Request, file: UploadFile = File(...))
             
             # Genera nome unico per il file
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-            file_extension = file.filename.split(".")[-1].lower()
             s3_key = f"profile-pictures/{user.id}_{timestamp}.{file_extension}"
             
             logger.info(f"🔍 DEBUG - Uploading to S3: {s3_bucket}/{s3_key}")
@@ -651,7 +676,7 @@ async def upload_profile_picture(request: Request, file: UploadFile = File(...))
                 Bucket=s3_bucket,
                 Key=s3_key,
                 Body=contents,
-                ContentType=file.content_type,
+                ContentType=file_mime,
                 CacheControl="max-age=31536000"  # Cache per 1 anno
             )
             logger.info(f"✅ File uploaded successfully to S3")
@@ -694,7 +719,7 @@ async def upload_profile_picture(request: Request, file: UploadFile = File(...))
         except Exception as s3_error:
             logger.exception("❌ S3 upload error")
             # Fallback a salvataggio locale
-            return save_profile_picture_locally(user, contents)
+            return save_profile_picture_locally(user, contents, file_extension)
     
     except Exception as e:
         logger.exception("❌ Error uploading profile picture")
@@ -704,7 +729,7 @@ async def upload_profile_picture(request: Request, file: UploadFile = File(...))
         )
 
 
-def save_profile_picture_locally(user, file_contents):
+def save_profile_picture_locally(user, file_contents, extension="jpg"):
     """Salva immagine profilo localmente come fallback"""
     try:
         from datetime import datetime
@@ -715,7 +740,7 @@ def save_profile_picture_locally(user, file_contents):
         
         # Genera nome unico
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        filename = f"{user.id}_{timestamp}.jpg"
+        filename = f"{user.id}_{timestamp}.{extension}"
         file_path = upload_dir / filename
         
         # Salva file

@@ -10,11 +10,12 @@ import json
 import base64
 
 from app.database import get_session
-from app.models import User, Category, CommunityQuestion, CommunityLike, CommunityContact, CommunityQuestionFollow, QuestionStatus, CategoryHierarchy, CategoryRequestNotification, Review
+from app.models import User, Category, CommunityQuestion, CommunityLike, CommunityContact, CommunityQuestionFollow, CommunityReport, QuestionStatus, CategoryHierarchy, CategoryRequestNotification, Review
 from app.routes.auth import verify_token
 from app.utils_user import get_display_name, has_payment_method
 from app.utils.email import send_email
 from app.utils.ai_service import genera_tags, modera_immagine, valida_richiesta, controlla_duplicato
+from app.utils.file_immagini import tipo_immagine
 from loguru import logger
 
 router = APIRouter()
@@ -26,33 +27,54 @@ def _notify_consultants_by_email(recipients, question_title, question_excerpt, a
     Tutti i valori che arrivano dagli utenti (titolo, testo, nome autore) vanno
     escapati: finiscono in un'email HTML, e senza escaping l'autore della
     domanda può iniettare markup arbitrario nella posta dei consulenti.
+    Ogni destinatario riceve la mail nella lingua del suo sito.
     """
     from html import escape
     from app.utils.notification_email import _branded_email
 
     base = os.getenv("BASE_URL", os.getenv("APP_URL", ""))
     safe_title = escape(question_title or "")
-    q_box = (
-        '<div style="background:#f9fafb;border-left:4px solid #43a047;border-radius:8px;padding:16px 20px;margin:20px 0;">'
-        f'<h3 style="margin:0 0 8px;color:#1f2937;">{safe_title}</h3>'
-        f'<p style="margin:0;color:#6b7280;">{escape(question_excerpt or "")}...</p>'
-        f'<p style="margin:10px 0 0;"><strong>Utente:</strong> {escape(author_name or "")}</p></div>'
-    )
+    safe_excerpt = escape(question_excerpt or "")
+    safe_author = escape(author_name or "")
 
-    for email, nome in recipients:
+    for riga in recipients:
+        email, nome = riga[0], riga[1]
+        lingua = riga[2] if len(riga) > 2 else "it"
+        en = lingua == "en"
+        etichetta_utente = "From:" if en else "Utente:"
+        q_box = (
+            '<div style="background:#f9fafb;border-left:4px solid #43a047;border-radius:8px;padding:16px 20px;margin:20px 0;">'
+            f'<h3 style="margin:0 0 8px;color:#1f2937;">{safe_title}</h3>'
+            f'<p style="margin:0;color:#6b7280;">{safe_excerpt}...</p>'
+            f'<p style="margin:10px 0 0;"><strong>{etichetta_utente}</strong> {safe_author}</p></div>'
+        )
         try:
-            body = (
-                f"<p>Ciao <strong>{escape(nome)}</strong>,</p>"
-                "<p>C'è una nuova richiesta di consulenza nella tua categoria di expertise!</p>"
-                + q_box +
-                "<p>Accedi al tuo profilo per vedere tutte le nuove richieste della tua categoria.</p>"
-            )
+            if en:
+                body = (
+                    f"<p>Hello <strong>{escape(nome)}</strong>,</p>"
+                    "<p>There is a new consultation request in your area of expertise.</p>"
+                    + q_box +
+                    "<p>Open your profile to see the new requests in your category.</p>"
+                )
+                oggetto = f"New request in your category: {question_title}"
+                titolo = "New consultation request"
+                bottone = "View requests"
+            else:
+                body = (
+                    f"<p>Ciao <strong>{escape(nome)}</strong>,</p>"
+                    "<p>C'è una nuova richiesta di consulenza nella tua categoria di expertise!</p>"
+                    + q_box +
+                    "<p>Accedi al tuo profilo per vedere tutte le nuove richieste della tua categoria.</p>"
+                )
+                oggetto = f"Nuova richiesta nella tua categoria: {question_title}"
+                titolo = "Nuova richiesta di consulenza"
+                bottone = "Visualizza Richieste"
             send_email(
                 recipient_email=email,
-                subject=f"Nuova richiesta nella tua categoria: {question_title}",
+                subject=oggetto,
                 html_content=_branded_email(
-                    "🔔", "Nuova richiesta di consulenza", "#43a047", "#2e7d32",
-                    body, "Visualizza Richieste", f"{base}/profile"
+                    "🔔", titolo, "#43a047", "#2e7d32",
+                    body, bottone, f"{base}/profile", lingua="en" if en else "it",
                 ),
             )
             logger.info(f"📧 Email sent to consultant {email}")
@@ -576,7 +598,11 @@ async def api_ask_question(
                         is_read=False
                     )
                     session.add(notification)
-                    recipients.append((consultant.email, consultant.nome or "Consulente"))
+                    recipients.append((
+                        consultant.email,
+                        consultant.nome or "Consulente",
+                        getattr(consultant, "ui_language", None) or "it",
+                    ))
 
                 session.commit()
 
@@ -623,14 +649,6 @@ async def upload_community_image(
         if not current_user:
             return JSONResponse({"error": "Devi essere loggato"}, status_code=401)
         
-        # Verifica formato file
-        allowed_types = ["image/jpeg", "image/png", "image/webp"]
-        if file.content_type not in allowed_types:
-            return JSONResponse(
-                {"error": "Formato non supportato. Usa JPG, PNG o WebP."},
-                status_code=400
-            )
-        
         # Il limite va applicato PRIMA di tenere tutto in memoria, altrimenti
         # un upload enorme viene comunque bufferizzato per intero.
         MAX_UPLOAD = 5 * 1024 * 1024
@@ -647,7 +665,15 @@ async def upload_community_image(
                 {"error": "File troppo grande. Massimo 5MB."},
                 status_code=413
             )
-        
+
+        riconosciuto = tipo_immagine(contents)
+        if riconosciuto is None or riconosciuto[0] == "gif":
+            return JSONResponse(
+                {"error": "Formato non supportato. Usa JPG, PNG o WebP."},
+                status_code=400
+            )
+        file_extension, file_mime = riconosciuto
+
         # ========== MODERAZIONE AI ==========
         image_b64 = base64.b64encode(contents).decode("utf-8")
         moderation = await modera_immagine(image_b64, title, description)
@@ -685,7 +711,6 @@ async def upload_community_image(
             
             # Genera nome unico
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
-            file_extension = file.filename.split(".")[-1].lower() if file.filename else "jpg"
             s3_key = f"community-images/{current_user.id}_{timestamp}.{file_extension}"
             
             await asyncio.to_thread(
@@ -693,7 +718,7 @@ async def upload_community_image(
                 Bucket=s3_bucket,
                 Key=s3_key,
                 Body=contents,
-                ContentType=file.content_type,
+                ContentType=file_mime,
                 CacheControl="max-age=31536000"
             )
             
@@ -1378,3 +1403,72 @@ async def edit_question(question_id: int, request: Request):
     except Exception as e:
         logger.error("Error editing question: " + str(e))
         return JSONResponse({"error": "Errore durante la modifica"}, status_code=500)
+
+
+# Quante segnalazioni una persona può inviare in un'ora, su domande diverse.
+# Sulla stessa domanda ne basta una: la seconda viene rifiutata.
+LIMITE_SEGNALAZIONI_ORA = 5
+MOTIVO_SEGNALAZIONE_MIN = 10
+MOTIVO_SEGNALAZIONE_MAX = 1000
+
+
+@router.post("/api/community/{question_id}/report")
+async def segnala_domanda(question_id: int, request: Request):
+    """Segnala una domanda. Serve un account, un motivo, e non si ripete."""
+    current_user = verify_token(request)
+    if not current_user:
+        return JSONResponse({"error": "Non autenticato"}, status_code=401)
+
+    try:
+        payload = await request.json()
+    except Exception:
+        payload = {}
+    if not isinstance(payload, dict):
+        payload = {}
+    motivo = (payload.get("reason") or "").strip()
+    if len(motivo) < MOTIVO_SEGNALAZIONE_MIN:
+        return JSONResponse(
+            {"error": "Scrivi il motivo della segnalazione (almeno qualche parola)."},
+            status_code=400,
+        )
+    motivo = motivo[:MOTIVO_SEGNALAZIONE_MAX]
+
+    with get_session() as session:
+        domanda = session.get(CommunityQuestion, question_id)
+        if not domanda or not domanda.validation:
+            return JSONResponse({"error": "Domanda non trovata"}, status_code=404)
+
+        gia = session.exec(
+            select(CommunityReport).where(
+                CommunityReport.question_id == question_id,
+                CommunityReport.user_id == current_user.id,
+            )
+        ).first()
+        if gia:
+            return JSONResponse({"error": "Hai già segnalato questa domanda"}, status_code=409)
+
+        da = datetime.utcnow() - timedelta(hours=1)
+        quante = session.exec(
+            select(func.count()).select_from(CommunityReport).where(
+                CommunityReport.user_id == current_user.id,
+                CommunityReport.created_at >= da,
+            )
+        ).one()
+        if quante >= LIMITE_SEGNALAZIONI_ORA:
+            return JSONResponse(
+                {"error": "Hai inviato troppe segnalazioni. Riprova fra un'ora."},
+                status_code=429,
+            )
+
+        session.add(CommunityReport(
+            question_id=question_id,
+            user_id=current_user.id,
+            reason=motivo,
+            status="open",
+        ))
+        session.commit()
+
+    # Senza una riga nel log, una segnalazione che non compare in admin
+    # non lascia traccia: il motivo resta nel database, qui solo gli id.
+    logger.info(f"🚩 Segnalazione registrata: domanda {question_id}, utente {current_user.id}")
+    return JSONResponse({"success": True}, status_code=201)

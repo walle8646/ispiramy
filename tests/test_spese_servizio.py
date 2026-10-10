@@ -169,7 +169,8 @@ def test_lo_storico_del_cliente_mostra_il_totale():
     html = (Path(__file__).resolve().parent.parent / "app" / "templates" / "profile.html").read_text(encoding="utf-8")
     assert "function importiHTML(b)" in html
     assert "b.total_paid" in html
-    assert "consulenza ${euro(b.price)} + servizio ${euro(b.service_fee)}" in html
+    assert "${UI.voceConsulenza} ${euro(b.price)} + ${UI.voceServizio} ${euro(b.service_fee)}" in html
+    assert "profilo.voce_consulenza" in html and "profilo.voce_servizio" in html
     assert "b.role !== 'client'" in html
 
 

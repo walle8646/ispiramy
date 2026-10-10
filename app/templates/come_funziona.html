@@ -218,37 +218,34 @@
 
 <div class="cf">
     <div class="cf-apertura">
-        <h1>Come funziona Ispiramy</h1>
+        <h1>{{ t('cf.titolo') }}</h1>
         <p>
-            Hai un problema concreto. Da qualche parte c'è una persona che lo ha
-            già risolto. Ispiramy serve a farvi parlare, per il tempo che serve,
-            in videochiamata.
+            {{ t('cf.intro') }}
         </p>
     </div>
 
-    <h2>Se cerchi una consulenza</h2>
-    <p class="cf-sottotitolo">Dalla ricerca alla videochiamata, in quattro passi.</p>
+    <h2>{{ t('cf.cerchi_titolo') }}</h2>
+    <p class="cf-sottotitolo">{{ t('cf.cerchi_sotto') }}</p>
 
     <div class="cf-passi">
         <div class="cf-passo">
             <span class="cf-numero">1</span>
             {# Lente su un elenco di persone: cercare #}
-            <svg viewBox="0 0 160 110" role="img" aria-label="Cerchi fra i consulenti">
+            <svg viewBox="0 0 160 110" role="img" aria-label="{{ t('cf.aria_cerca') }}">
                 <rect x="14" y="18" width="92" height="16" rx="8" fill="#e8f5e9"/>
                 <rect x="14" y="44" width="92" height="16" rx="8" fill="#e8f5e9"/>
                 <rect x="14" y="70" width="60" height="16" rx="8" fill="#e8f5e9"/>
                 <circle cx="112" cy="62" r="26" fill="none" stroke="#43a047" stroke-width="7"/>
                 <line x1="131" y1="81" x2="148" y2="98" stroke="#43a047" stroke-width="7" stroke-linecap="round"/>
             </svg>
-            <h3>Cerchi</h3>
-            <p>Scrivi di cosa hai bisogno, o scegli una categoria. Vedi chi se ne
-               occupa, quanto chiede e cosa dicono le recensioni.</p>
+            <h3>{{ t('cf.cerchi') }}</h3>
+            <p>{{ t('cf.cerchi_testo') }}</p>
         </div>
 
         <div class="cf-passo">
             <span class="cf-numero">2</span>
             {# Calendario con un giorno scelto: prenotare #}
-            <svg viewBox="0 0 160 110" role="img" aria-label="Scegli giorno e ora">
+            <svg viewBox="0 0 160 110" role="img" aria-label="{{ t('cf.aria_prenota') }}">
                 <rect x="24" y="16" width="112" height="86" rx="12" fill="#ffffff" stroke="#43a047" stroke-width="5"/>
                 <rect x="24" y="16" width="112" height="22" rx="12" fill="#43a047"/>
                 <rect x="24" y="30" width="112" height="8" fill="#43a047"/>
@@ -261,15 +258,14 @@
                 </g>
                 <rect x="64" y="72" width="18" height="14" rx="4" fill="#43a047"/>
             </svg>
-            <h3>Prenoti</h3>
-            <p>Scegli giorno, ora e durata fra gli orari che il consulente ha
-               aperto. Servono almeno {{ ore_preavviso }} ore di anticipo.</p>
+            <h3>{{ t('cf.prenoti') }}</h3>
+            <p>{{ t('cf.prenoti_testo').split('{ore}')[0] }}{{ ore_preavviso }}{{ t('cf.prenoti_testo').split('{ore}')[1] }}</p>
         </div>
 
         <div class="cf-passo">
             <span class="cf-numero">3</span>
             {# Carta con lucchetto: il pagamento bloccato, non ancora incassato #}
-            <svg viewBox="0 0 160 110" role="img" aria-label="Il pagamento resta bloccato">
+            <svg viewBox="0 0 160 110" role="img" aria-label="{{ t('cf.aria_pagamento') }}">
                 <rect x="18" y="28" width="104" height="66" rx="10" fill="#ffffff" stroke="#43a047" stroke-width="5"/>
                 <rect x="18" y="44" width="104" height="12" fill="#43a047"/>
                 <rect x="32" y="70" width="34" height="8" rx="4" fill="#c8e6c9"/>
@@ -279,58 +275,54 @@
                     <circle cx="22" cy="39" r="5" fill="#ffffff"/>
                 </g>
             </svg>
-            <h3>Paghi solo se si fa</h3>
-            <p>L'importo viene bloccato sulla carta, non addebitato. Diventa un
-               pagamento vero solo quando il consulente accetta.</p>
+            <h3>{{ t('cf.paghi') }}</h3>
+            <p>{{ t('cf.paghi_testo') }}</p>
         </div>
 
         <div class="cf-passo">
             <span class="cf-numero">4</span>
             {# Due riquadri di videochiamata #}
-            <svg viewBox="0 0 160 110" role="img" aria-label="Parlate in videochiamata">
+            <svg viewBox="0 0 160 110" role="img" aria-label="{{ t('cf.aria_video') }}">
                 <rect x="10" y="22" width="92" height="66" rx="10" fill="#ffffff" stroke="#43a047" stroke-width="5"/>
                 <circle cx="56" cy="48" r="13" fill="#c8e6c9"/>
                 <path d="M 36 78 q 0 -16 20 -16 q 20 0 20 16 z" fill="#c8e6c9"/>
                 <path d="M 110 42 l 34 -16 v 58 l -34 -16 z" fill="#43a047"/>
             </svg>
-            <h3>Parlate</h3>
-            <p>All'ora stabilita si apre la videochiamata dentro Ispiramy: non
-               devi installare niente. Alla fine lasci una recensione.</p>
+            <h3>{{ t('cf.parlate') }}</h3>
+            <p>{{ t('cf.parlate_testo') }}</p>
         </div>
     </div>
 
-    <h2>Quanto costa</h2>
-    <p class="cf-sottotitolo">Il prezzo lo decide il consulente. Noi aggiungiamo una cosa sola.</p>
+    <h2>{{ t('cf.costo') }}</h2>
+    <p class="cf-sottotitolo">{{ t('cf.costo_sotto') }}</p>
 
     <div class="cf-conti">
         <div class="cf-riga">
-            <span>La consulenza, al prezzo del consulente (da {{ prezzo_orario_minimo }} € l'ora)</span>
-            <span>es. 50,00 €</span>
+            <span>{{ t('cf.riga_prezzo').split('{n}')[0] }}{{ prezzo_orario_minimo }}{{ t('cf.riga_prezzo').split('{n}')[1] }}</span>
+            <span>{{ t('cf.esempio') }}</span>
         </div>
         <div class="cf-riga">
-            <span>Spese di servizio</span>
+            <span>{{ t('prenota.spese') }}</span>
             <span>{{ spese_servizio_euro }} €</span>
         </div>
         <div class="cf-riga">
-            <span>Quanto paghi</span>
+            <span>{{ t('cf.quanto_paghi') }}</span>
             {# Il totale si calcola: se le spese cambiano, la somma resta giusta #}
             <span>{{ "%.2f"|format(50 + spese_servizio_valore)|replace(".", ",") }} €</span>
         </div>
         <p class="cf-nota">
-            Nessun abbonamento e nessun costo per iscriversi: paghi solo le
-            consulenze che prenoti. Se annulli almeno {{ ore_limite_annullamento }} ore prima,
-            o se il consulente rifiuta, l'importo bloccato torna indietro.
+            {{ t('cf.nota').replace('{ore}', ore_limite_annullamento|string) }}
         </p>
     </div>
 
-    <h2>Se vuoi dare consulenze</h2>
-    <p class="cf-sottotitolo">Metti a disposizione quello che sai, quando ti va.</p>
+    <h2>{{ t('cf.dare') }}</h2>
+    <p class="cf-sottotitolo">{{ t('cf.dare_sotto') }}</p>
 
     <div class="cf-passi">
         <div class="cf-passo">
             <span class="cf-numero">1</span>
             {# Scheda profilo con spunta di verifica #}
-            <svg viewBox="0 0 160 110" role="img" aria-label="Crei il profilo">
+            <svg viewBox="0 0 160 110" role="img" aria-label="{{ t('cf.aria_profilo') }}">
                 <rect x="26" y="14" width="108" height="84" rx="12" fill="#ffffff" stroke="#43a047" stroke-width="5"/>
                 <circle cx="62" cy="44" r="14" fill="#c8e6c9"/>
                 <path d="M 42 74 q 0 -17 20 -17 q 20 0 20 17 z" fill="#c8e6c9"/>
@@ -342,15 +334,14 @@
                           stroke-linecap="round" stroke-linejoin="round"/>
                 </g>
             </svg>
-            <h3>Ti presenti</h3>
-            <p>Racconti di cosa ti occupi e scegli la tua categoria. Il profilo
-               viene verificato prima di comparire nella ricerca.</p>
+            <h3>{{ t('cf.presenti') }}</h3>
+            <p>{{ t('cf.presenti_testo') }}</p>
         </div>
 
         <div class="cf-passo">
             <span class="cf-numero">2</span>
             {# Griglia oraria con fasce accese #}
-            <svg viewBox="0 0 160 110" role="img" aria-label="Apri i tuoi orari">
+            <svg viewBox="0 0 160 110" role="img" aria-label="{{ t('cf.aria_orari') }}">
                 <rect x="20" y="18" width="120" height="76" rx="12" fill="#ffffff" stroke="#43a047" stroke-width="5"/>
                 <g fill="#e8f5e9">
                     <rect x="34" y="32" width="30" height="12" rx="4"/>
@@ -365,15 +356,14 @@
                 <rect x="70" y="72" width="30" height="12" rx="4" fill="#43a047"/>
                 <rect x="34" y="52" width="30" height="12" rx="4" fill="#43a047"/>
             </svg>
-            <h3>Apri i tuoi orari</h3>
-            <p>Segni le fasce in cui sei disponibile e la tua tariffa. Chi prenota
-               può scegliere solo lì dentro.</p>
+            <h3>{{ t('cf.orari') }}</h3>
+            <p>{{ t('cf.orari_testo') }}</p>
         </div>
 
         <div class="cf-passo">
             <span class="cf-numero">3</span>
             {# Campanella: la richiesta che arriva #}
-            <svg viewBox="0 0 160 110" role="img" aria-label="Ricevi la richiesta">
+            <svg viewBox="0 0 160 110" role="img" aria-label="{{ t('cf.aria_richiesta') }}">
                 <path d="M 80 20 a 26 26 0 0 1 26 26 v 20 l 10 14 H 44 l 10 -14 v -20 a 26 26 0 0 1 26 -26 z"
                       fill="#ffffff" stroke="#43a047" stroke-width="5" stroke-linejoin="round"/>
                 <circle cx="80" cy="18" r="6" fill="#43a047"/>
@@ -381,57 +371,51 @@
                 <circle cx="116" cy="30" r="12" fill="#e53935"/>
                 <text x="116" y="35" text-anchor="middle" font-size="15" font-weight="700" fill="#ffffff">1</text>
             </svg>
-            <h3>Accetti (o no)</h3>
-            <p>Ti avvisiamo per email e sul telefono. Se la richiesta non ti
-               convince la rifiuti, e il cliente non paga nulla.</p>
+            <h3>{{ t('cf.accetti') }}</h3>
+            <p>{{ t('cf.accetti_testo') }}</p>
         </div>
 
         <div class="cf-passo">
             <span class="cf-numero">4</span>
             {# Portafoglio con monete #}
-            <svg viewBox="0 0 160 110" role="img" aria-label="Ricevi il compenso">
+            <svg viewBox="0 0 160 110" role="img" aria-label="{{ t('cf.aria_incassi') }}">
                 <rect x="22" y="34" width="104" height="60" rx="12" fill="#ffffff" stroke="#43a047" stroke-width="5"/>
                 <path d="M 22 46 h 84 a 10 10 0 0 1 0 20 h -84" fill="#e8f5e9"/>
                 <circle cx="104" cy="56" r="7" fill="#43a047"/>
                 <circle cx="116" cy="26" r="14" fill="#c8e6c9"/>
                 <text x="116" y="32" text-anchor="middle" font-size="16" font-weight="700" fill="#1b5e20">€</text>
             </svg>
-            <h3>Incassi</h3>
-            <p>Dopo la consulenza il compenso arriva sul tuo conto Stripe o
-               PayPal. A noi resta il 20%, che tiene in piedi la piattaforma.</p>
+            <h3>{{ t('cf.incassi') }}</h3>
+            <p>{{ t('pagamenti.incassi') }}</p>
         </div>
     </div>
 
-    <h2>Domande che ci fanno spesso</h2>
+    <h2>{{ t('cf.domande') }}</h2>
     <div class="cf-domande">
         <div class="cf-domanda">
-            <h3>Devo installare qualcosa per la videochiamata?</h3>
-            <p>No. Si apre dentro Ispiramy, dal browser del computer o del telefono.
-               Ti servono microfono e telecamera, e dare il permesso quando il
-               browser lo chiede.</p>
+            <h3>{{ t('cf.d1') }}</h3>
+            <p>{{ t('cf.d1_testo') }}</p>
         </div>
         <div class="cf-domanda">
-            <h3>E se il consulente non si presenta?</h3>
-            <p>Non paghi. L'importo era solo bloccato e torna indietro.</p>
+            <h3>{{ t('cf.d2') }}</h3>
+            <p>{{ t('cf.d2_testo') }}</p>
         </div>
         <div class="cf-domanda">
-            <h3>Posso parlare prima di prenotare?</h3>
-            <p>Sì: da ogni profilo puoi scrivere un messaggio e spiegare la tua
-               situazione, così sai se è la persona giusta.</p>
+            <h3>{{ t('cf.d3') }}</h3>
+            <p>{{ t('cf.d3_testo') }}</p>
         </div>
         <div class="cf-domanda">
-            <h3>E se non ho ancora capito a chi chiedere?</h3>
-            <p>Pubblica la tua domanda nella <a href="/community">Community</a>:
-               è gratis, e sono i consulenti a farsi avanti.</p>
+            <h3>{{ t('cf.d4') }}</h3>
+            <p>{{ t('cf.d4_a') }} <a href="/community">Community</a>: {{ t('cf.d4_b') }}</p>
         </div>
     </div>
 
     <div class="cf-chiusura">
-        <h2>Si comincia da qui</h2>
-        <p>Cerca chi può aiutarti, o mettiti a disposizione di chi ha bisogno.</p>
+        <h2>{{ t('cf.chiusura') }}</h2>
+        <p>{{ t('cf.chiusura_testo') }}</p>
         <div class="cf-pulsanti">
-            <a href="/consultants" class="cf-pulsante">Trova un consulente</a>
-            <a href="/community" class="cf-pulsante secondario">Fai una domanda</a>
+            <a href="/consultants" class="cf-pulsante">{{ t('cf.trova') }}</a>
+            <a href="/community" class="cf-pulsante secondario">{{ t('cf.domanda') }}</a>
         </div>
     </div>
 </div>

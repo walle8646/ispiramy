@@ -1070,7 +1070,7 @@
             
             <!-- Sezione Social -->
             <div class="footer-section">
-                <h3>Seguici</h3>
+                <h3>{{ t('piede.seguici') }}</h3>
                 <ul>
                     <li><a href="#" style="display: flex; align-items: center; gap: 10px;">
                         <i class="fab fa-facebook-f" style="width:18px;text-align:center;"></i> Facebook
@@ -1274,12 +1274,23 @@
 
         /* "15:00" del giorno indicato, visto dal fuso di chi guarda. */
         window.oraNelTuoFuso = function (giorno, ora) {
+            const momento = window.momentoNelTuoFuso(giorno, ora);
+            return momento ? momento.ora : null;
+        };
+
+        /* Ora e giorno nel fuso del browser. Se il fuso e' quello del sito,
+           o se il browser non lo sa dire, non si inventa una citta'. */
+        window.momentoNelTuoFuso = function (giorno, ora) {
             if (!window.fusoDiverso || !giorno || !ora) { return null; }
             try {
-                const base = new Date(`${giorno}T${ora.length === 5 ? ora : ora.slice(0, 5)}:00`);
+                const hhmm = ora.length === 5 ? ora : ora.slice(0, 5);
+                const base = new Date(`${giorno}T${hhmm}:00`);
                 if (isNaN(base)) { return null; }
                 const spostata = new Date(base.getTime() + scarto(base));
-                return spostata.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
+                return {
+                    ora: spostata.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' }),
+                    giorno: spostata.toLocaleDateString('it-IT', { day: 'numeric', month: 'short' })
+                };
             } catch (e) {
                 return null;
             }
@@ -1288,9 +1299,60 @@
         /* Il testo da mettere accanto a un orario: "(ora italiana)" e, se chi
            guarda sta altrove, anche l'ora sua. */
         window.etichettaFuso = function (giorno, ora) {
+            const inglese = (document.documentElement.lang || '').toLowerCase().indexOf('en') === 0;
             const tua = window.oraNelTuoFuso(giorno, ora);
+            if (inglese) {
+                return tua ? `Italian time · ${tua} for you` : 'Italian time';
+            }
             return tua ? `ora italiana · da te le ${tua}` : 'ora italiana';
         };
+
+        /* "09:30" anche se il browser scrive "09.30" o ci mette uno spazio. */
+        function soloOra(testo) {
+            const pulito = String(testo || '').replace(/\./g, ':').replace(/[^\d:]/g, '');
+            const parti = pulito.split(':').filter(Boolean);
+            if (parti.length < 2) { return pulito; }
+            return `${parti[0].padStart(2, '0')}:${parti[1].padStart(2, '0')}`;
+        }
+
+        /* Fascia su due righe. La prima è l'ora di chi prenota; la seconda,
+           più piccola, è l'ora italiana e compare solo se il fuso è diverso
+           da quello del sito. Gli orari inviati restano quelli italiani. */
+        window.fasciaSlot = function (giorno, inizio, fine) {
+            const inizioIt = soloOra(inizio);
+            const fineIt = fine ? soloOra(fine) : '';
+            const italiano = fineIt ? `${inizioIt}–${fineIt}` : inizioIt;
+            const da = window.momentoNelTuoFuso(giorno, inizio);
+            const a = fine ? window.momentoNelTuoFuso(giorno, fine) : null;
+            if (!da) { return { principale: italiano, secondaria: null }; }
+            const daOra = soloOra(da.ora);
+            const aOra = a ? soloOra(a.ora) : '';
+            return {
+                principale: aOra ? `${daOra}–${aOra}` : daOra,
+                secondaria: `${italiano} IT`
+            };
+        };
+
+        /* Testo unico, per i punti in cui non c'è spazio per due righe. */
+        window.etichettaSlot = function (giorno, inizio, fine) {
+            const fascia = window.fasciaSlot(giorno, inizio, fine);
+            return fascia.secondaria
+                ? `${fascia.principale} · ${fascia.secondaria}`
+                : fascia.principale;
+        };
+
+        function notaOrari() {
+            const inglese = (document.documentElement.lang || '').toLowerCase().indexOf('en') === 0;
+            if (window.fusoDiverso) {
+                return inglese
+                    ? 'Times in your timezone. Italian time underneath.'
+                    : "Orari nel tuo fuso. Sotto, l'ora italiana.";
+            }
+            return inglese ? 'Times in Italian time.' : 'Orari in ora italiana.';
+        }
+
+        const notaFuso = document.getElementById('nomeFusoPrenotazione');
+        if (notaFuso) notaFuso.textContent = notaOrari();
     })();
     </script>
 
@@ -1482,6 +1544,7 @@
                 'booking': 'fa-calendar-check',
                 'message': 'fa-envelope',
                 'payment': 'fa-credit-card',
+                'payment_hold': 'fa-hourglass-half',
                 'cancellation': 'fa-times-circle',
                 'offer': 'fa-handshake'
             };

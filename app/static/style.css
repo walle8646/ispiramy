@@ -807,3 +807,37 @@ body {
 .price-filter-form * {
     box-sizing: border-box;
 }
+
+.nav-badge {
+    display: inline-block;
+    min-width: 1.3rem;
+    padding: 0 6px;
+    margin-left: 4px;
+    border-radius: 999px;
+    background: #c62828;
+    color: #fff;
+    font-size: 0.75rem;
+    font-weight: 700;
+    line-height: 1.3rem;
+    text-align: center;
+    vertical-align: middle;
+}
+.admin-nav a:hover .nav-badge,
+.admin-nav a.active .nav-badge {
+    background: #fff;
+    color: #c62828;
+}
+
+.badge-verificato-categoria {
+    display: inline-flex;
+    align-items: center;
+    margin-left: 6px;
+    padding: 1px 7px;
+    border-radius: 999px;
+    background: #e8f5e9;
+    color: #1b5e20;
+    font-size: 0.72rem;
+    font-weight: 700;
+    line-height: 1.4;
+    vertical-align: middle;
+}

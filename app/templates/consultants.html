@@ -56,7 +56,7 @@
                 
                 {% if selected_category %}
                 <a href="/consultants{% if search_query %}?search={{ search_query }}{% endif %}{% if min_price %}{% if search_query %}&{% else %}?{% endif %}min_price={{ min_price }}{% endif %}{% if max_price %}&max_price={{ max_price }}{% endif %}{% if min_rating %}{% if search_query or min_price %}&{% else %}?{% endif %}min_rating={{ min_rating }}{% endif %}" class="filter-tag">
-                    📁 Categoria
+                    📁 {{ t('filtri.categorie') }}
                     <span class="tag-remove">✕</span>
                 </a>
                 {% endif %}
@@ -237,7 +237,7 @@
                             
                             <!-- Categoria sotto la foto -->
                             {% if item.category %}
-                            <span class="category-badge">{{ item.category.icon }} {{ nc(item.category.name) }}</span>
+                            <span class="category-badge">{{ item.category.icon }} {{ nc(item.category.name) }}{% if item.categoria_verificata %} <span class="badge-verificato-categoria">{{ t('comune.verificato') }}</span>{% endif %}</span>
                             {% endif %}
                         </div>
                         
@@ -247,13 +247,13 @@
                             <h3 class="consultant-name">{{ item.nome }} {{ item.cognome or '' }}</h3>
                             
                             <!-- Professione subito sotto il nome -->
-                            <p class="profession">{{ item.professione or 'Consulente' }}</p>
+                            <p class="profession">{{ item.professione or t('prenota.consulente') }}</p>
 
                             {# Le bandiere dicono in che lingua si puo' parlare
                                con questa persona: e' la prima cosa che serve
                                sapere a chi non parla italiano. #}
                             {% if item.lingue %}
-                            <p class="consultant-lingue" title="Lingue parlate">
+                            <p class="consultant-lingue" title="{{ t('esperti.lingue') }}">
                                 {% for codice, nome, bandiera in item.lingue %}<span>{{ bandiera }} {{ t('lingua.' ~ codice) }}</span>{% endfor %}
                             </p>
                             {% endif %}
@@ -279,7 +279,7 @@
                     <div class="card-footer">
                         {% if item.prezzo_consulenza %}
                         <div class="price-section">
-                            <span class="price-label">A partire da</span>
+                            <span class="price-label">{{ t('esperti.da') }}</span>
                             <span class="price-value">€{{ item.prezzo_consulenza }}</span>
                         </div>
                         {% endif %}
@@ -289,7 +289,7 @@
                                     data-consultant-id="{{ item.id }}"
                                     data-consultant-name="{{ item.nome }} {{ item.cognome }}"
                                     data-consultant-pic="{{ item.profile_picture or item|default_avatar }}"
-                                    title="Invia un messaggio">
+                                    title="{{ t('scheda.messaggio') }}">
                                 <i class="fas fa-envelope"></i> {{ t('esperti.messaggia') }}
                             </button>
                             <a href="/book/{{ item.id }}" class="btn-consult">

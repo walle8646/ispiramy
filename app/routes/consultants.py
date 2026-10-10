@@ -8,6 +8,7 @@ import re
 from app.database import get_session
 from app.models import User, Category, CategoryHierarchy, Review
 from app.routes.auth import verify_token
+from app.utils.verifica_categorie import id_categorie_verificate
 from loguru import logger
 
 router = APIRouter()
@@ -247,7 +248,8 @@ async def consultants_page(
             
             # Nome di ogni categoria: serve sia per filtrare sia per il
             # punteggio, ed e' una tabella piccola.
-            nomi_categorie = {c.id: c.name for c in session.exec(select(Category)).all()}
+            categorie_per_id = {c.id: c for c in session.exec(select(Category)).all()}
+            nomi_categorie = {i: c.name for i, c in categorie_per_id.items()}
 
             # ========== BASE QUERY ==========
             # Il filtro sul metodo di pagamento va fatto in SQL, non in Python:
@@ -458,6 +460,7 @@ async def consultants_page(
             enriched_consultants = []
             for user in consultants:
                 stats = review_stats.get(user.id, {'count': 0, 'avg': 0})
+                verificate = id_categorie_verificate(user)
                 user_data = {
                     'id': user.id,
                     'nome': user.nome,
@@ -469,11 +472,12 @@ async def consultants_page(
                     'review_avg': stats['avg'],
                     'review_count': stats['count'],
                     'lingue': [voce for voce in LINGUE if voce[0] in lingue_parlate(user)],
-                    'category': None
+                    'category': None,
+                    'categoria_verificata': bool(user.category_id and user.category_id in verificate),
                 }
                 
                 if user.category_id:
-                    cat = session.get(Category, user.category_id)
+                    cat = categorie_per_id.get(user.category_id)
                     if cat:
                         user_data['category'] = cat
                 

@@ -1,4 +1,5 @@
 from sqlmodel import Field, SQLModel, Relationship
+from sqlalchemy import UniqueConstraint
 from datetime import datetime, time
 from typing import Optional, List
 from decimal import Decimal
@@ -61,6 +62,9 @@ class User(SQLModel, table=True):
     # ma senza questa data il codice valeva per sempre.
     confirmation_code_created_at: Optional[datetime] = Field(default=None)
     is_verified: bool = Field(default=False, index=True)  # filtro principale della ricerca consulenti
+    # JSON di id categoria in cui il badge «Verificato» è visibile.
+    # None = non ancora distinto: vedi app.utils.verifica_categorie.
+    verified_category_ids: Optional[str] = Field(default=None)
     is_anonymous: bool = Field(default=False)  # Se True, mostra "Utente #ID" invece del nome
     genere: Optional[str] = Field(default=None)  # M=Maschio, F=Femmina, None=Non specificato
     notify_category_requests: bool = Field(default=True)  # 🔔 Ricevi notifiche per richieste in categoria
@@ -70,6 +74,9 @@ class User(SQLModel, table=True):
     auto_accept_bookings: bool = Field(default=True)
     user_type_id: int = Field(default=1)  # 1=Utente, 2=Verificatore, 3=Amministratore
     languages: Optional[str] = Field(default=None)  # JSON array: '["it","en","fr"]'
+    # Lingua del sito scelta da questa persona. Serve alle email e alle
+    # notifiche, che partono anche senza una richiesta (promemoria, pagamenti).
+    ui_language: Optional[str] = Field(default="it")
     
     # Stripe Connect
     stripe_account_id: Optional[str] = Field(default=None)  # Stripe Connected Account ID (acct_xxx)
@@ -192,6 +199,23 @@ class CommunityContact(SQLModel, table=True):
         )
 
 
+class CommunityReport(SQLModel, table=True):
+    """Segnalazione di una domanda. Una sola per persona e per domanda."""
+    __tablename__ = "community_reports"
+    __table_args__ = (
+        UniqueConstraint("question_id", "user_id", name="uq_community_report_utente_domanda"),
+    )
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    question_id: int = Field(foreign_key="community_questions.id", index=True)
+    user_id: int = Field(foreign_key="user.id", index=True)
+    reason: str = Field(max_length=1000)
+    status: str = Field(default="open", index=True)  # open, dismissed, hidden
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    resolved_at: Optional[datetime] = Field(default=None)
+    resolved_by: Optional[int] = Field(default=None, foreign_key="user.id")
+
+
 class CommunityQuestionFollow(SQLModel, table=True):
     """Traccia quali utenti sono interessati a una domanda della community (Segui e Richiedi)"""
     __tablename__ = "community_question_follows"
@@ -264,9 +288,9 @@ class Booking(SQLModel, table=True):
     acceptance_deadline: Optional[datetime] = None
     paypal_payout_id: Optional[str] = None  # PayPal Payout Batch ID (dopo rilascio fondi)
     
-    # Transfer differito (48h hold)
+    # Transfer differito: parte con la recensione, oppure a payment_held_until se non arriva
     stripe_transfer_id: Optional[str] = None  # Stripe Transfer ID (dopo rilascio fondi)
-    payment_held_until: Optional[datetime] = None  # Quando scade il hold (48h dopo fine consulenza)
+    payment_held_until: Optional[datetime] = None  # Scadenza di riserva se il cliente non recensisce
     payment_released_at: Optional[datetime] = None  # Quando i fondi sono stati trasferiti
     refund_amount: Optional[Decimal] = None  # Importo rimborsato (può essere parziale)
     
@@ -454,6 +478,33 @@ class Dispute(SQLModel, table=True):
     ai_comment: Optional[str] = Field(default=None, max_length=5000)
     ai_analyzed_at: Optional[datetime] = Field(default=None)
     
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: Optional[datetime] = Field(default=None)
+
+
+class TransactionProblem(SQLModel, table=True):
+    """Un movimento di denaro che non è andato a buon fine e va riprovato.
+
+    Una riga aperta è un compenso, un rimborso o un trasferimento ancora fermo.
+    Quando il movimento riesce, o qualcuno lo chiude a mano con una nota, la
+    riga passa a 'resolved' e non si riprova più: così non si paga due volte.
+    """
+    __tablename__ = "transaction_problems"
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    booking_id: int = Field(foreign_key="booking.id", index=True)
+    # payout = compenso intero, refund = rimborso al cliente, transfer = quota
+    # del consulente rimasta dopo un rimborso parziale
+    kind: str = Field(index=True)
+    status: str = Field(default="open", index=True)  # open, resolved
+    amount_cents: int = Field(default=0)
+    error_reason: str = Field(default="", max_length=2000)
+    attempts: int = Field(default=0)
+    last_attempt_at: Optional[datetime] = Field(default=None)
+    next_attempt_at: Optional[datetime] = Field(default=None)
+    resolution_note: Optional[str] = Field(default=None, max_length=2000)
+    resolved_at: Optional[datetime] = Field(default=None)
+    resolved_by_user_id: Optional[int] = Field(default=None, foreign_key="user.id")
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: Optional[datetime] = Field(default=None)
 

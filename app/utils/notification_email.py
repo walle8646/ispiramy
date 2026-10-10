@@ -7,6 +7,7 @@ import os
 from sendgrid import SendGridAPIClient
 from sendgrid.helpers.mail import Mail, Email, To, Content
 from app.logger_config import logger
+from app.utils.orari import ORE_RILASCIO_SENZA_RECENSIONE
 from typing import Dict, Optional
 
 
@@ -15,7 +16,8 @@ def send_notification_email(
     to_name: str,
     subject: str,
     template_name: str,
-    template_data: Dict[str, str]
+    template_data: Dict[str, str],
+    lingua: str = "it",
 ) -> bool:
     """
     Invia un'email di notifica usando SendGrid.
@@ -43,7 +45,7 @@ def send_notification_email(
             return False
         
         # Genera l'HTML del template
-        html_content = generate_email_html(template_name, template_data)
+        html_content = generate_email_html(template_name, template_data, lingua=lingua)
         
         if not html_content:
             logger.error(f"Template {template_name} non trovato o errore generazione")
@@ -73,6 +75,34 @@ def send_notification_email(
         return False
 
 
+def nota_compenso(lingua: str = "it") -> str:
+    """Come e quando il consulente viene pagato.
+
+    In italiano la mail tiene anche la frase in inglese, come prima: chi la
+    riceve in italiano trova comunque la regola. In inglese resta solo
+    l'inglese, altrimenti la mail tradotta avrebbe ancora un paragrafo italiano.
+    """
+    ore = ORE_RILASCIO_SENZA_RECENSIONE
+    inglese = (
+        "The consultant's payout stays on hold until the client leaves a review "
+        "and there is no open dispute. If they never review, "
+        f"it is sent {ore} hours after the consultation ends."
+    )
+    if lingua == "en":
+        testo = f"<p style='margin:0;'>{inglese}</p>"
+    else:
+        testo = (
+            "<p style='margin:0 0 8px;'>Il compenso del consulente resta trattenuto finché il cliente "
+            "lascia la recensione e non c'è una contestazione aperta. Se la recensione non arriva, "
+            f"parte {ore} ore dopo la fine della consulenza.</p>"
+            f"<p style='margin:0;color:#546e7a;font-size:13px;'>{inglese}</p>"
+        )
+    return (
+        '<div style="background:#f1f8f0;border-left:4px solid #43a047;border-radius:6px;'
+        f'padding:14px 18px;margin:20px 0;">{testo}</div>'
+    )
+
+
 # Testo sul pagamento nell'email di rifiuto, se il chiamante non ne passa uno
 NOTA_RIMBORSO = (
     "se hai pagato, riceverai il rimborso entro 5-10 giorni lavorativi "
@@ -82,6 +112,14 @@ NOTA_BLOCCO_ANNULLATO = (
     "non ti è stato addebitato nulla. L'importo era solo bloccato e il blocco è stato "
     "annullato: a seconda della banca può restare visibile qualche giorno sull'estratto conto."
 )
+NOTA_RIMBORSO_EN = (
+    "if you paid, you will receive a refund within 5-10 business days "
+    "on the payment method you used."
+)
+NOTA_BLOCCO_ANNULLATO_EN = (
+    "you were not charged. The amount was only authorized and that hold has been "
+    "cancelled: depending on your bank it may stay visible on your statement for a few days."
+)
 
 
 # URL pubblico del logo per le email (PNG su S3 — gli email client non rendono bene gli SVG)
@@ -89,7 +127,8 @@ EMAIL_LOGO_URL = "https://ispiramy-images.s3.eu-north-1.amazonaws.com/logo-email
 
 
 def _branded_email(emoji: str, title: str, accent: str, accent_dark: str,
-                   body_html: str, button_label: str = None, button_url: str = None) -> str:
+                   body_html: str, button_label: str = None, button_url: str = None,
+                   lingua: str = "it") -> str:
     """Wrapper email brandizzato: header verde con logo + contenuto + footer.
     Usa stili inline (i client email spesso rimuovono i blocchi <style>)."""
     button = ""
@@ -100,8 +139,22 @@ def _branded_email(emoji: str, title: str, accent: str, accent_dark: str,
             f'padding:14px 36px;text-decoration:none;border-radius:8px;margin:8px 0 4px;'
             f'font-weight:600;font-size:16px;">{button_label}</a></div>'
         )
+    if lingua == "en":
+        lang = "en"
+        nota = (
+            f"This is an automatic email from <strong style=\"color:{accent};\">Ispiramy</strong>. "
+            "Please do not reply."
+        )
+        firma = "© Ispiramy — The platform that connects people who need help with people who can give it."
+    else:
+        lang = "it"
+        nota = (
+            f"Questa è un'email automatica da <strong style=\"color:{accent};\">Ispiramy</strong>. "
+            "Non rispondere a questo messaggio."
+        )
+        firma = "© Ispiramy — La piattaforma che connette chi cerca aiuto con chi può darlo."
     return f"""<!DOCTYPE html>
-<html lang="it">
+<html lang="{lang}">
 <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
 <body style="margin:0;padding:0;background:#eef1f4;font-family:-apple-system,'Segoe UI',Roboto,Arial,sans-serif;color:#374151;">
   <div style="max-width:600px;margin:0 auto;padding:24px 16px;">
@@ -115,8 +168,8 @@ def _branded_email(emoji: str, title: str, accent: str, accent_dark: str,
       {button}
     </div>
     <div style="text-align:center;color:#9ca3af;font-size:12px;margin-top:22px;line-height:1.6;">
-      <p style="margin:0;">Questa è un'email automatica da <strong style="color:{accent};">Ispiramy</strong>. Non rispondere a questo messaggio.</p>
-      <p style="margin:6px 0 0;">© Ispiramy — La piattaforma che connette chi cerca aiuto con chi può darlo.</p>
+      <p style="margin:0;">{nota}</p>
+      <p style="margin:6px 0 0;">{firma}</p>
     </div>
   </div>
 </body>
@@ -131,7 +184,28 @@ def _details_box(rows_html: str, accent: str) -> str:
     )
 
 
-def generate_email_html(template_name: str, data: Dict[str, str]) -> Optional[str]:
+def _dati_nella_lingua(data: Dict[str, str], lingua: str) -> Dict[str, str]:
+    """Note di rimborso e titoli dei riquadri, nella lingua della mail."""
+    dati = dict(data or {})
+    if lingua != "en":
+        return dati
+    nota = dati.get("refund_note") or ""
+    if nota == NOTA_RIMBORSO or "riceverai il rimborso" in nota:
+        dati["refund_note"] = NOTA_RIMBORSO_EN
+    elif nota == NOTA_BLOCCO_ANNULLATO or "non ti è stato addebitato" in nota or "non ti e stato addebitato" in nota:
+        dati["refund_note"] = NOTA_BLOCCO_ANNULLATO_EN
+    sezione = dati.get("reason_section") or ""
+    if sezione:
+        dati["reason_section"] = (
+            sezione
+            .replace("Motivo del rifiuto:", "Reason for declining:")
+            .replace("📝 Motivo:", "Reason:")
+            .replace("Cosa segnala il cliente:", "What the client reported:")
+        )
+    return dati
+
+
+def generate_email_html(template_name: str, data: Dict[str, str], lingua: str = "it") -> Optional[str]:
     """
     Genera l'HTML dell'email (brandizzato) sostituendo le variabili nel template.
 
@@ -152,6 +226,10 @@ def generate_email_html(template_name: str, data: Dict[str, str]) -> Optional[st
             'booking_confirmation.html': 'booking_confirmed.html',
         }.get(template_name, template_name)
 
+        if lingua == "en":
+            from app.utils.email_en import email_html_en
+            return email_html_en(template_name, _dati_nella_lingua(data, "en"))
+
         # Palette accenti per tipo di email (su base verde bosco del brand)
         GREEN, GREEN_D = "#43a047", "#2e7d32"
         AMBER, AMBER_D = "#f39c12", "#e67e22"
@@ -168,6 +246,7 @@ def generate_email_html(template_name: str, data: Dict[str, str]) -> Optional[st
                 "<p>Hai ricevuto una nuova prenotazione da <strong>{client_name}</strong>!</p>"
                 + _details_box(row("📅 Data:", "{date}") + row("🕐 Orario:", "{time}") + row("⏱️ Durata:", "{duration} minuti"), GREEN)
                 + "<p>Preparati in anticipo e sii puntuale per offrire la migliore esperienza al tuo cliente.</p>"
+                + nota_compenso()
             )
             return _fill(_branded_email("📅", "Nuova Prenotazione", GREEN, GREEN_D, body, "Visualizza Prenotazione", "{action_url}"), data)
 
@@ -240,11 +319,30 @@ def generate_email_html(template_name: str, data: Dict[str, str]) -> Optional[st
                 + _details_box(row("📅 Data:", "{date}") + row("🕐 Orario:", "{time}"), AMBER)
                 + "{reason_section}"
                 + '<div style="background:#fff8e1;border-left:4px solid #f39c12;border-radius:6px;padding:14px 18px;margin:20px 0;">'
-                  "<p style='margin:0;'>Il compenso di questa consulenza resta trattenuto finché la contestazione "
-                  "non è esaminata. Ti contatteremo se servono chiarimenti: se la consulenza era registrata, "
-                  "la registrazione viene usata per verificare cosa è successo.</p></div>"
+                  "<p style='margin:0 0 8px;'>Il compenso di questa consulenza resta trattenuto finché la contestazione "
+                  "non è chiusa. Senza contestazione, parte quando il cliente lascia la recensione, oppure "
+                  f"{ORE_RILASCIO_SENZA_RECENSIONE} ore dopo la fine se la recensione non arriva. "
+                  "Ti contatteremo se servono chiarimenti: se la consulenza era registrata, "
+                  "la registrazione viene usata per verificare cosa è successo.</p>"
+                  "<p style='margin:0;color:#546e7a;font-size:13px;'>This payout stays on hold until the dispute is closed. "
+                  "With no open dispute, it is sent when the client leaves a review, or "
+                  f"{ORE_RILASCIO_SENZA_RECENSIONE} hours after the consultation ends if they never review. "
+                  "We will contact you if we need more detail. If the consultation was recorded, "
+                  "the recording is used to check what happened.</p></div>"
             )
             return _fill(_branded_email("⚠️", "Contestazione aperta", AMBER, AMBER_D, body, "Vai al tuo profilo", "{action_url}"), data)
+
+        if template_name == 'dispute_decided.html':
+            body = (
+                "<p>Ciao <strong>{user_name}</strong>,</p>"
+                "<p>Abbiamo chiuso la contestazione sulla consulenza del <strong>{date}</strong>"
+                " alle <strong>{time}</strong>.</p>"
+                + '<div style="background:#f1f8f0;border-left:4px solid #43a047;border-radius:6px;'
+                  'padding:14px 18px;margin:20px 0;">'
+                "<p style='margin:0 0 8px;'>{outcome_it}</p>"
+                "<p style='margin:0;color:#546e7a;font-size:13px;'>{outcome_en}</p></div>"
+            )
+            return _fill(_branded_email("⚖️", "Decisione sulla contestazione", GREEN, GREEN_D, body, "Vai al tuo profilo", "{action_url}"), data)
 
         if template_name == 'booking_request.html':
             body = (
@@ -288,6 +386,7 @@ def generate_email_html(template_name: str, data: Dict[str, str]) -> Optional[st
                 "<p>Com'è andata la tua consulenza con <strong>{consultant_name}</strong>?</p>"
                 + _details_box(row("📅 Data:", "{date}") + row("🕐 Orario:", "{time}"), GOLD)
                 + "<p>La tua opinione è preziosa e aiuta altri utenti a scegliere il consulente giusto. Ci vogliono solo 30 secondi!</p>"
+                + nota_compenso()
             )
             return _fill(_branded_email("⭐", "Lascia una Recensione", GOLD, GOLD_D, body, "Lascia la tua Recensione", "{review_url}"), data)
 
@@ -297,6 +396,7 @@ def generate_email_html(template_name: str, data: Dict[str, str]) -> Optional[st
                 "<p>Non hai ancora lasciato una recensione per la consulenza con <strong>{consultant_name}</strong>.</p>"
                 + _details_box(row("📅 Data:", "{date}") + row("🕐 Orario:", "{time}"), AMBER)
                 + "<p>Ci vogliono solo 30 secondi e aiuterai altri utenti a trovare il consulente perfetto! Se l'hai già fatto, ignora questo messaggio.</p>"
+                + nota_compenso()
             )
             return _fill(_branded_email("🔔", "Non dimenticare la Recensione", AMBER, AMBER_D, body, "Lascia la tua Recensione", "{review_url}"), data)
 

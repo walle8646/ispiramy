@@ -1,0 +1,227 @@
+{% extends "base.html" %}
+
+{% block title %}{{ t('problemi.titolo') }} - Admin Ispiramy{% endblock %}
+
+{% block extra_css %}
+<style>
+    .admin-container {
+        max-width: 980px;
+        margin: 30px auto;
+        padding: 0 16px 40px;
+    }
+    .admin-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        flex-wrap: wrap;
+        margin-bottom: 24px;
+    }
+    .admin-header h1 {
+        font-size: 1.5rem;
+        color: #1a1a2e;
+        margin: 0;
+    }
+    .admin-header h1 i { color: #c62828; }
+    .admin-nav {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+    .admin-nav a {
+        padding: 8px 14px;
+        border-radius: 8px;
+        text-decoration: none;
+        font-size: 0.9rem;
+        font-weight: 500;
+        color: #555;
+        background: #f5f5f5;
+    }
+    .admin-nav a:hover, .admin-nav a.active {
+        background: #2e7d32;
+        color: #fff;
+    }
+    .problema-vuoto {
+        background: #fff;
+        border-radius: 14px;
+        padding: 36px 20px;
+        text-align: center;
+        color: #777;
+        box-shadow: 0 2px 12px rgba(0,0,0,0.05);
+    }
+    .problema-card {
+        background: #fff;
+        border-radius: 14px;
+        padding: 18px 16px;
+        margin-bottom: 14px;
+        box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+        border-left: 4px solid #c62828;
+    }
+    .problema-testa {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        flex-wrap: wrap;
+        align-items: baseline;
+        margin-bottom: 10px;
+    }
+    .problema-tipo {
+        font-weight: 700;
+        color: #1a1a2e;
+    }
+    .problema-importo {
+        font-size: 1.15rem;
+        font-weight: 700;
+        color: #1b5e20;
+    }
+    .problema-griglia {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px 16px;
+        margin-bottom: 10px;
+    }
+    .problema-griglia span {
+        display: block;
+        font-size: 0.75rem;
+        color: #888;
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+    }
+    .problema-griglia strong {
+        font-weight: 600;
+        color: #222;
+        overflow-wrap: anywhere;
+    }
+    .problema-errore {
+        background: #fff5f5;
+        color: #7f1d1d;
+        border-radius: 8px;
+        padding: 10px 12px;
+        margin: 8px 0 12px;
+        overflow-wrap: anywhere;
+        font-size: 0.92rem;
+    }
+    .problema-azioni textarea {
+        width: 100%;
+        box-sizing: border-box;
+        min-height: 64px;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        padding: 8px 10px;
+        font: inherit;
+        resize: vertical;
+    }
+    .problema-bottoni {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 8px;
+    }
+    .problema-bottoni button {
+        flex: 1 1 160px;
+        border: none;
+        border-radius: 8px;
+        padding: 10px 14px;
+        font-weight: 600;
+        cursor: pointer;
+    }
+    .btn-riprova { background: #2e7d32; color: #fff; }
+    .btn-risolto { background: #eceff1; color: #333; }
+    .problema-msg { min-height: 1.2em; color: #c62828; font-size: 0.9rem; margin: 8px 0 0; }
+    @media (max-width: 640px) {
+        .problema-griglia { grid-template-columns: 1fr; }
+        .admin-container { padding: 0 12px 32px; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="admin-container">
+    <div class="admin-header">
+        <h1><i class="fas fa-rotate"></i> {{ t('problemi.titolo') }}</h1>
+        <nav class="admin-nav">
+            <a href="/admin"><i class="fas fa-chart-bar"></i> {{ t('admin.dashboard') }}</a>
+            <a href="/admin/disputes"><i class="fas fa-exclamation-triangle"></i> {{ t('admin.contestazioni') }}</a>
+            <a href="/admin/transaction-problems" class="active"><i class="fas fa-rotate"></i> {{ t('problemi.menu') }}{% if problemi_transazione_aperti %} <span class="nav-badge">{{ problemi_transazione_aperti }}</span>{% endif %}</a>
+            <a href="/admin/reports"><i class="fas fa-flag"></i> {{ t('segnalazioni.menu') }}{% if segnalazioni_aperte %} <span class="nav-badge">{{ segnalazioni_aperte }}</span>{% endif %}</a>
+            <a href="/admin/users"><i class="fas fa-users"></i> {{ t('admin.utenti') }}</a>
+            <a href="/admin/bookings"><i class="fas fa-video"></i> {{ t('admin.consulenze') }}</a>
+        </nav>
+    </div>
+
+    {% if not problemi %}
+    <div class="problema-vuoto">{{ t('problemi.vuoto') }}</div>
+    {% endif %}
+
+    {% for p in problemi %}
+    <article class="problema-card">
+        <div class="problema-testa">
+            <div class="problema-tipo">{{ t('problemi.tipo.' + p.kind) }}</div>
+            <div class="problema-importo">&euro;{{ p.amount_eur }}</div>
+        </div>
+        <div class="problema-griglia">
+            <div><span>{{ t('problemi.prenotazione') }}</span><strong>#{{ p.booking_id }}</strong></div>
+            <div><span>{{ t('problemi.persone') }}</span><strong>{{ p.client_name }} / {{ p.consultant_name }}</strong></div>
+            <div><span>{{ t('problemi.tentativi') }}</span><strong>{{ p.attempts }}</strong></div>
+            <div><span>{{ t('problemi.ultimo') }}</span><strong>{% if p.last_attempt_at %}{{ p.last_attempt_at.strftime('%d/%m/%Y %H:%M') }}{% else %}—{% endif %}</strong></div>
+            <div><span>{{ t('problemi.prossimo') }}</span><strong>{% if p.next_attempt_at %}{{ p.next_attempt_at.strftime('%d/%m/%Y %H:%M') }}{% else %}—{% endif %}</strong></div>
+        </div>
+        <div class="problema-errore"><span>{{ t('problemi.errore') }}: </span>{{ p.error_reason }}</div>
+        <div class="problema-azioni">
+            <textarea id="nota-{{ p.id }}" placeholder="{{ t('problemi.nota') }}"></textarea>
+            <div class="problema-bottoni">
+                <button type="button" class="btn-riprova" onclick="riprovaProblema({{ p.id }}, this)">{{ t('problemi.riprova') }}</button>
+                <button type="button" class="btn-risolto" onclick="risolviProblema({{ p.id }}, this)">{{ t('problemi.risolto') }}</button>
+            </div>
+            <p class="problema-msg" id="msg-{{ p.id }}"></p>
+        </div>
+    </article>
+    {% endfor %}
+</div>
+<script>
+    async function riprovaProblema(id, btn) {
+        btn.disabled = true;
+        const msg = document.getElementById('msg-' + id);
+        msg.textContent = '';
+        try {
+            const resp = await fetch('/admin/api/transaction-problems/' + id + '/retry', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: '{}'
+            });
+            if (resp.ok) {
+                window.location.reload();
+                return;
+            }
+            const data = await resp.json().catch(() => ({}));
+            msg.textContent = data.detail || {{ t('comune.errore')|tojson }};
+        } catch (e) {
+            msg.textContent = {{ t('comune.errore_rete')|tojson }};
+        }
+        btn.disabled = false;
+    }
+
+    async function risolviProblema(id, btn) {
+        const nota = document.getElementById('nota-' + id).value;
+        const msg = document.getElementById('msg-' + id);
+        msg.textContent = '';
+        btn.disabled = true;
+        try {
+            const resp = await fetch('/admin/api/transaction-problems/' + id + '/resolve', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ note: nota })
+            });
+            const data = await resp.json().catch(() => ({}));
+            if (resp.ok) {
+                window.location.reload();
+                return;
+            }
+            msg.textContent = data.detail || {{ t('comune.errore')|tojson }};
+        } catch (e) {
+            msg.textContent = {{ t('comune.errore_rete')|tojson }};
+        }
+        btn.disabled = false;
+    }
+</script>
+{% endblock %}

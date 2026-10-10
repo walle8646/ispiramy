@@ -60,6 +60,21 @@ def test_il_menu_a_panino_lascia_il_posto_alle_schede():
     assert ".navbar .navbar-links" in telefono
 
 
+def test_sul_telefono_la_barra_in_alto_non_va_a_capo():
+    """Da loggati, verso i 390px, lente lingua campanella e chat facevano
+    scendere la barra su due righe. Sul telefono resta una riga sola."""
+    css = _file("app", "static", "mobile.css")
+    telefono = css[css.index("ASPETTO DA APP"):css.index("Sul computer la barra e il foglio non esistono")]
+    assert "flex-wrap: nowrap !important;" in telefono
+    titolo = telefono[telefono.index(".navbar .navbar-title"):]
+    titolo = titolo[:titolo.index("}")]
+    assert "white-space: nowrap" in titolo
+    # il marchio non si spegne per farci stare le icone
+    assert ".navbar .navbar-logo" in telefono
+    assert ".navbar .notifications-icon" in telefono
+    assert ".navbar .scelta-lingua" in telefono
+
+
 def test_ogni_pagina_sa_chi_sei(client):
     """Meta' delle rotte non passava current_user al template: su messaggi,
     "Come funziona" e le pagine informative la barra diceva "Accedi" a chi
@@ -294,6 +309,6 @@ def test_le_altre_pagine_sul_telefono_stringono_l_apertura():
     assert ".consultant-skills" in blocco and "display: none" in blocco
     assert ".calendar-section" in blocco and "order: 2;" in blocco
     assert ".detail-creata" in blocco and "display: none" in blocco
-    assert "Creata il" in offerta, "la data di creazione resta nel markup"
+    assert "offerta.creata" in offerta, "la data di creazione resta nel markup"
     prima = offerta[:offerta.index("il primo giorno resta in vista")]
     assert "order: 2;" not in prima

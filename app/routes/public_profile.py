@@ -5,6 +5,7 @@ from app.database import get_session
 from app.logger_config import logger
 from app.utils.template_helpers import get_all_categories
 from app.utils_user import has_payment_method
+from app.utils.verifica_categorie import etichette_verificate, id_categorie_verificate
 from sqlmodel import select
 import json
 
@@ -75,25 +76,15 @@ def public_user_profile(request: Request, user_id: int):
                 pass
         
         # Compute last seen label
+        from app.utils.lingue_ui import etichetta_attivita, lingua_di
         last_seen_label = None
+        is_online = False
         if user.last_seen:
             from datetime import datetime
             now = datetime.utcnow()
             diff = now - user.last_seen
             minutes = int(diff.total_seconds() / 60)
-            if minutes < 5:
-                last_seen_label = "Online ora"
-            elif minutes < 60:
-                last_seen_label = f"Attivo {minutes} min fa"
-            elif minutes < 1440:
-                hours = minutes // 60
-                last_seen_label = f"Attivo {hours} or{'a' if hours == 1 else 'e'} fa"
-            elif minutes < 43200:
-                days = minutes // 1440
-                last_seen_label = f"Attivo {days} giorn{'o' if days == 1 else 'i'} fa"
-            else:
-                months = minutes // 43200
-                last_seen_label = f"Attivo {months} mes{'e' if months == 1 else 'i'} fa"
+            last_seen_label, is_online = etichetta_attivita(minutes, lingua_di(request))
         
         # Carica recensioni del consulente
         reviews_raw = session.exec(
@@ -131,9 +122,12 @@ def public_user_profile(request: Request, user_id: int):
             "user_languages": user_languages,
             "user_other_language": user_other_language,
             "last_seen_label": last_seen_label,
+            "is_online": is_online,
             "reviews": reviews,
             "avg_rating": avg_rating,
             "consultant_has_payment": has_payment_method(user),
+            "categorie_verificate": etichette_verificate(session, user),
+            "categorie_verificate_ids": list(id_categorie_verificate(user)),
             "current_user_has_payment": has_payment_method(current_user) if current_user else False,
         })
 

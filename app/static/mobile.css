@@ -457,10 +457,40 @@
         display: none !important;
     }
 
-    /* Una riga sola: marchio a sinistra, icone a destra */
+    /* Una riga sola, anche da loggati. Prima la barra andava a capo verso i
+       390px: a sinistra il marchio, sotto lente, lingua, campanella e chat.
+       Il flex-wrap lasciato per il menu a panino vinceva ancora. Qui si
+       spegne, le distanze si stringono e il marchio cala di un filo. Logo,
+       lente, lingua, campanella e chat restano tutti visibili. */
+    .navbar {
+        flex-wrap: nowrap !important;
+        align-items: center !important;
+        gap: 8px !important;
+        padding: 8px 10px !important;
+    }
+
     .navbar .navbar-left {
         width: auto !important;
         flex: 1 1 auto !important;
+        min-width: 0 !important;
+        justify-content: flex-start !important;
+    }
+
+    .navbar .navbar-logo-link {
+        gap: 8px !important;
+        min-width: 0;
+    }
+
+    .navbar .navbar-logo {
+        height: 30px !important;
+        width: 30px !important;
+        flex: 0 0 auto;
+    }
+
+    .navbar .navbar-title {
+        font-size: 18px !important;
+        line-height: 1 !important;
+        white-space: nowrap !important;
     }
 
     .navbar .search-wrapper {
@@ -474,18 +504,21 @@
         width: 36px;
         height: 36px;
         color: #1b5e20;
-        font-size: 19px;
+        font-size: 18px;
         text-decoration: none;
+        flex: 0 0 auto;
     }
 
     .navbar .navbar-links {
         display: flex !important;
         flex-direction: row !important;
+        flex-wrap: nowrap !important;
         align-items: center !important;
         justify-content: flex-end !important;
         width: auto !important;
+        flex: 0 0 auto !important;
         order: 2 !important;
-        gap: 18px !important;
+        gap: 6px !important;
         padding: 0 !important;
         margin: 0 !important;
         background: none !important;
@@ -501,6 +534,27 @@
 
     .navbar .scelta-lingua {
         order: -1 !important;
+        flex: 0 0 auto;
+        gap: 1px;
+        padding: 1px;
+    }
+
+    .navbar .scelta-lingua a {
+        min-width: 26px;
+        padding: 4px 6px;
+        font-size: 12px;
+        line-height: 1.15;
+        white-space: nowrap;
+    }
+
+    .navbar .notifications-icon,
+    .navbar .chat-button {
+        flex: 0 0 auto;
+        width: 36px !important;
+        height: 36px !important;
+        min-width: 36px !important;
+        min-height: 36px !important;
+        padding: 0 !important;
     }
 
     /* Il piede di pagina e' una cosa da sito: i suoi collegamenti stanno nel
@@ -862,10 +916,10 @@
         border-top: 1px solid #e6eae7 !important;
     }
 
-    /* Da loggati la barra va su due righe e il calcolo fisso (65px) lasciava
-       la casella sotto le schede. La conversazione riempie lo spazio che
-       resta, qualunque sia l'altezza della barra. Chi non conosce :has()
-       tiene il calcolo qui sopra. */
+    /* Il calcolo fisso (65px) lasciava la casella sotto le schede quando la
+       barra era piu' alta. La conversazione riempie lo spazio che resta,
+       qualunque sia l'altezza della barra. Chi non conosce :has() tiene il
+       calcolo qui sopra. */
     body:has(.chat-container) {
         display: flex;
         flex-direction: column;

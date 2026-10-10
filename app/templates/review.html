@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Lascia una Recensione - Ispiramy{% endblock %}
+{% block title %}{{ t('recensione.titolo') }} - Ispiramy{% endblock %}
 
 {% block extra_css %}
 <style>
@@ -296,20 +296,20 @@
             <i class="fas fa-exclamation-circle"></i>
             <h2>Ops!</h2>
             <p>{{ error }}</p>
-            <a href="/profile">← Torna al profilo</a>
+            <a href="/profile">← {{ t('esito.torna_profilo') }}</a>
         </div>
 
         {% elif already_reviewed %}
         <div class="review-done">
             <i class="fas fa-check-circle"></i>
-            <h2>Recensione già inviata!</h2>
-            <p>Hai già lasciato una recensione per questa consulenza. Grazie!</p>
-            <a href="/profile">← Torna al profilo</a>
+            <h2>{{ t('recensione.gia') }}</h2>
+            <p>{{ t('recensione.gia_testo') }}</p>
+            <a href="/profile">← {{ t('esito.torna_profilo') }}</a>
         </div>
 
         {% else %}
-        <h1>⭐ Come è andata la consulenza?</h1>
-        <p class="subtitle">La tua opinione aiuta altri utenti a scegliere il consulente giusto.</p>
+        <h1>⭐ {{ t('recensione.titolo_breve') }}</h1>
+        <p class="subtitle">{{ t('recensione.sottotitolo') }}</p>
 
         {% if consultant %}
         <div class="consultant-info">
@@ -335,7 +335,7 @@
         </div>
 
         <div class="review-question">
-            <label>Era preparato sull'argomento?</label>
+            <label>{{ t('recensione.preparato') }}</label>
             <div class="star-rating" data-field="prepared">
                 <input type="radio" name="prepared" value="5" id="p5"><label for="p5">★</label>
                 <input type="radio" name="prepared" value="4" id="p4"><label for="p4">★</label>
@@ -346,7 +346,7 @@
         </div>
 
         <div class="review-question">
-            <label>Capacità comunicativa?</label>
+            <label>{{ t('recensione.comunicazione') }}</label>
             <div class="star-rating" data-field="communication">
                 <input type="radio" name="communication" value="5" id="c5"><label for="c5">★</label>
                 <input type="radio" name="communication" value="4" id="c4"><label for="c4">★</label>
@@ -357,22 +357,28 @@
         </div>
 
         <div class="review-comment">
-            <label>Commento (opzionale)</label>
-            <textarea id="reviewComment" placeholder="Racconta la tua esperienza..." maxlength="2000"></textarea>
+            <label>{{ t('recensione.commento') }}</label>
+            <textarea id="reviewComment" placeholder="{{ t('recensione.commento_ph') }}" maxlength="2000"></textarea>
         </div>
 
-        <button class="review-btn-submit" id="reviewSubmitBtn" onclick="submitReview()">Invia Recensione</button>
-        <button class="review-btn-dispute" onclick="toggleDisputeForm()">⚠️ Apri una contestazione</button>
+        <button class="review-btn-submit" id="reviewSubmitBtn" onclick="submitReview()">{{ t('recensione.invia') }}</button>
+        {% if puo_contestare %}
+        <button class="review-btn-dispute" onclick="toggleDisputeForm()">⚠️ {{ t('recensione.apri') }}</button>
 
         <!-- Form contestazione (nascosto) -->
         <div class="dispute-form-container" id="disputeFormContainer">
-            <h3>⚠️ Apri una contestazione</h3>
-            <p>Descrivi qual era l'obiettivo della consulenza e cosa non ha funzionato. Fornisci più dettagli possibile per aiutarci a valutare la situazione.</p>
-            <textarea id="disputeDescription" placeholder="Es: Ho richiesto la consulenza per risolvere un problema di... ma il consulente non ha affrontato il tema, oppure le informazioni fornite erano errate perché..." maxlength="5000" oninput="updateDisputeCharCount()"></textarea>
+            <h3>⚠️ {{ t('recensione.apri') }}</h3>
+            <p>{{ t('recensione.contestazione_testo') }}</p>
+            <textarea id="disputeDescription" placeholder="{{ t('recensione.contestazione_ph') }}" maxlength="5000" oninput="updateDisputeCharCount()"></textarea>
             <div class="dispute-char-count"><span id="disputeCharCount">0</span>/5000</div>
-            <button class="dispute-btn-submit" id="disputeSubmitBtn" onclick="submitDispute()">Invia contestazione</button>
-            <button class="dispute-btn-cancel" onclick="toggleDisputeForm()">Annulla</button>
+            <button class="dispute-btn-submit" id="disputeSubmitBtn" onclick="submitDispute()">{{ t('recensione.invia_contestazione') }}</button>
+            <button class="dispute-btn-cancel" onclick="toggleDisputeForm()">{{ t('comune.annulla') }}</button>
         </div>
+        {% elif motivo_contestazione %}
+        <p style="font-size:0.82rem;color:#999;margin-top:8px;text-align:center;">
+            <i class="fas fa-info-circle"></i> {{ motivo_contestazione }}
+        </p>
+        {% endif %}
 
         <div id="reviewMsg" class="review-msg" style="display:none;"></div>
         {% endif %}
@@ -394,13 +400,13 @@
         const communication = document.querySelector('input[name="communication"]:checked');
 
         if (!helpful || !prepared || !communication) {
-            showReviewMsg('Per favore, seleziona un voto per ogni domanda.', 'error');
+            showReviewMsg({{ t('recensione.scegli_voto')|tojson }}, 'error');
             return;
         }
 
         const btn = document.getElementById('reviewSubmitBtn');
         btn.disabled = true;
-        btn.textContent = 'Invio in corso...';
+        btn.textContent = {{ t('recensione.invio')|tojson }};
 
         try {
             const resp = await fetch('/api/review/{{ token }}/submit', {
@@ -415,17 +421,17 @@
             });
             const data = await resp.json();
             if (resp.ok) {
-                showReviewMsg('Grazie per la tua recensione! ⭐', 'success');
+                showReviewMsg({{ t('recensione.grazie')|tojson }}, 'success');
                 setTimeout(() => { window.location.href = '/profile'; }, 2000);
             } else {
-                showReviewMsg(data.detail || 'Errore nell\'invio', 'error');
+                showReviewMsg(data.detail || {{ t('recensione.errore')|tojson }}, 'error');
                 btn.disabled = false;
-                btn.textContent = 'Invia Recensione';
+                btn.textContent = {{ t('recensione.invia')|tojson }};
             }
         } catch (e) {
-            showReviewMsg('Errore di connessione', 'error');
+            showReviewMsg({{ t('comune.errore_rete')|tojson }}, 'error');
             btn.disabled = false;
-            btn.textContent = 'Invia Recensione';
+            btn.textContent = {{ t('recensione.invia')|tojson }};
         }
     }
 
@@ -446,12 +452,12 @@
     async function submitDispute() {
         const desc = document.getElementById('disputeDescription').value.trim();
         if (desc.length < 20) {
-            showReviewMsg('La descrizione deve contenere almeno 20 caratteri.', 'error');
+            showReviewMsg({{ t('recensione.minimo')|tojson }}, 'error');
             return;
         }
         const btn = document.getElementById('disputeSubmitBtn');
         btn.disabled = true;
-        btn.textContent = 'Invio in corso...';
+        btn.textContent = {{ t('recensione.invio')|tojson }};
         try {
             const resp = await fetch('/api/booking/{{ booking.id }}/dispute', {
                 method: 'POST',
@@ -460,18 +466,18 @@
             });
             const data = await resp.json();
             if (resp.ok) {
-                showReviewMsg('Contestazione inviata con successo. Ti contatteremo al più presto.', 'success');
+                showReviewMsg({{ t('recensione.contestazione_ok')|tojson }}, 'success');
                 document.getElementById('disputeFormContainer').style.display = 'none';
                 document.querySelector('.review-btn-dispute').style.display = 'none';
             } else {
-                showReviewMsg(data.detail || 'Errore nell\'invio', 'error');
+                showReviewMsg(data.detail || {{ t('recensione.errore')|tojson }}, 'error');
                 btn.disabled = false;
-                btn.textContent = 'Invia contestazione';
+                btn.textContent = {{ t('recensione.invia_contestazione')|tojson }};
             }
         } catch (e) {
-            showReviewMsg('Errore di connessione', 'error');
+            showReviewMsg({{ t('comune.errore_rete')|tojson }}, 'error');
             btn.disabled = false;
-            btn.textContent = 'Invia contestazione';
+            btn.textContent = {{ t('recensione.invia_contestazione')|tojson }};
         }
     }
 </script>

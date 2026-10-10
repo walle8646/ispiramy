@@ -12,7 +12,7 @@ import secrets
 import os
 
 from app.database import engine
-from app.models import Review, Booking, User
+from app.models import Review, Booking, User, Dispute
 from app.routes.auth import get_current_user
 from app.logger_config import logger
 from app.utils.notification_service import send_notification
@@ -118,6 +118,14 @@ async def submit_review(booking_id: int, review_data: ReviewRequest, request: Re
             )
         except Exception as e:
             logger.error(f"Errore invio notifica recensione al consulente: {e}")
+
+        # Il compenso parte con la recensione, se non c'è una contestazione aperta.
+        # La funzione non paga se il denaro non è più trattenuto o se si discute.
+        try:
+            from app.scheduler import release_booking_payment
+            release_booking_payment(booking_id)
+        except Exception as e:
+            logger.error(f"Errore rilascio compenso dopo recensione booking {booking_id}: {e}")
 
         return JSONResponse({"success": True, "message": "Recensione inviata con successo!"})
 
@@ -255,7 +263,20 @@ async def review_page(token: str, request: Request):
             return _render(already_reviewed=True)
 
         consultant = session.get(User, booking.consultant_user_id)
-        return _render(booking=booking, consultant=consultant)
+        from app.routes.dispute import motivo_blocco_contestazione
+        gia_contestata = session.exec(
+            select(Dispute).where(Dispute.booking_id == booking.id)
+        ).first()
+        if gia_contestata:
+            motivo = "Hai già aperto una contestazione per questa consulenza."
+        else:
+            motivo = motivo_blocco_contestazione(booking)
+        return _render(
+            booking=booking,
+            consultant=consultant,
+            puo_contestare=motivo is None,
+            motivo_contestazione=motivo,
+        )
 
 
 @router.post("/api/review/{token}/submit")
@@ -295,4 +316,11 @@ async def submit_review_by_token(token: str, review_data: ReviewRequest):
         session.commit()
 
         logger.info(f"⭐ Review via token creata per booking {booking.id}")
+
+        try:
+            from app.scheduler import release_booking_payment
+            release_booking_payment(booking.id)
+        except Exception as e:
+            logger.error(f"Errore rilascio compenso dopo recensione booking {booking.id}: {e}")
+
         return JSONResponse({"success": True, "message": "Recensione inviata con successo! Grazie!"})

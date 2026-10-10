@@ -90,8 +90,10 @@ def test_a_schermo_si_vede_anche_l_ora_di_chi_guarda():
     assert "function scarto(data)" in blocco, "lo scarto va calcolato sulla data, non fisso"
     assert "fusoAttuale()" in blocco, "il fuso si rilegge, non si congela al caricamento"
 
+    assert "fasciaSlot" in base and "secondaria" in base
     prenota = _file("app", "templates", "booking.html")
-    assert prenota.count("etichettaFuso") >= 2, "orario scelto e riepilogo"
+    # Pulsanti, orario scelto e riepilogo: l'ora italiana sta sulla seconda riga
+    assert prenota.count("secondaria") >= 3, "orario scelto e riepilogo"
 
 
 def test_chi_non_dichiara_niente_si_da_per_italiano():
@@ -116,8 +118,8 @@ def test_il_consulente_deve_dire_in_che_lingua_lavora():
     """Senza lingua dichiarata il profilo non compare in nessun filtro: il
     controllo sta nel modulo e anche nella rotta, perche' il primo si aggira."""
     modulo = _file("app", "templates", "profile.html")
-    assert "Lingue Parlate *" in modulo
-    assert "Scegli almeno una lingua" in modulo, "manca il blocco prima di inviare"
+    assert "profilo.lingue_titolo" in modulo
+    assert "profilo.scegli_lingua" in modulo, "manca il blocco prima di inviare"
     # a chi non ha mai scelto, l'italiano arriva gia' spuntato
     assert "{% if 'it' in user_languages or not user_languages %}checked{% endif %}" in modulo
 

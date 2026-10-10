@@ -12,9 +12,10 @@ from ..models import User, ConsultationOffer, Message, Category, CommunityQuesti
 from .auth import get_current_user
 from app.utils_user import has_payment_method
 from app.logger_config import logger
-from app.routes.booking import slot_gia_prenotato
+from app.routes.booking import blocca_agenda, slot_gia_prenotato
 from app.utils.stripe_config import create_checkout_session
 from app.utils.prezzi import PREZZO_ORARIO_MINIMO, centesimi, spese_servizio, totale_cliente
+from app.utils.orari import scadenza_compenso_senza_recensione
 
 router = APIRouter()
 
@@ -399,6 +400,7 @@ async def confirm_booking(
         raise HTTPException(status_code=400, detail="Descrizione della consulenza obbligatoria")
     
     with Session(engine) as session:
+        blocca_agenda(session)
         # Get consultation offer
         offer = session.get(ConsultationOffer, offer_id)
         if not offer:
@@ -420,7 +422,8 @@ async def confirm_booking(
 
         # Lo slot dev'essere ancora libero: l'offerta puo' essere stata mandata
         # giorni prima, e nel frattempo quell'ora puo' essere stata prenotata.
-        if slot_gia_prenotato(session, offer.consultant_user_id, selected_date, start_time):
+        blocca_agenda(session, offer.consultant_user_id)
+        if slot_gia_prenotato(session, offer.consultant_user_id, selected_date, start_time, end_time):
             raise HTTPException(status_code=409, detail="Questo slot è già stato prenotato")
 
         # Prenota lo slot prima di mandare al checkout, come per le prenotazioni
@@ -438,7 +441,7 @@ async def confirm_booking(
             status="pending_payment",
             payment_status="pending",
             payment_method="stripe",
-            payment_held_until=fine + timedelta(hours=48),
+            payment_held_until=scadenza_compenso_senza_recensione(fine),
             service_fee=spese_servizio(),
             community_question_id=int(community_question_id) if community_question_id else None,
             client_notes=description if description.strip() else f"Prenotazione da offerta consulenza #{offer.id}",
@@ -457,7 +460,7 @@ async def confirm_booking(
             # Il cliente paga la consulenza piu' le spese di servizio
             amount_cents = centesimi(totale_cliente(offer.price))
             
-            # Pagamento alla piattaforma — il trasferimento al consulente avviene dopo 48h
+            # Pagamento alla piattaforma — il consulente lo riceve con la recensione
             
             # Chiamata HTTP a Stripe: fuori dall'event loop
             checkout_session = await asyncio.to_thread(

@@ -332,10 +332,12 @@
     <div class="admin-header">
         <h1><i class="fas fa-bullhorn"></i> Social</h1>
         <div class="admin-nav">
-            <a href="/admin">Dashboard</a>
-            <a href="/admin/users">Utenti</a>
-            <a href="/admin/bookings">Consulenze</a>
-            <a href="/admin/disputes">Contestazioni</a>
+            <a href="/admin">{{ t('admin.dashboard') }}</a>
+            <a href="/admin/users">{{ t('admin.utenti') }}</a>
+            <a href="/admin/bookings">{{ t('admin.consulenze') }}</a>
+            <a href="/admin/disputes">{{ t('admin.contestazioni') }}</a>
+            <a href="/admin/transaction-problems">{{ t('problemi.menu') }}{% if problemi_transazione_aperti %} <span class="nav-badge">{{ problemi_transazione_aperti }}</span>{% endif %}</a>
+            <a href="/admin/reports"><i class="fas fa-flag"></i> {{ t('segnalazioni.menu') }}{% if segnalazioni_aperte %} <span class="nav-badge">{{ segnalazioni_aperte }}</span>{% endif %}</a>
             <a href="/admin/social" class="active">Social</a>
         </div>
     </div>
@@ -344,15 +346,15 @@
         <div class="account-badges">
             {% for p, label in platform_labels.items() %}
                 {% if accounts.get(p) %}
-                <span class="account-badge ok"><i class="fas fa-check-circle"></i> {{ label }}: {{ accounts[p].username or 'collegato' }}</span>
+                <span class="account-badge ok"><i class="fas fa-check-circle"></i> {{ label }}: {{ accounts[p].username or t('admin.collegato') }}</span>
                 {% else %}
-                <span class="account-badge ko"><i class="fas fa-times-circle"></i> {{ label }}: non collegato</span>
+                <span class="account-badge ko"><i class="fas fa-times-circle"></i> {{ label }}: {{ t('admin.non_collegato') }}</span>
                 {% endif %}
             {% endfor %}
         </div>
         <div class="toolbar-actions">
-            <button class="btn btn-light" onclick="refreshResults()"><i class="fas fa-rotate"></i> Aggiorna esiti</button>
-            <button class="btn btn-primary" id="generateBtn" onclick="generateDrafts()"><i class="fas fa-wand-magic-sparkles"></i> Genera contenuti</button>
+            <button class="btn btn-light" onclick="refreshResults()"><i class="fas fa-rotate"></i> {{ t('admin.aggiorna_esiti') }}</button>
+            <button class="btn btn-primary" id="generateBtn" onclick="generateDrafts()"><i class="fas fa-wand-magic-sparkles"></i> {{ t('admin.genera_contenuti') }}</button>
         </div>
     </div>
 
@@ -362,28 +364,29 @@
 
     <div class="calendario">
         <div class="calendario-testa">
-            <button type="button" onclick="cambiaMese(-1)" aria-label="Mese precedente"><i class="fas fa-chevron-left"></i></button>
+            <button type="button" onclick="cambiaMese(-1)" aria-label="{{ t('admin.mese_prec') }}"><i class="fas fa-chevron-left"></i></button>
             <span class="calendario-mese" id="calendarioMese"></span>
-            <button type="button" onclick="cambiaMese(1)" aria-label="Mese successivo"><i class="fas fa-chevron-right"></i></button>
+            <button type="button" onclick="cambiaMese(1)" aria-label="{{ t('admin.mese_succ') }}"><i class="fas fa-chevron-right"></i></button>
         </div>
         <div class="calendario-griglia" id="calendarioGriglia"></div>
     </div>
 
     {% set icone_tipo = {'immagini': 'fa-image', 'video_slide': 'fa-photo-film', 'video_completo': 'fa-clapperboard'} %}
-    {% set azioni_tipo = {'immagini': 'Genera immagini', 'video_slide': 'Genera video da immagini', 'video_completo': 'Genera video completo'} %}
-    {% set attese_tipo = {'immagini': 'Genero le immagini...', 'video_slide': 'Genero il video (1-2 minuti)...', 'video_completo': 'Genero il video (1-2 minuti)...'} %}
+    {% set etichette_ui = {'immagini': t('admin.tipo_immagini'), 'video_slide': t('admin.tipo_video'), 'video_completo': t('admin.tipo_completo')} %}
+    {% set azioni_tipo = {'immagini': t('admin.genera_immagini'), 'video_slide': t('admin.genera_video_slide'), 'video_completo': t('admin.genera_video')} %}
+    {% set attese_tipo = {'immagini': t('admin.attesa_immagini'), 'video_slide': t('admin.attesa_video'), 'video_completo': t('admin.attesa_video')} %}
 
     <div class="schede">
         {% for tipo in elenco_tipi %}
         <button class="scheda {% if loop.first %}attiva{% endif %}" data-scheda="{{ tipo }}" onclick="mostraScheda('{{ tipo }}', this)">
-            <i class="fas {{ icone_tipo[tipo] }}"></i> {{ etichette_tipo[tipo] }} ({{ conteggi_tipo.get(tipo, 0) }})
+            <i class="fas {{ icone_tipo[tipo] }}"></i> {{ etichette_ui[tipo] }} ({{ conteggi_tipo.get(tipo, 0) }})
         </button>
         {% endfor %}
     </div>
 
     <div class="status-filters">
-        <button class="status-filter active" data-filter="all" onclick="filterDrafts(this)">Tutti ({{ drafts|length }})</button>
-        {% for st, label in [('draft','Bozze'), ('approved','Approvati'), ('publishing','In pubblicazione'), ('published','Pubblicati'), ('failed','Falliti'), ('rejected','Rifiutati')] %}
+        <button class="status-filter active" data-filter="all" onclick="filterDrafts(this)">{{ t('admin.tutti') }} ({{ drafts|length }})</button>
+        {% for st, label in [('draft', t('admin.bozze')), ('approved', t('admin.approvati')), ('publishing', t('admin.in_pubblicazione')), ('published', t('admin.pubblicati')), ('failed', t('admin.falliti')), ('rejected', t('admin.rifiutati'))] %}
         <button class="status-filter" data-filter="{{ st }}" onclick="filterDrafts(this)">{{ label }} ({{ counts.get(st, 0) }})</button>
         {% endfor %}
     </div>
@@ -391,7 +394,7 @@
     {% if not contenuti %}
     <div class="empty-state">
         <i class="fas fa-wand-magic-sparkles"></i>
-        Nessun contenuto ancora. Clicca <strong>Genera contenuti</strong> per crearne dalle domande della community.
+        {{ t('admin.nessun_contenuto') }} <strong>{{ t('admin.genera_contenuti') }}</strong> {{ t('admin.genera_da_domande') }}
     </div>
     {% endif %}
 
@@ -401,8 +404,8 @@
          data-stati="{{ mie_uscite | map(attribute='status') | join(' ') }}" id="content-{{ c.id }}">
         <div class="draft-head">
             <div class="draft-meta">
-                <span class="tipo-chip"><i class="fas {{ icone_tipo[c.content_kind] }}"></i> {{ etichette_tipo[c.content_kind] }}</span>
-                {% if c.source_title %}<span class="draft-source">da: “{{ c.source_title[:70] }}”</span>{% endif %}
+                <span class="tipo-chip"><i class="fas {{ icone_tipo[c.content_kind] }}"></i> {{ etichette_ui[c.content_kind] }}</span>
+                {% if c.source_title %}<span class="draft-source">{{ t('admin.da') }} “{{ c.source_title[:70] }}”</span>{% endif %}
             </div>
             <span class="draft-source">#{{ c.id }} · {{ c.created_at.strftime('%d/%m %H:%M') }}</span>
         </div>
@@ -410,7 +413,7 @@
         <textarea class="draft-caption" id="caption-{{ c.id }}">{{ c.caption_base }}</textarea>
 
         <details class="testi-social">
-            <summary>Testo per ogni social</summary>
+            <summary>{{ t('admin.testo_social') }}</summary>
             {% for p, etichetta in platform_labels.items() %}
             <label class="campo-etichetta">{{ etichetta }}</label>
             <textarea class="draft-caption" id="testo-{{ c.id }}-{{ p }}" rows="4">{{ testi[c.id].get(p, '') }}</textarea>
@@ -418,7 +421,7 @@
         </details>
 
         <div class="draft-fields">
-            <label>Media (vale per tutte le uscite)</label>
+            <label>{{ t('admin.media_uscite') }}</label>
             <textarea class="media-input" id="media-{{ c.id }}" rows="{{ [((c.media_urls or '').splitlines()|length), 2]|max }}" placeholder="https://... (uno per riga, URL pubblici)">{{ c.media_urls or '' }}</textarea>
         </div>
 
@@ -441,14 +444,14 @@
         {% endif %}
 
         <div class="draft-actions">
-            <label class="tipo-scelta">Tipo
+            <label class="tipo-scelta">{{ t('admin.tipo_scelta') }}
                 <select onchange="cambiaTipo({{ c.id }}, this.value)">
                     {% for tipo in elenco_tipi %}
-                    <option value="{{ tipo }}" {% if c.content_kind == tipo %}selected{% endif %}>{{ etichette_tipo[tipo] }}</option>
+                    <option value="{{ tipo }}" {% if c.content_kind == tipo %}selected{% endif %}>{{ etichette_ui[tipo] }}</option>
                     {% endfor %}
                 </select>
             </label>
-            <button class="btn btn-light" onclick="salvaContenuto({{ c.id }})"><i class="fas fa-floppy-disk"></i> Salva</button>
+            <button class="btn btn-light" onclick="salvaContenuto({{ c.id }})"><i class="fas fa-floppy-disk"></i> {{ t('admin.salva') }}</button>
             {% for tipo in elenco_tipi %}
             <button class="btn btn-light" id="genmedia-{{ c.id }}-{{ tipo }}"
                     data-icona="{{ icone_tipo[tipo] }}" data-etichetta="{{ azioni_tipo[tipo] }}" data-attesa="{{ attese_tipo[tipo] }}"
@@ -457,9 +460,9 @@
         </div>
 
         <div class="uscite">
-            <div class="uscite-testa"><i class="fas fa-share-nodes"></i> Uscite sui social</div>
+            <div class="uscite-testa"><i class="fas fa-share-nodes"></i> {{ t('admin.uscite') }}</div>
             {% if not mie_uscite %}
-            <div class="uscite-vuote">Nessuna uscita: scegli un social e un orario qui sotto. Lo stesso media vale per tutti.</div>
+            <div class="uscite-vuote">{{ t('admin.nessuna_uscita') }}</div>
             {% endif %}
 
             {% for u in mie_uscite %}
@@ -481,32 +484,32 @@
 
                 <div class="uscita-azioni">
                     {% if u.status == 'draft' %}
-                    <button class="btn btn-primary" onclick="draftAction({{ u.id }}, 'approve')"><i class="fas fa-check"></i> Approva</button>
-                    <button class="btn btn-light" onclick="draftAction({{ u.id }}, 'reject')"><i class="fas fa-ban"></i> Rifiuta</button>
+                    <button class="btn btn-primary" onclick="draftAction({{ u.id }}, 'approve')"><i class="fas fa-check"></i> {{ t('admin.approva') }}</button>
+                    <button class="btn btn-light" onclick="draftAction({{ u.id }}, 'reject')"><i class="fas fa-ban"></i> {{ t('admin.rifiuta') }}</button>
                     {% elif u.status == 'failed' %}
-                    <button class="btn btn-primary" onclick="retryDraft({{ u.id }}, {{ 'true' if u.postforme_post_id else 'false' }})"><i class="fas fa-rotate-right"></i> Riprova</button>
+                    <button class="btn btn-primary" onclick="retryDraft({{ u.id }}, {{ 'true' if u.postforme_post_id else 'false' }})"><i class="fas fa-rotate-right"></i> {{ t('admin.riprova_social') }}</button>
                     {% elif u.status == 'approved' %}
-                    <button class="btn btn-primary" onclick="publishNow({{ u.id }})"><i class="fas fa-paper-plane"></i> Pubblica ora</button>
-                    <button class="btn btn-light" onclick="draftAction({{ u.id }}, 'back_to_draft')"><i class="fas fa-rotate-left"></i> Torna bozza</button>
+                    <button class="btn btn-primary" onclick="publishNow({{ u.id }})"><i class="fas fa-paper-plane"></i> {{ t('admin.pubblica_ora') }}</button>
+                    <button class="btn btn-light" onclick="draftAction({{ u.id }}, 'back_to_draft')"><i class="fas fa-rotate-left"></i> {{ t('admin.torna_bozza') }}</button>
                     {% elif u.status == 'rejected' %}
-                    <button class="btn btn-light" onclick="draftAction({{ u.id }}, 'back_to_draft')"><i class="fas fa-rotate-left"></i> Ripristina</button>
+                    <button class="btn btn-light" onclick="draftAction({{ u.id }}, 'back_to_draft')"><i class="fas fa-rotate-left"></i> {{ t('admin.ripristina') }}</button>
                     {% endif %}
                     {% if u.published_url %}
                     <a class="btn btn-light" href="{{ u.published_url }}" target="_blank" rel="noopener"><i class="fas fa-external-link-alt"></i> Vedi</a>
                     {% endif %}
                     {% if u.status not in ('published', 'publishing') %}
-                    <button class="btn btn-danger" onclick="deleteDraft({{ u.id }})"><i class="fas fa-trash"></i> Elimina</button>
+                    <button class="btn btn-danger" onclick="deleteDraft({{ u.id }})"><i class="fas fa-trash"></i> {{ t('admin.elimina') }}</button>
                     {% endif %}
                 </div>
 
                 {% if u.status == 'approved' and not u.scheduled_at %}
-                <div class="draft-hint">⏸ Senza data esce solo con "Pubblica ora": il job pubblica i post programmati.</div>
+                <div class="draft-hint">⏸ {{ t('admin.senza_data') }}</div>
                 {% endif %}
                 {% if u.status in ('draft', 'rejected') and u.scheduled_at %}
-                <div class="draft-hint">⏸ La data c'è ma l'uscita non è approvata: il job pubblica solo quelle approvate.</div>
+                <div class="draft-hint">⏸ {{ t('admin.data_non_approvata') }}</div>
                 {% endif %}
                 {% if u.error %}
-                <div class="draft-error"><strong>Errore:</strong> {{ u.error }}</div>
+                <div class="draft-error"><strong>{{ t('admin.errore_label') }}</strong> {{ u.error }}</div>
                 {% endif %}
             </div>
             {% endfor %}
@@ -518,7 +521,7 @@
                     {% endfor %}
                 </select>
                 <input type="datetime-local" id="nuova-data-{{ c.id }}">
-                <button class="btn btn-primary" onclick="aggiungiUscita({{ c.id }})"><i class="fas fa-plus"></i> Aggiungi uscita</button>
+                <button class="btn btn-primary" onclick="aggiungiUscita({{ c.id }})"><i class="fas fa-plus"></i> {{ t('admin.aggiungi_uscita') }}</button>
             </div>
         </div>
     </div>
@@ -547,22 +550,22 @@ async function post(url, body, method) {
     } catch (e) {
         // Il server ha chiuso la connessione senza rispondere (per esempio un
         // riavvio a meta' lavoro): prima il bottone restava bloccato in silenzio
-        return { ok: false, message: 'Connessione interrotta: il server non ha risposto. Riprova tra poco.' };
+        return { ok: false, message: {{ t('admin.connessione_interrotta')|tojson }} };
     }
     const data = await resp.json().catch(() => ({}));
     // Una risposta non JSON (502, 504...) diceva solo "Errore": il codice aiuta a capire cosa e' successo
-    const ripiego = resp.ok ? 'OK' : `Errore del server (HTTP ${resp.status})`;
+    const ripiego = resp.ok ? 'OK' : {{ t('admin.errore_server')|tojson }}.replace('{codice}', resp.status);
     return { ok: resp.ok && data.ok !== false, message: data.message || ripiego };
 }
 
 async function generateDrafts() {
     const btn = document.getElementById('generateBtn');
     btn.disabled = true;
-    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Genero...';
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> ' + {{ t('admin.genero')|tojson }};
     const r = await post('/admin/social/generate', { limit: 3 });
     toast(r.message, !r.ok);
     if (r.ok) setTimeout(() => location.reload(), 1200);
-    else { btn.disabled = false; btn.innerHTML = '<i class="fas fa-wand-magic-sparkles"></i> Genera contenuti'; }
+    else { btn.disabled = false; btn.innerHTML = '<i class="fas fa-wand-magic-sparkles"></i> ' + {{ t('admin.genera_contenuti')|tojson }}; }
 }
 
 async function salvaContenuto(id) {
@@ -614,11 +617,7 @@ async function retryDraft(id, raggiuntoLaPiattaforma) {
     // Se il post era arrivato fino al social ed è fallito lì, ritentare vuol
     // dire inviarne uno nuovo. Facebook a volte segnala un errore anche quando
     // il post è uscito: meglio controllare prima di rischiare un doppione.
-    if (raggiuntoLaPiattaforma && !confirm(
-        'Il post era arrivato al social ed è stato rifiutato lì.\n\n' +
-        'Prima di ritentare controlla sulla pagina che non sia uscito comunque: ' +
-        'a volte il social segnala un errore anche quando pubblica.\n\n' +
-        'Ritentare con un nuovo invio?')) return;
+    if (raggiuntoLaPiattaforma && !confirm({{ t('admin.ritenta_confirm')|tojson }})) return;
     await draftAction(id, 'approve');
 }
 
@@ -760,7 +759,7 @@ function filterDrafts(btn) {
 // ----------------------------------------------------------- calendario
 const VOCI_CALENDARIO = JSON.parse(document.getElementById('datiCalendario').textContent || '[]');
 const ICONE_PIATTAFORMA = { facebook: 'f', instagram: 'ig', linkedin: 'in', tiktok: 'tk' };
-const GIORNI = ['Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab', 'Dom'];
+const GIORNI = {{ t('admin.giorni_corti')|tojson }}.split('|');
 let meseMostrato = new Date();
 
 function chiaveGiorno(data) {
@@ -792,7 +791,7 @@ function disegnaCalendario() {
     const griglia = document.getElementById('calendarioGriglia');
     const primo = new Date(meseMostrato.getFullYear(), meseMostrato.getMonth(), 1);
     document.getElementById('calendarioMese').textContent =
-        primo.toLocaleDateString('it-IT', { month: 'long', year: 'numeric' });
+        primo.toLocaleDateString({{ t('admin.locale_data')|tojson }}, { month: 'long', year: 'numeric' });
 
     // La settimana comincia di lunedì: in JavaScript la domenica è 0
     const scarto = (primo.getDay() + 6) % 7;

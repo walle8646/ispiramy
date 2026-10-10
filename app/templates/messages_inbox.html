@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Messaggi - Ispiramy{% endblock %}
+{% block title %}{{ t('messaggi.titolo') }} - Ispiramy{% endblock %}
 
 {% block content %}
 <style>
@@ -170,7 +170,7 @@
 
     <div class="conversation-list" id="conversationList">
         <div class="loading-messages" style="text-align: center; padding: 40px; color: #999;">
-            Caricamento conversazioni...
+            {{ t('messaggi.caricamento') }}
         </div>
     </div>
 </div>
@@ -196,9 +196,9 @@
                         <div class="empty-state">
                             <div class="empty-state-icon">📭</div>
                             <p>{{ t('messaggi.nessuna') }}</p>
-                            <p style="font-size: 14px;">Inizia a chattare con i consulenti!</p>
+                            <p style="font-size: 14px;">{{ t('messaggi.inizia') }}</p>
                             <a href="/consultants" style="margin-top: 16px; display: inline-block; padding: 12px 24px; background: linear-gradient(135deg, #43a047 0%, #2e7d32 100%); color: white; border-radius: 8px; text-decoration: none;">
-                                🔍 Trova Consulenti
+                                🔍 {{ t('faq.trova') }}
                             </a>
                         </div>
                     `;
@@ -213,7 +213,7 @@
                             minute: '2-digit'
                         });
 
-                        const lastMsg = conv.last_message?.content || 'Nessun messaggio';
+                        const lastMsg = conv.last_message?.content || {{ t('messaggi.nessun_testo')|tojson }};
                         const preview = lastMsg.length > 50 ? lastMsg.substring(0, 50) + '...' : lastMsg;
 
                         const defaultAvatar = conv.other_user.genere === 'M' ? '/static/avatar-male.svg' : conv.other_user.genere === 'F' ? '/static/avatar-female.svg' : '/static/avatar-default.svg';

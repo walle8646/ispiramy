@@ -19,7 +19,13 @@ from sqlmodel import Session, select
 from app.database import engine, DATABASE_URL
 from app.models import Notification, Booking, User, Review, Dispute
 from app.logger_config import logger
-from app.utils.orari import con_fuso, now_italy_naive
+from app.utils.orari import (
+    ORE_RILASCIO_SENZA_RECENSIONE,
+    con_fuso,
+    fine_consulenza,
+    now_italy_naive,
+)
+from app.utils.prezzi import compenso_consulente_centesimi, percentuale_commissione
 from app.utils.notification_service import send_notification
 import os
 
@@ -264,10 +270,28 @@ def schedule_review_reminder(booking_id: int, client_id: int, review_token: str,
         logger.error(f"❌ Errore scheduling promemoria recensione: {e}")
 
 
-def release_booking_payment(booking_id: int):
+def _ha_recensione(session, booking_id: int) -> bool:
+    return session.exec(select(Review).where(Review.booking_id == booking_id)).first() is not None
+
+
+def _attesa_senza_recensione_finita(booking) -> bool:
+    """Sono passate le ore di riserva dalla fine, quindi si paga anche senza recensione."""
+    try:
+        fine = fine_consulenza(booking)
+    except (TypeError, ValueError):
+        return False
+    return now_italy_naive() >= fine + timedelta(hours=ORE_RILASCIO_SENZA_RECENSIONE)
+
+
+def release_booking_payment(booking_id: int, forza: bool = False):
     """
-    Rilascia il pagamento trattenuto al consulente dopo 48h dalla fine della consulenza.
-    Verifica che non ci siano contestazioni aperte prima di trasferire.
+    Rilascia il compenso trattenuto al consulente.
+
+    Parte quando il cliente ha lasciato la recensione, oppure
+    ORE_RILASCIO_SENZA_RECENSIONE ore dopo la fine se la recensione non
+    arriva. Una contestazione aperta blocca sempre, finché non è chiusa.
+    `forza` serve solo all'amministrazione: contestazione respinta, il
+    consulente va pagato anche senza recensione e prima di quei giorni.
     """
     try:
         with Session(engine) as session:
@@ -298,27 +322,39 @@ def release_booking_payment(booking_id: int):
                     user_id=booking.consultant_user_id,
                     type_key="payment_hold",
                     title="Pagamento in attesa",
-                    message=f"Il pagamento per la consulenza #{booking_id} è in attesa per una contestazione in corso.",
+                    message=(
+                        f"Il pagamento per la consulenza #{booking_id} è in attesa: c'è una contestazione aperta. "
+                        f"The payout for consultation #{booking_id} is on hold while a dispute is open."
+                    ),
                     related_booking_id=booking_id,
+                    action_url=f"/profile#prenotazione-{booking_id}",
                     solo_una_volta=True
+                )
+                return
+
+            if not forza and not _ha_recensione(session, booking_id) and not _attesa_senza_recensione_finita(booking):
+                logger.info(
+                    f"⏳ Booking {booking_id}: in attesa della recensione "
+                    f"(o delle {ORE_RILASCIO_SENZA_RECENSIONE} ore), rilascio non ancora dovuto"
                 )
                 return
             
             # Recupera consulente
             consultant = session.get(User, booking.consultant_user_id)
             
-            # Calcola importo da trasferire (totale - fee piattaforma)
-            amount_cents = int(float(booking.price) * 100)
-            fee_percent = consultant.platform_fee_percent if consultant.platform_fee_percent else 20
-            transfer_amount = amount_cents - int(amount_cents * fee_percent / 100)
+            # Compenso sul valore della consulenza, spese di servizio escluse.
+            # I centesimi non passano da float: 19,99 € diventerebbero 19,98.
+            fee_percent = percentuale_commissione(consultant)
+            transfer_amount = compenso_consulente_centesimi(booking.price, fee_percent)
             
             if booking.payment_method == "paypal":
                 # === PayPal Payout ===
+                # Senza conto non si segna "paid": il pagamento resta trattenuto
+                # e il prossimo giro (o il riavvio) riprova, quando il consulente
+                # avrà indicato l'email PayPal.
                 if not consultant or not consultant.paypal_email:
                     logger.error(f"❌ Booking {booking_id}: consulente senza email PayPal, impossibile trasferire")
-                    booking.payment_status = "paid"
-                    session.add(booking)
-                    session.commit()
+                    riprova_rilascio(booking_id, "Il consulente non ha un conto PayPal collegato")
                     return
                 
                 try:
@@ -338,6 +374,7 @@ def release_booking_payment(booking_id: int):
                         booking.payment_released_at = now_italy_naive()
                         session.add(booking)
                         session.commit()
+                        _chiudi_problema_compenso(booking_id)
                         
                         logger.info(f"✅ Booking {booking_id}: PayPal payout {payout_id}, €{transfer_amount/100:.2f} → {consultant.paypal_email}")
                         
@@ -349,16 +386,19 @@ def release_booking_payment(booking_id: int):
                         )
                     else:
                         logger.error(f"❌ Booking {booking_id}: PayPal payout fallito")
+                        riprova_rilascio(booking_id, "PayPal non ha accettato il pagamento")
                         
                 except Exception as e:
                     logger.error(f"❌ Booking {booking_id}: errore PayPal Payout: {e}")
+                    riprova_rilascio(booking_id, str(e))
             else:
                 # === Stripe Transfer ===
+                # Come per PayPal: senza conto il denaro resta trattenuto e si
+                # riprova. Segnarlo "paid" lo faceva sparire dai recuperi e il
+                # consulente non veniva mai pagato.
                 if not consultant or not consultant.stripe_account_id:
                     logger.error(f"❌ Booking {booking_id}: consulente senza account Stripe, impossibile trasferire")
-                    booking.payment_status = "paid"
-                    session.add(booking)
-                    session.commit()
+                    riprova_rilascio(booking_id, "Il consulente non ha un conto Stripe collegato")
                     return
                 
                 try:
@@ -369,6 +409,7 @@ def release_booking_payment(booking_id: int):
                         currency="eur",
                         destination=consultant.stripe_account_id,
                         transfer_group=f"booking_{booking_id}",
+                        idempotency_key=f"consultant-payout-{booking_id}",
                         metadata={
                             "booking_id": str(booking_id),
                             "consultant_user_id": str(consultant.id),
@@ -380,6 +421,7 @@ def release_booking_payment(booking_id: int):
                     booking.payment_released_at = now_italy_naive()
                     session.add(booking)
                     session.commit()
+                    _chiudi_problema_compenso(booking_id)
                     
                     logger.info(f"✅ Booking {booking_id}: pagamento rilasciato, transfer {transfer.id}, €{transfer_amount/100:.2f} → {consultant.stripe_account_id}")
                     
@@ -392,20 +434,60 @@ def release_booking_payment(booking_id: int):
                     
                 except Exception as e:
                     logger.error(f"❌ Booking {booking_id}: errore Stripe Transfer: {e}")
+                    riprova_rilascio(booking_id, str(e))
                 
     except Exception as e:
         logger.error(f"❌ Errore rilascio pagamento booking {booking_id}: {e}")
 
 
+def _chiudi_problema_compenso(booking_id: int) -> None:
+    """Il denaro è partito: la riga fra i problemi, se c'era, si chiude."""
+    try:
+        from app.utils.problemi_transazione import chiudi
+        chiudi(booking_id, "payout", "Compenso inviato al consulente.")
+    except Exception as e:  # noqa: BLE001
+        logger.error(f"❌ Problema compenso non chiuso per booking {booking_id}: {e}")
+
+
+def riprova_rilascio(booking_id: int, errore: str = "tentativo non riuscito") -> None:
+    """Il tentativo di oggi non è riuscito: se ne programma un altro fra 6 ore.
+
+    Il rilascio è un appuntamento unico. Se il consulente non ha ancora il
+    conto, senza un nuovo appuntamento il compenso resterebbe fermo fino al
+    prossimo riavvio del server. La stessa attesa compare fra i problemi
+    di transazione, così si vede e si può ritentare a mano.
+    """
+    try:
+        quando = datetime.now(ITALY_TZ) + timedelta(hours=6)
+        scheduler.add_job(
+            release_booking_payment,
+            trigger=DateTrigger(run_date=quando),
+            args=[booking_id],
+            id=f"payment_release_{booking_id}",
+            replace_existing=True,
+            misfire_grace_time=3600,
+        )
+        logger.info(f"🔁 Rilascio booking {booking_id} riprogrammato per {quando}")
+    except Exception as e:
+        logger.error(f"❌ Impossibile riprovare il rilascio del booking {booking_id}: {e}")
+    try:
+        from app.utils.problemi_transazione import accantona_compenso
+        accantona_compenso(booking_id, errore)
+    except Exception as e:  # noqa: BLE001
+        logger.error(f"❌ Problema compenso non registrato per booking {booking_id}: {e}")
+
+
 def schedule_payment_release(booking_id: int, consultation_end_datetime: datetime):
     """
-    Schedula il rilascio del pagamento 48h dopo la fine della consulenza.
+    Schedula il rilascio di riserva: se il cliente non recensisce, il compenso
+    parte ORE_RILASCIO_SENZA_RECENSIONE ore dopo la fine. La recensione,
+    se arriva prima, lo fa partire subito.
     """
     try:
         if consultation_end_datetime.tzinfo is None:
             consultation_end_datetime = consultation_end_datetime.replace(tzinfo=ITALY_TZ)
         
-        release_time = consultation_end_datetime + timedelta(hours=48)
+        release_time = consultation_end_datetime + timedelta(hours=ORE_RILASCIO_SENZA_RECENSIONE)
         
         scheduler.add_job(
             release_booking_payment,
@@ -433,6 +515,48 @@ def cancel_payment_release(booking_id: int):
         logger.info(f"ℹ️ Nessun job di rilascio pagamento da cancellare per booking {booking_id}")
     except Exception as e:
         logger.error(f"❌ Errore cancellazione rilascio pagamento: {e}")
+
+
+def _rimborso_automatico(booking) -> str | None:
+    """Rimborsa il cliente per intero. Ritorna il motivo se il denaro non è partito."""
+    if booking.payment_status != "held":
+        return None
+    if booking.payment_method == "paypal" and booking.paypal_capture_id:
+        try:
+            from app.utils.paypal_config import refund_capture
+            result = refund_capture(booking.paypal_capture_id)
+            if result:
+                booking.payment_status = "refunded"
+                logger.info(f"💸 Rimborso PayPal automatico per booking {booking.id}")
+                return None
+            return "PayPal non ha accettato il rimborso"
+        except Exception as e:  # noqa: BLE001
+            return str(e)
+    if booking.stripe_payment_intent_id:
+        try:
+            import stripe
+            stripe.api_key = os.getenv("STRIPE_SECRET_KEY")
+            refund = stripe.Refund.create(
+                payment_intent=booking.stripe_payment_intent_id,
+                reason="requested_by_customer",
+            )
+            booking.payment_status = "refunded"
+            logger.info(f"💸 Rimborso automatico {refund.id} per booking {booking.id}")
+            return None
+        except Exception as e:  # noqa: BLE001
+            return str(e)
+    return None
+
+
+def _annota_rimborso_fallito(booking, errore: str | None) -> None:
+    if not errore:
+        return
+    try:
+        from app.utils.prezzi import centesimi, totale_pagato
+        from app.utils.problemi_transazione import accantona_rimborso
+        accantona_rimborso(booking.id, centesimi(totale_pagato(booking)), errore)
+    except Exception as e:  # noqa: BLE001
+        logger.error(f"❌ Problema rimborso non registrato per booking {booking.id}: {e}")
 
 
 def check_booking_noshow(booking_id: int):
@@ -469,36 +593,16 @@ def check_booking_noshow(booking_id: int):
                 booking.status = "no_show"
                 logger.info(f"⚠️ Booking {booking_id}: consulente non si è presentato, rimborso automatico")
                 
-                if booking.payment_status == "held":
-                    if booking.payment_method == "paypal" and booking.paypal_capture_id:
-                        try:
-                            from app.utils.paypal_config import refund_capture
-                            result = refund_capture(booking.paypal_capture_id)
-                            if result:
-                                booking.payment_status = "refunded"
-                                logger.info(f"💸 Rimborso PayPal automatico per no-show consulente, booking {booking_id}")
-                            else:
-                                logger.error(f"❌ Errore rimborso PayPal no-show booking {booking_id}")
-                        except Exception as e:
-                            logger.error(f"❌ Errore rimborso PayPal no-show booking {booking_id}: {e}")
-                    elif booking.stripe_payment_intent_id:
-                        try:
-                            import stripe
-                            stripe.api_key = os.getenv("STRIPE_SECRET_KEY")
-                            refund = stripe.Refund.create(
-                                payment_intent=booking.stripe_payment_intent_id,
-                                reason='requested_by_customer'
-                            )
-                            booking.payment_status = "refunded"
-                            logger.info(f"💸 Rimborso automatico {refund.id} per no-show consulente, booking {booking_id}")
-                        except Exception as e:
-                            logger.error(f"❌ Errore rimborso no-show booking {booking_id}: {e}")
+                errore_rimborso = _rimborso_automatico(booking)
+                if errore_rimborso:
+                    logger.error(f"❌ Errore rimborso no-show consulente booking {booking_id}: {errore_rimborso}")
                 
                 # Cancella il rilascio pagamento schedulato
                 cancel_payment_release(booking_id)
                 
                 session.add(booking)
                 session.commit()
+                _annota_rimborso_fallito(booking, errore_rimborso)
                 
                 # Notifica al cliente
                 send_notification(
@@ -534,35 +638,15 @@ def check_booking_noshow(booking_id: int):
                 booking.status = "no_show"
                 logger.info(f"⚠️ Booking {booking_id}: nessuno si è presentato, rimborso al cliente")
                 
-                if booking.payment_status == "held":
-                    if booking.payment_method == "paypal" and booking.paypal_capture_id:
-                        try:
-                            from app.utils.paypal_config import refund_capture
-                            result = refund_capture(booking.paypal_capture_id)
-                            if result:
-                                booking.payment_status = "refunded"
-                                logger.info(f"💸 Rimborso PayPal automatico (nessuno presente), booking {booking_id}")
-                            else:
-                                logger.error(f"❌ Errore rimborso PayPal no-show booking {booking_id}")
-                        except Exception as e:
-                            logger.error(f"❌ Errore rimborso PayPal no-show booking {booking_id}: {e}")
-                    elif booking.stripe_payment_intent_id:
-                        try:
-                            import stripe
-                            stripe.api_key = os.getenv("STRIPE_SECRET_KEY")
-                            refund = stripe.Refund.create(
-                                payment_intent=booking.stripe_payment_intent_id,
-                                reason='requested_by_customer'
-                            )
-                            booking.payment_status = "refunded"
-                            logger.info(f"💸 Rimborso automatico {refund.id} (nessuno presente), booking {booking_id}")
-                        except Exception as e:
-                            logger.error(f"❌ Errore rimborso no-show booking {booking_id}: {e}")
+                errore_rimborso = _rimborso_automatico(booking)
+                if errore_rimborso:
+                    logger.error(f"❌ Errore rimborso (nessuno presente) booking {booking_id}: {errore_rimborso}")
                 
                 cancel_payment_release(booking_id)
                 
                 session.add(booking)
                 session.commit()
+                _annota_rimborso_fallito(booking, errore_rimborso)
                 
                 send_notification(
                     user_id=booking.client_user_id,
@@ -657,6 +741,12 @@ def start_scheduler():
 
     # Recovery: processa booking rimasti bloccati durante il downtime
     recover_stuck_bookings()
+    # Recovery: compensi, rimborsi e quote del consulente rimasti a metà
+    try:
+        from app.utils.problemi_transazione import riprendi_dopo_riavvio
+        riprendi_dopo_riavvio()
+    except Exception as e:  # noqa: BLE001
+        logger.error(f"❌ Recovery problemi di transazione: {e}")
     # Recovery: richieste scadute mentre il server era giù
     scadi_richieste_senza_risposta()
     # Recovery: libera subito gli slot rimasti appesi durante il downtime
@@ -699,13 +789,22 @@ def recover_stuck_bookings():
                     
                     end_dt = datetime.combine(booking.booking_date, end_time).replace(tzinfo=ITALY_TZ)
                     noshow_due = end_dt + timedelta(minutes=15)
-                    release_due = end_dt + timedelta(hours=48)
+                    release_due = end_dt + timedelta(hours=ORE_RILASCIO_SENZA_RECENSIONE)
+                    ha_recensione = _ha_recensione(session, booking.id)
+
+                    def rilascia_se_tocca():
+                        """La recensione sblocca subito; altrimenti si aspetta la scadenza."""
+                        if booking.payment_status != "held":
+                            return
+                        schedule_payment_release(booking.id, end_dt)
+                        if ha_recensione or now >= release_due:
+                            release_booking_payment(booking.id)
                     
                     if now < noshow_due:
                         # Consulenza non ancora finita o nel grace period, rischedula normalmente
                         logger.info(f"⏳ Recovery booking {booking.id}: consulenza non ancora finita, rischedulo")
                         schedule_noshow_check(booking.id, end_dt)
-                        schedule_payment_release(booking.id, end_dt)
+                        rilascia_se_tocca()
                         
                     elif now >= noshow_due and booking.status == "confirmed":
                         # No-show check non eseguito, eseguilo ora
@@ -713,13 +812,10 @@ def recover_stuck_bookings():
                         check_booking_noshow(booking.id)
                         # Se dopo il no-show check è ancora held (es. client no-show), schedula il rilascio
                         session.refresh(booking)
-                        if booking.payment_status == "held" and now >= release_due:
-                            release_booking_payment(booking.id)
-                        elif booking.payment_status == "held":
-                            schedule_payment_release(booking.id, end_dt)
+                        rilascia_se_tocca()
                             
-                    elif now >= release_due:
-                        # Rilascio pagamento scaduto, eseguilo ora
+                    elif now >= release_due or ha_recensione:
+                        # Recensione già arrivata, oppure sono passate le ore di riserva
                         logger.info(f"🔄 Recovery booking {booking.id}: eseguo rilascio pagamento mancato")
                         release_booking_payment(booking.id)
                         

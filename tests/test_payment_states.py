@@ -3,8 +3,8 @@
 Due bug distinti, entrambi silenziosi:
 - lo slot non veniva riservato durante il checkout, quindi due clienti potevano
   pagare lo stesso orario;
-- gli elenchi filtravano su payment_status 'paid', che dall'introduzione del
-  trattenuto a 48 ore non viene praticamente mai usato: le consulenze
+- gli elenchi filtravano su payment_status 'paid', che da quando il denaro
+  resta trattenuto non viene praticamente mai usato: le consulenze
   sparivano dallo storico appena il pagamento veniva rilasciato.
 """
 import secrets

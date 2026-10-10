@@ -1,5 +1,5 @@
 {% extends "static_page_base.html" %}
-{% block title %}Termini e condizioni - Ispiramy{% endblock %}
+{% block title %}{{ t('termini.titolo') }} - Ispiramy{% endblock %}
 {% block page_content %}
 <style>
     /* Solo su telefono: il titolo e i paragrafi restano larghi quanto lo schermo.
@@ -26,204 +26,95 @@
         }
     }
 </style>
-<h1>Termini e condizioni</h1>
-<p class="updated">Bozza del 3 ottobre 2026</p>
+<h1>{{ t('termini.titolo') }}</h1>
+<p class="updated">{{ t('termini.quando') }}</p>
 
 <div class="draft-note">
-    <strong>Bozza.</strong> Questo testo va letto da chi gestisce Ispiramy prima di considerarlo definitivo.
-    Non è il parere di un avvocato.
+    <strong>{{ t('legale.bozza') }}</strong> {{ t('termini.bozza') }}
+    <p style="margin: 12px 0 0;"><strong>{{ t('termini.manca_titolo') }}</strong></p>
+    <p style="margin: 4px 0 0;">{{ t('termini.manca_ragione') }}</p>
+    <p style="margin: 4px 0 0;">{{ t('termini.manca_sede') }}</p>
+    <p style="margin: 4px 0 0;">{{ t('termini.manca_iva') }}</p>
 </div>
 
-<p>
-    Questi termini valgono per chi usa Ispiramy: chi visita il sito, chi crea un account,
-    chi prenota una consulenza e chi la offre. Se ti registri, prenoti o pubblichi qualcosa,
-    accetti questo testo. Se non ti va bene, non usare il servizio.
-</p>
+<p>{{ t('termini.accetti') }}</p>
 
-<h2>Cos'è Ispiramy</h2>
-<p>
-    Ispiramy è un sito. Dopo l'accesso puoi cercare un consulente, prenotare una consulenza
-    a pagamento, pagarla, scrivergli in chat e pubblicare nella community.
-    Il prezzo e la durata li decide il consulente: con la tariffa oraria del profilo,
-    oppure con un'offerta in cui prezzo e durata sono già scritti.
-</p>
-<p>
-    I consulenti non sono dipendenti di Ispiramy. La consulenza è un accordo tra chi prenota
-    e il consulente. Ispiramy non è parte di quell'accordo: mette a disposizione il sito,
-    il pagamento e la videochiamata.
-</p>
+<h2>{{ t('termini.cose') }}</h2>
+<p>{{ t('termini.cose_testo') }}</p>
+<p>{{ t('termini.cose_parte') }}</p>
 
-<h2>Solo maggiorenni</h2>
-<p>
-    Ispiramy è per chi ha compiuto 18 anni. Creando l'account confermi di essere maggiorenne.
-</p>
+<h2>{{ t('termini.eta') }}</h2>
+<p>{{ t('termini.eta_testo') }}</p>
 
-<h2>Account e password</h2>
-<p>
-    Per prenotare, scrivere e usare la community serve un account. Puoi aprirlo con email
-    e password, oppure con Google. Se ti registri con l'email, ti mandiamo un codice per confermarla.
-</p>
-<p>
-    I dati che inserisci devono essere veri. La password resta tua: non passarla a nessuno.
-    Quello che parte dal tuo account lo consideriamo fatto da te, finché non ci scrivi che
-    qualcun altro ci è entrato.
-</p>
-<p>
-    Ti avvisiamo di consulenze, messaggi e aggiornamenti del servizio per email e, se le attivi
-    sul telefono, con le notifiche push.
-</p>
+<h2>{{ t('termini.account') }}</h2>
+<p>{{ t('termini.account_testo') }}</p>
+<p>{{ t('termini.account_dati') }}</p>
+<p>{{ t('termini.account_avvisi') }}</p>
 
-<h2>Quello che pubblichi</h2>
-<p>
-    Profilo, domande in community, messaggi, recensioni e la descrizione della consulenza
-    li scrivi tu. Restano tuoi e ne rispondi tu. Ispiramy non li fa propri e non garantisce
-    che siano esatti. Il nome Ispiramy, il logo e il sito restano di Ispiramy.
-</p>
-<p>
-    Alcuni testi e alcune immagini vengono fermati in automatico se sembrano illeciti, offensivi,
-    violenti o sessuali. Non è un controllo su tutto: se il controllo tecnico non risponde,
-    un messaggio in chat può passare lo stesso.
-</p>
+<h2>{{ t('termini.pubblichi') }}</h2>
+<p>{{ t('termini.pubblichi_testo') }}</p>
+<p>{{ t('termini.pubblichi_filtro') }}</p>
 
-<h2>Segnalare un contenuto illecito</h2>
+<h2>{{ t('termini.segnala') }}</h2>
+<p>{{ t('termini.segnala_community') }}</p>
 <p>
-    Se vedi un contenuto che ritieni illecito, scrivi a
+    {{ t('termini.segnala_mail') }}
     <a href="mailto:admin@ispiramy.com">admin@ispiramy.com</a>.
-    Indica la pagina, o chi l'ha pubblicato, e spiega in poche righe perché lo segnali.
-    Leggiamo la mail e ti rispondiamo allo stesso indirizzo.
 </p>
 
-<h2>Come si usa il sito</h2>
-<p>
-    Non usare Ispiramy per attività illecite, truffe, molestie, minacce, incitamento all'odio
-    o contenuti sessuali che riguardano minori. Non spacciarti per un'altra persona.
-    Nella community le richieste sono domande di aiuto: niente pubblicità e niente testi
-    messi lì per caso.
-</p>
+<h2>{{ t('termini.condotta') }}</h2>
+<p>{{ t('termini.condotta_testo') }}</p>
 
-<h2>Consulenze a pagamento</h2>
-<p>
-    Prima di pagare vedi l'importo. Nella prenotazione dal profilo del consulente il prezzo
-    è la sua tariffa oraria, almeno {{ prezzo_orario_minimo }} € l'ora, per 60, 90 o 120 minuti,
-    più {{ spese_servizio_euro }} € di spese di servizio. Il totale è la somma delle due cose.
-</p>
-<p>
-    Se accetti un'offerta, prezzo e durata sono quelli scritti sull'offerta. Anche lì, prima
-    del pagamento, vedi le spese di servizio e il totale.
-</p>
-<p>
-    Si prenota con almeno {{ ore_preavviso }} ore di anticipo, su un orario che il consulente
-    ha aperto. Gli orari sono in ora italiana.
-</p>
+<h2>{{ t('termini.prezzo') }}</h2>
+<p>{{ t('termini.prezzo_intro') }}</p>
+<p>{{ t('termini.prezzo_min').split('{n}')[0] }}{{ prezzo_orario_minimo }}{{ t('termini.prezzo_min').split('{n}')[1] }}</p>
+<p>{{ t('termini.prezzo_spese').split('{n}')[0] }}{{ spese_servizio_euro }}{{ t('termini.prezzo_spese').split('{n}')[1] }}</p>
+<p>{{ t('termini.offerte') }}</p>
+<p>{{ t('termini.anticipo').split('{n}')[0] }}{{ ore_preavviso }}{{ t('termini.anticipo').split('{n}')[1] }}</p>
 
-<h2>Come si paga</h2>
-<p>
-    Paghi con carta, tramite Stripe, oppure con PayPal, se il consulente ha attivato quel metodo.
-    Ispiramy non conserva i numeri della carta: li gestiscono Stripe e PayPal.
-</p>
-<p>
-    Se il consulente conferma le prenotazioni in automatico, l'importo viene incassato al
-    pagamento e tenuto da Ispiramy fino a dopo la consulenza. Se invece conferma a mano,
-    l'importo viene solo bloccato. Ti viene addebitato quando accetta. Risponde entro
-    {{ ore_per_rispondere }} ore e, in ogni caso, almeno un'ora prima dell'inizio.
-    Se rifiuta o non risponde in tempo, il blocco si annulla e non paghi. La banca può
-    continuare a mostrare quel blocco per qualche giorno.
-</p>
-<p>
-    Se interrompi il pagamento, non ti viene addebitato nulla e la consulenza non risulta prenotata.
-</p>
-<p>
-    Sul prezzo della consulenza Ispiramy trattiene una commissione, di norma del {{ commissione_percentuale }}%.
-    Le spese di servizio restano a Ispiramy e non vanno al consulente. 48 ore dopo la fine,
-    se non c'è una contestazione aperta, Ispiramy avvia il trasferimento del compenso sul
-    conto Stripe o PayPal del consulente.
-</p>
+<h2>{{ t('termini.paga') }}</h2>
+<p>{{ t('termini.paga_metodo') }}</p>
+<p>{{ t('termini.paga_auto') }}</p>
+<p>{{ t('termini.paga_mano').split('{n}')[0] }}{{ ore_per_rispondere }}{{ t('termini.paga_mano').split('{n}')[1] }}</p>
+<p>{{ t('termini.paga_interrompi') }}</p>
+<p>{{ t('termini.commissione').split('{n}')[0] }}{{ commissione_percentuale }}{{ t('termini.commissione').split('{n}')[1] }}</p>
+<p>{{ t('termini.compenso').split('{n}')[0] }}{{ ore_rilascio }}{{ t('termini.compenso').split('{n}')[1] }}</p>
 
-<h2>Annullare e farsi rimborsare</h2>
-<p>
-    Una consulenza già confermata si può annullare fino a {{ ore_limite_annullamento }} ore
-    prima dell'inizio. Può farlo chi ha prenotato e può farlo il consulente. Se l'importo era
-    solo bloccato, il blocco si annulla. Se era già stato incassato, chiediamo a Stripe o a
-    PayPal il rimborso di tutto quello che hai pagato, spese di servizio comprese.
-    L'email di annullamento dice che, se hai pagato, il rimborso arriva entro 5-10 giorni
-    lavorativi sullo stesso metodo di pagamento.
-</p>
-<p>
-    Una richiesta che il consulente non ha ancora accettato la puoi ritirare anche più vicino
-    all'orario: in quel caso non c'è stato un addebito.
-</p>
-<p>
-    Passate le {{ ore_limite_annullamento }} ore, o se la consulenza è già iniziata, dal sito
-    non si annulla più.
-</p>
-<p>
-    A orario finito, se il consulente non è entrato in chiamata e tu sì, il rimborso parte da solo.
-    Lo stesso succede se non entra nessuno. Se tu non entri e il consulente sì, il pagamento
-    va avanti e non c'è rimborso.
-</p>
-<p>
-    Dopo la consulenza, se la registrazione è attiva, chi ha prenotato può aprire una
-    contestazione entro 48 ore dalla fine dell'orario prenotato. Di base la registrazione
-    è attiva e si può disattivare prima della chiamata: senza registrazione la contestazione
-    non si apre. Se ne apre una sola per quella consulenza. Finché è aperta, il compenso
-    del consulente resta fermo. Chi gestisce Ispiramy la legge e può rimborsare per intero
-    o in parte, oppure chiuderla e far arrivare il pagamento al consulente. Se il rimborso
-    è parziale, la quota si calcola su tutto quello che hai pagato, spese di servizio comprese.
-</p>
-<p>
-    Annullamenti e rimborsi sono quelli descritti qui. Se sei un consumatore, questo testo
-    non toglie i diritti che la legge non permette di rinunciare.
-</p>
+<h2>{{ t('termini.annulla') }}</h2>
+<p>{{ t('termini.annulla_fino').split('{n}')[0] }}{{ ore_limite_annullamento }}{{ t('termini.annulla_fino').split('{n}')[1] }}</p>
+<p>{{ t('termini.rimborso') }}</p>
+<p>{{ t('termini.ritira') }}</p>
+<p>{{ t('termini.dopo').split('{n}')[0] }}{{ ore_limite_annullamento }}{{ t('termini.dopo').split('{n}')[1] }}</p>
+<p>{{ t('termini.assente') }}</p>
+<p>{{ t('termini.contestazione').split('{n}')[0] }}{{ ore_contestazione }}{{ t('termini.contestazione').split('{n}')[1] }}</p>
+<p>{{ t('termini.decisione') }}</p>
+<p>{{ t('termini.consumatore') }}</p>
 
-<h2>La consulenza non la facciamo noi</h2>
-<p>
-    Il consulente parla per sé. Ispiramy non garantisce che la consulenza risolva il problema,
-    né che il consiglio sia adatto al caso. Un profilo può essere controllato prima di
-    comparire nella ricerca: quel controllo non è una garanzia sul risultato della chiamata.
-</p>
+<h2>{{ t('termini.non_noi') }}</h2>
+<p>{{ t('termini.non_noi_testo') }}</p>
 
-<h2>Fino a dove rispondiamo</h2>
-<p>
-    Nei limiti in cui la legge italiana lo consente, Ispiramy non risponde di quello che viene
-    detto in consulenza, dei testi pubblicati dagli utenti e di un risultato che non arriva.
-    Non escludiamo la responsabilità che la legge non permette di escludere. Se sei un
-    consumatore, restano i diritti del Codice del consumo e delle norme europee che non si
-    possono rinunciare.
-</p>
+<h2>{{ t('termini.responsabilita') }}</h2>
+<p>{{ t('termini.responsabilita_testo') }}</p>
 
-<h2>Privacy</h2>
-<p>
-    Come trattiamo i dati personali è scritto nell'<a href="/privacy">informativa privacy</a>.
-</p>
+<h2>{{ t('termini.privacy') }}</h2>
+<p>{{ t('termini.privacy_prima') }}<a href="/privacy">{{ t('termini.privacy_link') }}</a>.</p>
 
-<h2>Se cambiamo questi termini</h2>
-<p>
-    Possiamo aggiornare questa pagina. In cima c'è la data del testo. Se dopo un aggiornamento
-    continui a usare Ispiramy, vale il testo nuovo.
-</p>
+<h2>{{ t('termini.cambiamo') }}</h2>
+<p>{{ t('termini.cambiamo_testo') }}</p>
 
-<h2>Cessione</h2>
-<p>
-    L'account è tuo e non lo puoi passare a un'altra persona. Se il servizio passa a qualcun
-    altro, questi termini passano insieme al servizio.
-</p>
+<h2>{{ t('termini.cessione') }}</h2>
+<p>{{ t('termini.cessione_testo') }}</p>
 
-<h2>Se una frase non regge</h2>
-<p>
-    Se una parte di questi termini non è valida, il resto continua a valere.
-</p>
+<h2>{{ t('termini.frase') }}</h2>
+<p>{{ t('termini.frase_testo') }}</p>
 
-<h2>Legge italiana</h2>
-<p>
-    Il contratto è regolato dalla legge italiana. Non indichiamo il tribunale di una città.
-    Se sei un consumatore, puoi rivolgerti al giudice che la legge italiana e quella
-    dell'Unione europea già ti riconoscono.
-</p>
+<h2>{{ t('termini.legge') }}</h2>
+<p>{{ t('termini.legge_testo') }}</p>
 
-<h2>Prima ci scrivi</h2>
+<h2>{{ t('termini.prima') }}</h2>
 <p>
-    Se qualcosa non va, scrivi prima a
+    {{ t('termini.prima_testo') }}
     <a href="mailto:admin@ispiramy.com">admin@ispiramy.com</a>
-    e proviamo a risolverla. Poi, se serve, resta il giudice.
+    {{ t('termini.prima_dopo') }}
 </p>
 {% endblock %}

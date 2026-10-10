@@ -64,11 +64,11 @@ class CSRFMiddleware(BaseHTTPMiddleware):
                     content_type = request.headers.get("content-type", "")
                     if "application/x-www-form-urlencoded" in content_type or "multipart/form-data" in content_type:
                         from starlette.datastructures import UploadFile
+                        # request.body() tiene una copia: il form della route
+                        # la rilegge da li'. Non si rimette il body sul canale,
+                        # perche' la risposta poi aspetta la chiusura del client
+                        # e un altro http.request la fa cadere con un 500.
                         body = await request.body()
-                        # Ripristina il body per i middleware successivi
-                        async def receive():
-                            return {"type": "http.request", "body": body}
-                        request._receive = receive
                         from urllib.parse import parse_qs
                         if "application/x-www-form-urlencoded" in content_type:
                             form_data = parse_qs(body.decode("utf-8"))
@@ -206,6 +206,48 @@ def _utente_in_ogni_pagina(request: Request) -> dict:
     return {"current_user": ricordato}
 
 
+def _limiti_chat_in_ogni_pagina(request: Request) -> dict:
+    """Il tetto dei messaggi, lo stesso che applica il server.
+
+    Il banner della chat e il contatore del widget lo leggono da qui: se
+    restasse un numero scritto nel template, lo schermo direbbe 15 mentre
+    l'invio si ferma a un altro valore.
+    """
+    from app.routes.messages import max_messaggi_per_conversazione
+
+    return {"max_messaggi_conversazione": max_messaggi_per_conversazione()}
+
+
+def _problemi_in_ogni_pagina(request: Request) -> dict:
+    """Quanti movimenti di denaro sono ancora da riprovare, per il badge del menu.
+
+    Solo chi verifica o amministra lo vede. Se la tabella non c'è ancora, la
+    pagina pubblica non deve rompersi.
+    """
+    utente = getattr(request.state, "utente_corrente", None)
+    if not utente or (getattr(utente, "user_type_id", 0) or 0) < 2:
+        return {"problemi_transazione_aperti": 0}
+    aperti = 0
+    segnalazioni = 0
+    try:
+        from app.utils.problemi_transazione import conta_aperti
+        aperti = conta_aperti()
+    except Exception:
+        aperti = 0
+    try:
+        from app.routes.admin import conta_segnalazioni_aperte
+        segnalazioni = conta_segnalazioni_aperte()
+    except Exception as e:
+        # Il menu non deve rompere la pagina, ma un conteggio a zero
+        # senza traccia fa sembrare che la segnalazione non sia arrivata.
+        logger.warning(f"Conteggio segnalazioni non disponibile: {e}")
+        segnalazioni = 0
+    return {
+        "problemi_transazione_aperti": aperti,
+        "segnalazioni_aperte": segnalazioni,
+    }
+
+
 def _lingua_in_ogni_pagina(request: Request) -> dict:
     # La lingua scelta e la funzione per tradurre, in tutte le pagine.
     from app.utils.lingue_ui import (LINGUE_UI, lingua_di, nome_categoria,
@@ -224,7 +266,9 @@ def _lingua_in_ogni_pagina(request: Request) -> dict:
 
 templates = Jinja2Templates(directory="app/templates",
                             context_processors=[_utente_in_ogni_pagina,
-                                                _lingua_in_ogni_pagina])
+                                                _problemi_in_ogni_pagina,
+                                                _lingua_in_ogni_pagina,
+                                                _limiti_chat_in_ogni_pagina])
 # Aggiungi filtro personalizzato per nomi utenti
 templates.env.filters['display_name'] = get_display_name
 templates.env.filters['default_avatar'] = get_default_avatar
@@ -284,9 +328,11 @@ templates.env.globals['ore_limite_annullamento'] = ORE_LIMITE_ANNULLAMENTO
 # Le cifre che raccontiamo nelle pagine devono essere quelle vere: se un domani
 # cambiano le spese di servizio, la pagina "Come funziona" cambia con loro.
 from app.utils.prezzi import PREZZO_ORARIO_MINIMO, SPESE_SERVIZIO
+from app.routes.auth import MIN_PASSWORD_LENGTH
 templates.env.globals['spese_servizio_valore'] = float(SPESE_SERVIZIO)
 templates.env.globals['spese_servizio_euro'] = f"{float(SPESE_SERVIZIO):.2f}".replace('.', ',')
 templates.env.globals['prezzo_orario_minimo'] = PREZZO_ORARIO_MINIMO
+templates.env.globals['min_password'] = MIN_PASSWORD_LENGTH
 
 # Filtro per parsing JSON (usato per le immagini community)
 import json as _json
@@ -431,6 +477,10 @@ def test_s3_credentials():
 @app.on_event("startup")
 def on_startup():
     create_db_and_tables()
+    # 15 nel banner e 80 nel database erano i limiti vecchi: in produzione la
+    # riga c'è già, quindi il default nuovo da solo non cambierebbe niente.
+    from app.routes.messages import allinea_limite_messaggi_obsoleto
+    allinea_limite_messaggi_obsoleto()
     test_s3_credentials()  # Test S3 credentials early
     start_scheduler()  # Avvia lo scheduler per le notifiche programmate
     logger.info("✅ Ispiramy started successfully")

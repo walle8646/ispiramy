@@ -162,9 +162,9 @@ def test_sul_telefono_il_controllo_sta_sopra_agli_appuntamenti():
     assert alto < appuntamenti, "il controllo deve stare prima degli appuntamenti"
     fascia = profilo[alto:appuntamenti]
     assert "interruttore-push" in fascia
-    assert "Attiva notifiche" in fascia
+    assert "profilo.attiva_notifiche" in fascia
 
-    account = profilo[profilo.index(">Account</h3>"):]
+    account = profilo[profilo.index('id="schedaAccount"'):]
     assert 'id="interruttorePush"' in account[:account.index("voceInstallaProfilo")]
     assert "interruttore-push" in account[:account.index("voceInstallaProfilo")]
 

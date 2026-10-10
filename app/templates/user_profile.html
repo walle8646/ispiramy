@@ -797,7 +797,7 @@
                      alt="{{ user.nome }}"
                      onerror="this.onerror=null; this.src='{{ user|default_avatar }}'">
                 {% if last_seen_label %}
-                <div class="last-seen-badge{% if last_seen_label == 'Online ora' %} is-online{% endif %}">
+                <div class="last-seen-badge{% if is_online %} is-online{% endif %}">
                     <span class="last-seen-dot"></span> {{ last_seen_label }}
                 </div>
                 {% endif %}
@@ -806,14 +806,16 @@
                     <div style="display: flex; align-items: center; gap: 14px;">
                         <h1>{{ user|display_name }}</h1>
                         {% if not is_own_profile and current_user %}
-                        <button id="favoriteBtn" onclick="toggleFavorite({{ user.id }})" class="fav-heart-btn {% if is_favorited %}is-favorited{% endif %}" title="{{ 'Rimuovi dai Preferiti' if is_favorited else 'Salva nei Preferiti' }}">
+                        <button id="favoriteBtn" onclick="toggleFavorite({{ user.id }})" class="fav-heart-btn {% if is_favorited %}is-favorited{% endif %}" title="{{ t('scheda.togli_preferito') if is_favorited else t('scheda.salva_preferito') }}">
                             <svg viewBox="0 0 24 24" width="28" height="28" fill="{% if is_favorited %}#ef4444{% else %}none{% endif %}" stroke="#ef4444" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
                         </button>
                         {% endif %}
                     </div>
-                    <p class="pub-role">{{ user.professione or 'Professionista' }}</p>
+                    <p class="pub-role">{{ user.professione or t('scheda.professione') }}</p>
                     {% if category %}
-                    <div class="pub-cat-pill">{{ category.icon }} {{ nc(category.name) }}</div>
+                    <div class="pub-cat-pill">{{ category.icon }} {{ nc(category.name) }}
+                        {% if category.id in categorie_verificate_ids %}<span class="badge-verificato-categoria">{{ t('comune.verificato') }}</span>{% endif %}
+                    </div>
                     {% endif %}
                     {% if aree_interesse_list %}
                     <div class="pub-hero-skills">
@@ -823,7 +825,7 @@
                     </div>
                     {% endif %}
                     {% if is_own_profile %}
-                    <a href="/profile" class="btn-edit">✏️ Modifica profilo</a>
+                    <a href="/profile" class="btn-edit">✏️ {{ t('profilo.modifica') }}</a>
                     {% endif %}
                 </div>
             </div>
@@ -853,7 +855,7 @@
                     {% if user.descrizione %}
                     <p class="pub-desc">{{ user.descrizione }}</p>
                     {% else %}
-                    <p class="pub-placeholder">{{ user|display_name }} non ha ancora aggiunto una presentazione.</p>
+                    <p class="pub-placeholder">{{ user|display_name }} {{ t('scheda.senza_presentazione') }}</p>
                     {% endif %}
 
                     <!-- Statistiche inline -->
@@ -870,7 +872,7 @@
                     {% if reviews %}
                     <div class="reviews-toggle-header" onclick="this.classList.toggle('open'); this.nextElementSibling.classList.toggle('open');">
                         <div class="reviews-toggle-left">
-                            <span style="font-size: 1.1rem; font-weight: 600; color: #1a202c;">⭐ Recensioni</span>
+                            <span style="font-size: 1.1rem; font-weight: 600; color: #1a202c;">⭐ {{ t('scheda.recensioni') }}</span>
                             <span class="pub-avg-score" style="font-size: 1.1rem;">{{ avg_rating }}</span>
                             <span class="pub-avg-stars" style="font-size: 1rem;">
                                 {% for i in range(1, 6) %}
@@ -911,32 +913,32 @@
             <!-- Colonna destra: CTA sticky -->
             <div class="pub-sidebar">
                 <div class="pub-sidebar-card">
-                    <h3>Prenota una consulenza</h3>
+                    <h3>{{ t('scheda.prenota') }}</h3>
                     {% if user.prezzo_consulenza %}
-                    <div class="pub-sidebar-price">€{{ user.prezzo_consulenza }} <span>/ ora</span></div>
+                    <div class="pub-sidebar-price">€{{ user.prezzo_consulenza }} <span>{{ t('home.all_ora') }}</span></div>
                     {% endif %}
-                    <p class="pub-sidebar-sub">Sessione 1-on-1 in videochiamata</p>
+                    <p class="pub-sidebar-sub">{{ t('scheda.sessione') }}</p>
 
                     {% if is_own_profile %}
-                    <div class="pub-sidebar-btn disabled">Non puoi prenotare te stesso</div>
+                    <div class="pub-sidebar-btn disabled">{{ t('scheda.te_stesso') }}</div>
                     {% elif not current_user %}
-                    <a href="/login?redirect=/user/{{ user.id }}" class="pub-sidebar-btn">Accedi per Prenotare</a>
+                    <a href="/login?redirect=/user/{{ user.id }}" class="pub-sidebar-btn">{{ t('scheda.accedi') }}</a>
                     {% elif not consultant_has_payment %}
-                    <div class="pub-sidebar-btn disabled" style="background: #f0f0f0; color: #999; cursor: not-allowed;">Prenotazione non disponibile</div>
-                    <p style="font-size: 0.8rem; color: #999; text-align: center; margin-top: 6px;">Il consulente non ha ancora configurato un metodo di pagamento</p>
+                    <div class="pub-sidebar-btn disabled" style="background: #f0f0f0; color: #999; cursor: not-allowed;">{{ t('prenota.non_disponibile') }}</div>
+                    <p style="font-size: 0.8rem; color: #999; text-align: center; margin-top: 6px;">{{ t('scheda.pagamento_manca') }}</p>
                     {% else %}
-                    <a href="/book/{{ user.id }}" class="pub-sidebar-btn">Prenota Ora</a>
+                    <a href="/book/{{ user.id }}" class="pub-sidebar-btn">{{ t('scheda.prenota_ora') }}</a>
                     {% endif %}
 
                     {% if not is_own_profile and current_user and current_user.is_verified and current_user_has_payment %}
                     <button onclick="openChat({{ user.id }}, '{{ user.nome }} {{ user.cognome }}', '{{ user.profile_picture_url }}')" 
-                            class="pub-sidebar-msg">💬 Invia un messaggio</button>
+                            class="pub-sidebar-msg">💬 {{ t('scheda.messaggio') }}</button>
                     {% elif not is_own_profile and current_user and (not current_user.is_verified or not current_user_has_payment) %}
                     <a href="/profile" class="pub-sidebar-msg" style="background: #f59e0b; text-decoration: none; text-align: center;">
                         {% if not current_user.is_verified %}
-                        📝 Completa il profilo per messaggiare
+                        📝 {{ t('scheda.completa') }}
                         {% else %}
-                        📝 Configura un metodo di pagamento per messaggiare
+                        📝 {{ t('community.pagamento_per_messaggiare') }}
                         {% endif %}
                     </a>
                     {% endif %}
@@ -963,11 +965,11 @@ async function toggleFavorite(consultantId) {
         if (data.status === 'added') {
             btn.classList.add('is-favorited');
             svg.setAttribute('fill', '#ef4444');
-            btn.title = 'Rimuovi dai Preferiti';
+            btn.title = {{ t('scheda.togli_preferito')|tojson }};
         } else {
             btn.classList.remove('is-favorited');
             svg.setAttribute('fill', 'none');
-            btn.title = 'Salva nei Preferiti';
+            btn.title = {{ t('scheda.salva_preferito')|tojson }};
         }
         
         svg.style.transform = 'scale(1.3)';
