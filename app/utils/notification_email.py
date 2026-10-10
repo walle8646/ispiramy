@@ -7,6 +7,7 @@ import os
 from sendgrid import SendGridAPIClient
 from sendgrid.helpers.mail import Mail, Email, To, Content
 from app.logger_config import logger
+from app.utils.orari import ORE_RILASCIO_SENZA_RECENSIONE
 from typing import Dict, Optional
 
 
@@ -71,6 +72,25 @@ def send_notification_email(
     except Exception as e:
         logger.error(f"❌ Errore nell'invio email notifica: {e}")
         return False
+
+
+def nota_compenso() -> str:
+    """Come e quando il consulente viene pagato, in italiano e in inglese.
+
+    Le email non seguono la lingua del sito: la regola sta in tutte e due,
+    così chi legge in inglese la trova comunque.
+    """
+    ore = ORE_RILASCIO_SENZA_RECENSIONE
+    return (
+        '<div style="background:#f1f8f0;border-left:4px solid #43a047;border-radius:6px;'
+        'padding:14px 18px;margin:20px 0;">'
+        "<p style='margin:0 0 8px;'>Il compenso del consulente resta trattenuto finché il cliente "
+        "lascia la recensione e non c'è una contestazione aperta. Se la recensione non arriva, "
+        f"parte {ore} ore dopo la fine della consulenza.</p>"
+        "<p style='margin:0;color:#546e7a;font-size:13px;'>The consultant's payout stays on hold "
+        "until the client leaves a review and there is no open dispute. If they never review, "
+        f"it is sent {ore} hours after the consultation ends.</p></div>"
+    )
 
 
 # Testo sul pagamento nell'email di rifiuto, se il chiamante non ne passa uno
@@ -168,6 +188,7 @@ def generate_email_html(template_name: str, data: Dict[str, str]) -> Optional[st
                 "<p>Hai ricevuto una nuova prenotazione da <strong>{client_name}</strong>!</p>"
                 + _details_box(row("📅 Data:", "{date}") + row("🕐 Orario:", "{time}") + row("⏱️ Durata:", "{duration} minuti"), GREEN)
                 + "<p>Preparati in anticipo e sii puntuale per offrire la migliore esperienza al tuo cliente.</p>"
+                + nota_compenso()
             )
             return _fill(_branded_email("📅", "Nuova Prenotazione", GREEN, GREEN_D, body, "Visualizza Prenotazione", "{action_url}"), data)
 
@@ -240,9 +261,16 @@ def generate_email_html(template_name: str, data: Dict[str, str]) -> Optional[st
                 + _details_box(row("📅 Data:", "{date}") + row("🕐 Orario:", "{time}"), AMBER)
                 + "{reason_section}"
                 + '<div style="background:#fff8e1;border-left:4px solid #f39c12;border-radius:6px;padding:14px 18px;margin:20px 0;">'
-                  "<p style='margin:0;'>Il compenso di questa consulenza resta trattenuto finché la contestazione "
-                  "non è esaminata. Ti contatteremo se servono chiarimenti: se la consulenza era registrata, "
-                  "la registrazione viene usata per verificare cosa è successo.</p></div>"
+                  "<p style='margin:0 0 8px;'>Il compenso di questa consulenza resta trattenuto finché la contestazione "
+                  "non è chiusa. Senza contestazione, parte quando il cliente lascia la recensione, oppure "
+                  f"{ORE_RILASCIO_SENZA_RECENSIONE} ore dopo la fine se la recensione non arriva. "
+                  "Ti contatteremo se servono chiarimenti: se la consulenza era registrata, "
+                  "la registrazione viene usata per verificare cosa è successo.</p>"
+                  "<p style='margin:0;color:#546e7a;font-size:13px;'>This payout stays on hold until the dispute is closed. "
+                  "With no open dispute, it is sent when the client leaves a review, or "
+                  f"{ORE_RILASCIO_SENZA_RECENSIONE} hours after the consultation ends if they never review. "
+                  "We will contact you if we need more detail. If the consultation was recorded, "
+                  "the recording is used to check what happened.</p></div>"
             )
             return _fill(_branded_email("⚠️", "Contestazione aperta", AMBER, AMBER_D, body, "Vai al tuo profilo", "{action_url}"), data)
 
@@ -288,6 +316,7 @@ def generate_email_html(template_name: str, data: Dict[str, str]) -> Optional[st
                 "<p>Com'è andata la tua consulenza con <strong>{consultant_name}</strong>?</p>"
                 + _details_box(row("📅 Data:", "{date}") + row("🕐 Orario:", "{time}"), GOLD)
                 + "<p>La tua opinione è preziosa e aiuta altri utenti a scegliere il consulente giusto. Ci vogliono solo 30 secondi!</p>"
+                + nota_compenso()
             )
             return _fill(_branded_email("⭐", "Lascia una Recensione", GOLD, GOLD_D, body, "Lascia la tua Recensione", "{review_url}"), data)
 
@@ -297,6 +326,7 @@ def generate_email_html(template_name: str, data: Dict[str, str]) -> Optional[st
                 "<p>Non hai ancora lasciato una recensione per la consulenza con <strong>{consultant_name}</strong>.</p>"
                 + _details_box(row("📅 Data:", "{date}") + row("🕐 Orario:", "{time}"), AMBER)
                 + "<p>Ci vogliono solo 30 secondi e aiuterai altri utenti a trovare il consulente perfetto! Se l'hai già fatto, ignora questo messaggio.</p>"
+                + nota_compenso()
             )
             return _fill(_branded_email("🔔", "Non dimenticare la Recensione", AMBER, AMBER_D, body, "Lascia la tua Recensione", "{review_url}"), data)
 

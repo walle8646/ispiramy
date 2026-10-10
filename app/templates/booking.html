@@ -9,6 +9,7 @@
         margin: 2rem auto;
         padding: 0 1rem;
         box-sizing: border-box;
+        overflow-x: clip;
     }
     
     .booking-container *, .booking-container *::before, .booking-container *::after {
@@ -343,17 +344,19 @@
     /* Weekly Slots Grid */
     .weekly-slots-grid {
         display: grid;
-        grid-template-columns: repeat(7, 1fr);
-        gap: 1rem;
+        grid-template-columns: repeat(7, minmax(0, 1fr));
+        gap: 0.75rem;
         margin-top: 1rem;
+        min-width: 0;
     }
     
     .day-column {
         background: white;
         border: 1px solid #e0e0e0;
         border-radius: 8px;
-        padding: 1rem;
+        padding: 1rem 0.4rem;
         min-height: 200px;
+        min-width: 0;
     }
     
     .day-header {
@@ -378,18 +381,43 @@
         background: #f5f7ff;
         border: 1px solid #e0e0e0;
         border-radius: 6px;
-        padding: 0.5rem;
+        padding: 0.4rem 0.2rem;
         margin-bottom: 0.5rem;
-        font-size: 0.85rem;
         text-align: center;
         cursor: pointer;
-        transition: all 0.2s;
+        transition: background 0.2s, border-color 0.2s, color 0.2s;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 1px;
+        line-height: 1.15;
+        min-width: 0;
+    }
+
+    .slot-ora {
+        font-size: 0.82rem;
+        font-weight: 600;
+        white-space: nowrap;
+        font-variant-numeric: tabular-nums;
+    }
+
+    .slot-ora-it {
+        font-size: 0.68rem;
+        font-weight: 500;
+        color: #607d8b;
+        white-space: nowrap;
     }
     
     .day-slot:hover {
         background: #43a047;
         color: white;
         border-color: #43a047;
+    }
+
+    .day-slot:hover .slot-ora-it,
+    .day-slot.selected .slot-ora-it {
+        color: rgba(255, 255, 255, 0.9);
     }
     
     .day-slot.selected {
@@ -637,7 +665,15 @@
     
     @media (max-width: 480px) {
         .weekly-slots-grid {
-            grid-template-columns: repeat(2, 1fr);
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .slot-ora {
+            font-size: 0.95rem;
+        }
+
+        .slot-ora-it {
+            font-size: 0.75rem;
         }
 
         /* Il calendario ha sette colonne: su uno schermo da 375px ci sta solo
@@ -756,7 +792,7 @@
         <div class="booking-section">
             <h3><i class="fas fa-calendar-week"></i> Orari Disponibili - Prossimi 7 Giorni</h3>
             <p id="notaFusoPrenotazione" style="color:#546e7a; font-size:.9rem; margin:.35rem 0 0;">
-                Gli orari sono nel fuso <span id="nomeFusoPrenotazione">Europe/Rome</span>.
+                <span id="nomeFusoPrenotazione">Orari in ora italiana.</span>
             </p>
             <div class="weekly-slots-grid" id="weeklySlots">
                 <div class="loading-spinner">
@@ -965,10 +1001,26 @@
     // Le spese di servizio le somma il server al momento del pagamento: qui
     // servono solo per mostrare al cliente quanto pagherà davvero
     const speseServizio = {{ spese_servizio }};
-    (function () {
-        const nodo = document.getElementById('nomeFusoPrenotazione');
-        if (nodo && window.fusoDiChiGuarda) nodo.textContent = window.fusoDiChiGuarda;
-    })();
+    function fasciaDi(giorno, inizio, fine) {
+        if (window.fasciaSlot) return window.fasciaSlot(giorno, inizio, fine);
+        const principale = fine ? `${inizio}–${fine}` : (inizio || '');
+        return { principale: principale, secondaria: null };
+    }
+
+    function disegnaSlot(elemento, giorno, inizio, fine) {
+        const fascia = fasciaDi(giorno, inizio, fine);
+        elemento.replaceChildren();
+        const principale = document.createElement('span');
+        principale.className = 'slot-ora';
+        principale.textContent = fascia.principale;
+        elemento.appendChild(principale);
+        if (fascia.secondaria) {
+            const secondaria = document.createElement('span');
+            secondaria.className = 'slot-ora-it';
+            secondaria.textContent = fascia.secondaria;
+            elemento.appendChild(secondaria);
+        }
+    }
     
     // Dati domande community del cliente
     let selectedQuestionId = null;
@@ -1310,9 +1362,7 @@
                 dayData.slots.forEach(slot => {
                     const slotElement = document.createElement('div');
                     slotElement.className = 'day-slot';
-                    slotElement.textContent = window.etichettaSlot
-                        ? window.etichettaSlot(dayData.dateStr, slot.start_time, slot.end_time)
-                        : `${slot.start_time} - ${slot.end_time}`;
+                    disegnaSlot(slotElement, dayData.dateStr, slot.start_time, slot.end_time);
                     slotElement.addEventListener('click', () => selectSlotFromWeekly(slot, dayData.dateStr, dayData.date));
                     daySlotsContainer.appendChild(slotElement);
                 });
@@ -1333,12 +1383,15 @@
         event.currentTarget.classList.add('selected');
         
         // Mostra nella sezione "Orario Selezionato"
+        const fascia = fasciaDi(dateStr, slot.start_time, slot.end_time);
+        const rigaItaliana = fascia.secondaria
+            ? `<div style="color:#607d8b; font-size:.85rem; margin-top:2px;">${fascia.secondaria}</div>`
+            : '';
         const display = document.getElementById('selectedSlotDisplay');
         display.innerHTML = `
             <div style="text-align: left;">
                 <p style="margin: 0.5rem 0;"><strong>Data:</strong> ${date.toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</p>
-                <p style="margin: 0.5rem 0;"><strong>Orario:</strong> ${window.etichettaSlot ? window.etichettaSlot(dateStr, slot.start_time, slot.end_time) : (slot.start_time + ' - ' + slot.end_time)}
-                   <span style="color:#78909c; font-size:.85rem;">(${window.etichettaFuso ? window.etichettaFuso(dateStr, slot.start_time) : 'ora italiana'})</span></p>
+                <p style="margin: 0.5rem 0;"><strong>Orario:</strong> ${fascia.principale}${rigaItaliana}</p>
                 <p style="margin: 0.5rem 0;"><strong>Durata:</strong> ${selectedDuration} minuti</p>
                 <hr style="margin: 1rem 0;">
                 <p style="margin: 0.5rem 0;"><strong>Consulenza:</strong> € ${((pricePerHour / 60) * selectedDuration).toFixed(2)}</p>
@@ -1364,13 +1417,10 @@
         
         document.getElementById('summaryDate').textContent = 
             new Date(dateStr).toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
-        // L'orario e' quello italiano: chi prenota dall'estero deve saperlo
-        // prima di pagare, non dopo
-        const fuso = window.etichettaFuso ? window.etichettaFuso(dateStr, slot.start_time) : 'ora italiana';
-        const fascia = window.etichettaSlot
-            ? window.etichettaSlot(dateStr, slot.start_time, slot.end_time)
-            : `${slot.start_time} - ${slot.end_time}`;
-        document.getElementById('summaryTime').textContent = `${fascia} (${fuso})`;
+        const fascia = fasciaDi(dateStr, slot.start_time, slot.end_time);
+        document.getElementById('summaryTime').textContent = fascia.secondaria
+            ? `${fascia.principale} · ${fascia.secondaria}`
+            : fascia.principale;
         document.getElementById('summaryDuration').textContent = `${duration} minuti`;
         
         const consultationPrice = (pricePerHour / 60) * duration;

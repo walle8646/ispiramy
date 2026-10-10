@@ -19,6 +19,7 @@ from app.utils.verifica_categorie import id_categorie_verificate
 from app.utils.orari import (
     ORE_LIMITE_ANNULLAMENTO, ORE_PREAVVISO_PRENOTAZIONE, con_fuso, data_consulenza,
     finestra_ingresso, iso_ora_italiana, now_italy_naive,
+    scadenza_compenso_senza_recensione,
 )
 from app.utils.booking_requests import (
     RichiestaNonValida, accetta_richiesta, annulla_blocco, avvisa_annullamento,
@@ -58,8 +59,8 @@ MAX_APPUNTAMENTI_PROFILO = 3
 MAX_RICHIESTE_PROFILO = 20
 
 # Stati di pagamento di una consulenza effettivamente pagata. 'held' e' il
-# trattenuto in attesa delle 48h, 'released' il trasferito al consulente:
-# escludere 'released' faceva sparire la consulenza dallo storico dopo 48 ore.
+# trattenuto finché il compenso non parte, 'released' il trasferito al consulente:
+# escludere 'released' faceva sparire la consulenza dallo storico dopo il trasferimento.
 PAID_PAYMENT_STATUSES = ['paid', 'held', 'released']
 
 # Lock per sincronizzare join_booking per lo stesso booking
@@ -600,7 +601,7 @@ async def create_booking(
             status="pending_payment",
             payment_status="pending",
             payment_method="stripe",
-            payment_held_until=end_datetime_full + timedelta(hours=48),
+            payment_held_until=scadenza_compenso_senza_recensione(end_datetime_full),
             acceptance_deadline=scadenza_risposta(booking_datetime_full) if con_accettazione else None,
             service_fee=spese_servizio(),
             client_notes=client_notes or "Prenotazione diretta",
@@ -623,9 +624,10 @@ async def create_booking(
             # base della commissione e del pagamento al consulente
             amount_cents = centesimi(totale_cliente(price))
 
-            # Pagamento alla piattaforma — il trasferimento al consulente avviene dopo 48h
+            # Pagamento alla piattaforma — il consulente lo riceve con la recensione
+            # (o alla scadenza di riserva, se la recensione non arriva).
             if consultant.stripe_account_id and consultant.stripe_onboarding_complete:
-                logger.info(f"💰 Pagamento trattenuto: consulente {consultant.stripe_account_id} riceverà dopo 48h dalla fine consulenza")
+                logger.info(f"💰 Pagamento trattenuto: consulente {consultant.stripe_account_id} lo riceve con la recensione del cliente")
 
             checkout_session = await asyncio.to_thread(
                 create_checkout_session,

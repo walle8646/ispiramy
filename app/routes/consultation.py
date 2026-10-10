@@ -15,6 +15,7 @@ from app.logger_config import logger
 from app.routes.booking import slot_gia_prenotato
 from app.utils.stripe_config import create_checkout_session
 from app.utils.prezzi import PREZZO_ORARIO_MINIMO, centesimi, spese_servizio, totale_cliente
+from app.utils.orari import scadenza_compenso_senza_recensione
 
 router = APIRouter()
 
@@ -438,7 +439,7 @@ async def confirm_booking(
             status="pending_payment",
             payment_status="pending",
             payment_method="stripe",
-            payment_held_until=fine + timedelta(hours=48),
+            payment_held_until=scadenza_compenso_senza_recensione(fine),
             service_fee=spese_servizio(),
             community_question_id=int(community_question_id) if community_question_id else None,
             client_notes=description if description.strip() else f"Prenotazione da offerta consulenza #{offer.id}",
@@ -457,7 +458,7 @@ async def confirm_booking(
             # Il cliente paga la consulenza piu' le spese di servizio
             amount_cents = centesimi(totale_cliente(offer.price))
             
-            # Pagamento alla piattaforma — il trasferimento al consulente avviene dopo 48h
+            # Pagamento alla piattaforma — il consulente lo riceve con la recensione
             
             # Chiamata HTTP a Stripe: fuori dall'event loop
             checkout_session = await asyncio.to_thread(

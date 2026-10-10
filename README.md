@@ -70,9 +70,10 @@ Il sistema supporta sia SQLite (sviluppo) che PostgreSQL (produzione) ed è cont
 - **Stripe Checkout** o **PayPal**, a scelta in base a quanto configurato dal consulente
 - Lo slot viene riservato all'avvio del checkout e liberato se il pagamento non arriva
 - Webhook per la conferma automatica del pagamento
-- **Trattenuto 48 ore**: l'importo resta alla piattaforma e viene trasferito al
-  consulente (meno la commissione, default 20%) solo 48 ore dopo la fine della
-  consulenza, e solo se non ci sono contestazioni aperte
+- **Compenso dopo la recensione**: l'importo resta alla piattaforma e viene
+  trasferito al consulente (meno la commissione, default 20%) quando il cliente
+  lascia la recensione, se non c'è una contestazione aperta. Se la recensione
+  non arriva, parte 48 ore dopo la fine della consulenza
 - **Rimborso automatico** se il consulente rifiuta o non si presenta
 - **Stripe Connect** per l'onboarding dei consulenti; PayPal Payout in alternativa
 

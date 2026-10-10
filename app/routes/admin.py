@@ -413,9 +413,11 @@ async def admin_update_dispute_status(dispute_id: int, data: DisputeStatusReques
             booking = session.get(Booking, dispute.booking_id)
             if booking and booking.payment_status == "held":
                 if data.status == "rejected":
-                    # Contestazione respinta → paga il consulente (100%)
+                    # Contestazione respinta → paga il consulente anche senza
+                    # recensione e prima delle 48 ore di riserva. La contestazione
+                    # è già chiusa, quindi non blocca più il compenso.
                     from app.scheduler import release_booking_payment
-                    release_booking_payment(booking.id)
+                    release_booking_payment(booking.id, forza=True)
                     logger.info(f"💰 Contestazione #{dispute_id} respinta: pagamento rilasciato per booking {booking.id}")
                 elif data.status == "resolved":
                     # Contestazione risolta → rimborso (parziale o totale)

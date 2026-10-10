@@ -61,10 +61,10 @@ async def open_dispute(booking_id: int, data: DisputeRequest, request: Request):
 
         logger.info(f"🚨 [dispute] Contestazione #{dispute.id} aperta per booking {booking_id} da user {current_user.id}")
 
-        # Il rilascio automatico a 48 ore non deve partire mentre si discute:
-        # se scattasse nello stesso momento in cui si apre la contestazione,
-        # il compenso partirebbe lo stesso. Resta trattenuto finché un
-        # amministratore non decide.
+        # Né la recensione né la scadenza di riserva devono pagare mentre si
+        # discute: se scattassero nello stesso momento in cui si apre la
+        # contestazione, il compenso partirebbe lo stesso. Resta trattenuto
+        # finché un amministratore non decide.
         try:
             from app.scheduler import cancel_payment_release
             cancel_payment_release(booking_id)

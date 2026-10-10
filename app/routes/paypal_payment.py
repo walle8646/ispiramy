@@ -22,7 +22,7 @@ from app.routes.auth import verify_token
 from app.logger_config import logger
 from app.utils.notification_service import send_notification
 from app.utils_user import has_payment_method
-from app.utils.orari import ORE_PREAVVISO_PRENOTAZIONE
+from app.utils.orari import ORE_PREAVVISO_PRENOTAZIONE, scadenza_compenso_senza_recensione
 from app.scheduler import schedule_booking_reminders, schedule_payment_release, schedule_noshow_check
 
 router = APIRouter()
@@ -128,7 +128,7 @@ async def create_booking_paypal(request: Request):
         # Calcola end_datetime e held_until
         booking_dt = datetime.strptime(f"{booking_date_str} {start_time}", "%Y-%m-%d %H:%M")
         end_dt = datetime.strptime(f"{booking_date_str} {end_time}", "%Y-%m-%d %H:%M")
-        held_until = end_dt + timedelta(hours=48)
+        held_until = scadenza_compenso_senza_recensione(end_dt)
 
         # Consulente che conferma a mano: l'ordine PayPal blocca l'importo
         # (intent AUTHORIZE) e si incassa solo quando accetta.
@@ -254,7 +254,7 @@ async def create_consultation_paypal(offer_id: int, request: Request):
 
         booking_dt = datetime.strptime(f"{selected_date} {start_time}", "%Y-%m-%d %H:%M")
         end_dt = datetime.strptime(f"{selected_date} {end_time}", "%Y-%m-%d %H:%M")
-        held_until = end_dt + timedelta(hours=48)
+        held_until = scadenza_compenso_senza_recensione(end_dt)
         
         new_booking = Booking(
             client_user_id=offer.client_user_id,
@@ -395,7 +395,7 @@ async def paypal_capture(request: Request):
         
         session.commit()
         
-        # Notifiche a consulente e cliente + promemoria, no-show e rilascio a 48h
+        # Notifiche a consulente e cliente + promemoria, no-show e rilascio di riserva
         conferma_consulenza(session, booking)
         logger.info(f"✅ PayPal booking {booking.id} confermato, capture {capture_id}")
         
