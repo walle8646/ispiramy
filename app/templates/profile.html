@@ -974,20 +974,20 @@
                         
                         <div class="consultant-only-fields">
                         <div class="form-group">
-                            <label>Descrizione <span id="charCounter" style="float:right; font-size:0.9rem; color:#dc3545;">0/200 caratteri</span></label>
+                            <label>{{ t('profilo.descrizione') }} <span id="charCounter" style="float:right; font-size:0.9rem; color:#dc3545;">0/200 {{ t('profilo.caratteri') }}</span></label>
                             <textarea id="descrizioneTextarea" name="descrizione" rows="5" 
-                                placeholder="Raccontaci di te, della tua esperienza e come puoi aiutare gli altri (minimo 200 caratteri)">{{ user.descrizione or '' }}</textarea>
-                            <small id="descrizioneHint" style="color:#dc3545; display:block; margin-top:4px;">La descrizione deve essere di almeno 200 caratteri per richiedere la verifica del profilo.</small>
+                                placeholder="{{ t('profilo.descrizione_ph') }}">{{ user.descrizione or '' }}</textarea>
+                            <small id="descrizioneHint" style="color:#dc3545; display:block; margin-top:4px;">{{ t('profilo.descrizione_min') }}</small>
                         </div>
                         
                         <div class="form-group">
-                            <label>Aree di Interesse</label>
-                            <textarea id="areeInteresseTextarea" name="aree_interesse" rows="4" placeholder="Es: Sviluppo Mobile, Leadership, Crescita Personale">{{ user.aree_interesse or '' }}</textarea>
+                            <label>{{ t('profilo.aree') }}</label>
+                            <textarea id="areeInteresseTextarea" name="aree_interesse" rows="4" placeholder="{{ t('profilo.aree_ph') }}">{{ user.aree_interesse or '' }}</textarea>
                             <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 6px;">
-                                <small>Separa con virgole</small>
+                                <small>{{ t('profilo.virgole') }}</small>
                                 <button type="button" id="generateInterestsBtn" 
                                         style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; padding: 8px 16px; border-radius: 8px; font-size: 0.85em; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; transition: all 0.3s; box-shadow: 0 2px 8px rgba(102,126,234,.3);">
-                                    🤖 Genera con AI
+                                    🤖 {{ t('profilo.genera_ai') }}
                                 </button>
                             </div>
                             <div id="generateInterestsStatus" style="display: none; margin-top: 8px; padding: 10px 14px; border-radius: 8px; font-size: 0.9em;"></div>
@@ -997,80 +997,42 @@
                         <input type="hidden" id="tagsInput" name="tags" value='{{ user.tags or "" }}'>
 
                         <div class="form-section">
-                            <div class="form-section-title">🌐 Lingue Parlate *</div>
+                            <div class="form-section-title">🌐 {{ t('profilo.lingue_titolo') }} *</div>
                             <p style="margin: -6px 0 10px; font-size: .86em; color: #6b7a85;">
-                                In che lingue puoi fare una consulenza. È il primo filtro di chi
-                                cerca: senza, chi non parla italiano non ti trova.
+                                {{ t('profilo.lingue_testo') }}
                             </p>
                             <div class="languages-grid" style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px;">
                                 <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; padding: 8px; border-radius: 8px; border: 1px solid #e5e7eb; transition: all .2s;">
                                     <input type="checkbox" name="lang_it" value="it" {% if 'it' in user_languages or not user_languages %}checked{% endif %} style="width: 18px; height: 18px; accent-color: #2e7d32;">
-                                    🇮🇹 Italiano
+                                    🇮🇹 {{ t('profilo.nome_it') }}
                                 </label>
                                 <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; padding: 8px; border-radius: 8px; border: 1px solid #e5e7eb; transition: all .2s;">
                                     <input type="checkbox" name="lang_en" value="en" {% if user_languages and 'en' in user_languages %}checked{% endif %} style="width: 18px; height: 18px; accent-color: #2e7d32;">
-                                    🇬🇧 Inglese
+                                    🇬🇧 {{ t('profilo.nome_en') }}
                                 </label>
                                 <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; padding: 8px; border-radius: 8px; border: 1px solid #e5e7eb; transition: all .2s;">
                                     <input type="checkbox" name="lang_fr" value="fr" {% if user_languages and 'fr' in user_languages %}checked{% endif %} style="width: 18px; height: 18px; accent-color: #2e7d32;">
-                                    🇫🇷 Francese
+                                    🇫🇷 {{ t('profilo.nome_fr') }}
                                 </label>
                                 <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; padding: 8px; border-radius: 8px; border: 1px solid #e5e7eb; transition: all .2s;">
                                     <input type="checkbox" name="lang_es" value="es" {% if user_languages and 'es' in user_languages %}checked{% endif %} style="width: 18px; height: 18px; accent-color: #2e7d32;">
-                                    🇪🇸 Spagnolo
+                                    🇪🇸 {{ t('profilo.nome_es') }}
                                 </label>
                                 <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; padding: 8px; border-radius: 8px; border: 1px solid #e5e7eb; transition: all .2s;">
                                     <input type="checkbox" name="lang_de" value="de" {% if user_languages and 'de' in user_languages %}checked{% endif %} style="width: 18px; height: 18px; accent-color: #2e7d32;">
-                                    🇩🇪 Tedesco
+                                    🇩🇪 {{ t('profilo.nome_de') }}
                                 </label>
                                 <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; padding: 8px; border-radius: 8px; border: 1px solid #e5e7eb; transition: all .2s;">
                                     <input type="checkbox" name="lang_other" id="langOtherCheckbox" value="other" {% if user_languages and 'other' in user_languages %}checked{% endif %} style="width: 18px; height: 18px; accent-color: #2e7d32;">
-                                    🌍 Altro
+                                    🌍 {{ t('profilo.nome_altro') }}
                                 </label>
                             </div>
                             <div id="otherLanguageField" style="display: {% if user_other_language %}block{% else %}none{% endif %}; margin-top: 10px;">
-                                <input type="text" name="other_language" list="worldLanguages" autocomplete="off" value="{{ user_other_language or '' }}" placeholder="Scrivi o scegli un'altra lingua..." style="padding: 10px 14px; border: 1px solid #d1d8e0; border-radius: 8px; font-size: .95em; width: 100%;">
+                                <input type="text" name="other_language" list="worldLanguages" autocomplete="off" value="{{ user_other_language or '' }}" placeholder="{{ t('profilo.altra_lingua_ph') }}" style="padding: 10px 14px; border: 1px solid #d1d8e0; border-radius: 8px; font-size: .95em; width: 100%;">
                                 <datalist id="worldLanguages">
-                                    <option value="Portoghese"></option>
-                                    <option value="Cinese (Mandarino)"></option>
-                                    <option value="Arabo"></option>
-                                    <option value="Russo"></option>
-                                    <option value="Giapponese"></option>
-                                    <option value="Coreano"></option>
-                                    <option value="Olandese"></option>
-                                    <option value="Polacco"></option>
-                                    <option value="Rumeno"></option>
-                                    <option value="Ucraino"></option>
-                                    <option value="Greco"></option>
-                                    <option value="Turco"></option>
-                                    <option value="Hindi"></option>
-                                    <option value="Bengalese"></option>
-                                    <option value="Urdu"></option>
-                                    <option value="Persiano (Farsi)"></option>
-                                    <option value="Ebraico"></option>
-                                    <option value="Svedese"></option>
-                                    <option value="Norvegese"></option>
-                                    <option value="Danese"></option>
-                                    <option value="Finlandese"></option>
-                                    <option value="Ceco"></option>
-                                    <option value="Slovacco"></option>
-                                    <option value="Ungherese"></option>
-                                    <option value="Croato"></option>
-                                    <option value="Serbo"></option>
-                                    <option value="Sloveno"></option>
-                                    <option value="Bosniaco"></option>
-                                    <option value="Bulgaro"></option>
-                                    <option value="Albanese"></option>
-                                    <option value="Catalano"></option>
-                                    <option value="Thailandese"></option>
-                                    <option value="Vietnamita"></option>
-                                    <option value="Indonesiano"></option>
-                                    <option value="Filippino (Tagalog)"></option>
-                                    <option value="Swahili"></option>
-                                    <option value="Maltese"></option>
-                                    <option value="Estone"></option>
-                                    <option value="Lettone"></option>
-                                    <option value="Lituano"></option>
+                                    {% for nome in t('profilo.altre_lingue').split('|') %}
+                                    <option value="{{ nome }}"></option>
+                                    {% endfor %}
                                 </datalist>
                             </div>
                         </div>
@@ -1325,6 +1287,65 @@
 {% block extra_js %}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.js"></script>
 <script>
+    const UI = {
+        caratteri: {{ t('profilo.caratteri')|tojson }},
+        descrizioneOk: {{ t('profilo.descrizione_ok')|tojson }},
+        descrizioneMancano: {{ t('profilo.descrizione_mancano')|tojson }},
+        genera: {{ t('profilo.genera_ai')|tojson }},
+        aiTra: {{ t('profilo.ai_tra')|tojson }},
+        aiMin: {{ t('profilo.ai_min50')|tojson }},
+        aiCorso: {{ t('profilo.ai_corso')|tojson }},
+        aiAnalizza: {{ t('profilo.ai_analizza')|tojson }},
+        aiOk: {{ t('profilo.ai_ok')|tojson }},
+        aiErrore: {{ t('profilo.ai_errore')|tojson }},
+        aiRete: {{ t('profilo.ai_rete')|tojson }},
+        erroreSalva: {{ t('profilo.errore_salvataggio')|tojson }},
+        erroreRete: {{ t('profilo.errore_rete')|tojson }},
+        stripeOk: {{ t('profilo.stripe_ok')|tojson }},
+        stripeDash: {{ t('profilo.stripe_dashboard')|tojson }},
+        stripeCompleta: {{ t('profilo.stripe_completa')|tojson }},
+        stripeCompletaBtn: {{ t('profilo.stripe_completa_btn')|tojson }},
+        stripeIban: {{ t('profilo.stripe_iban')|tojson }},
+        stripeCollega: {{ t('profilo.stripe_collega')|tojson }},
+        stripeAvvio: {{ t('profilo.stripe_avvio')|tojson }},
+        conChi: {{ t('profilo.con_chi')|tojson }},
+        richiestaDa: {{ t('profilo.richiesta_da')|tojson }},
+        rifiuta: {{ t('profilo.rifiuta')|tojson }},
+        accetta: {{ t('profilo.accetta')|tojson }},
+        entra: {{ t('profilo.entra')|tojson }},
+        attesaAltro: {{ t('profilo.attesa_altro')|tojson }},
+        pronto: {{ t('profilo.pronto')|tojson }},
+        partecipa: {{ t('profilo.partecipa')|tojson }},
+        ePronto: {{ t('profilo.e_pronto')|tojson }},
+        scaduta: {{ t('profilo.richiesta_scaduta')|tojson }},
+        scadutaTesto: {{ t('profilo.richiesta_scaduta_testo')|tojson }},
+        daConfermare: {{ t('profilo.da_confermare')|tojson }},
+        daConfermareTesto: {{ t('profilo.da_confermare_testo')|tojson }},
+        inAttesa: {{ t('profilo.in_attesa')|tojson }},
+        inAttesaTesto: {{ t('profilo.in_attesa_testo')|tojson }},
+        contestazioneTu: {{ t('profilo.contestazione_tu')|tojson }},
+        contestazioneAltro: {{ t('profilo.contestazione_altro')|tojson }},
+        recensioneTu: {{ t('profilo.recensione_tu')|tojson }},
+        recensioneAltro: {{ t('profilo.recensione_altro')|tojson }},
+        iniziaTra: {{ t('profilo.inizia_tra')|tojson }},
+        mancato: {{ t('profilo.mancato')|tojson }},
+        ilConsulente: {{ t('profilo.il_consulente')|tojson }},
+        ilCliente: {{ t('profilo.il_cliente')|tojson }},
+        nonPartecipato: {{ t('profilo.non_partecipato')|tojson }},
+        nonSvolta: {{ t('profilo.non_svolta')|tojson }},
+        rifiutaTitolo: {{ t('profilo.rifiuta_titolo')|tojson }},
+        rifiutaSicuro: {{ t('profilo.rifiuta_sicuro')|tojson }},
+        rifiutaNotaRichiesta: {{ t('profilo.rifiuta_nota_richiesta')|tojson }},
+        rifiutaNotaPagata: {{ t('profilo.rifiuta_nota_pagata')|tojson }},
+        motivoRifiuto: {{ t('profilo.motivo_rifiuto')|tojson }},
+        confermaCorso: {{ t('profilo.conferma_corso')|tojson }},
+        accettata: {{ t('profilo.accettata')|tojson }},
+        accettaErrore: {{ t('profilo.accetta_errore')|tojson }},
+        reteRiprova: {{ t('profilo.rete_riprova')|tojson }},
+        rifiutata: {{ t('profilo.rifiutata')|tojson }},
+        scegliLingua: {{ t('profilo.scegli_lingua')|tojson }}
+    };
+    const LOCALE_UI = {{ ('en-GB' if lingua_ui == 'en' else 'it-IT')|tojson }};
     // ========== PAYPAL EMAIL ==========
     function togglePaypalEdit() {
         const form = document.getElementById('paypalEditForm');
@@ -1351,11 +1372,11 @@
             if (res.ok) {
                 location.reload();
             } else {
-                errorEl.textContent = data.error || 'Errore nel salvataggio';
+                errorEl.textContent = data.error || UI.erroreSalva;
                 errorEl.style.display = 'block';
             }
         } catch (e) {
-            errorEl.textContent = 'Errore di connessione';
+            errorEl.textContent = UI.erroreRete;
             errorEl.style.display = 'block';
         }
     }
@@ -1373,23 +1394,23 @@
             
             if (data.onboarding_complete) {
                 content.innerHTML = `
-                    <p style="color: rgba(255,255,255,.9); font-size: .9em; margin-bottom: 12px;">✅ Account Stripe collegato</p>
+                    <p style="color: rgba(255,255,255,.9); font-size: .9em; margin-bottom: 12px;">✅ ${UI.stripeOk}</p>
                     <button onclick="openStripeDashboard()" style="width: 100%; padding: 12px; background: white; color: #2e7d32; border: none; border-radius: 10px; font-weight: 600; cursor: pointer; font-size: .9em; transition: all .2s;">
-                        📊 Dashboard Pagamenti
+                        📊 ${UI.stripeDash}
                     </button>
                 `;
             } else if (data.connected && !data.onboarding_complete) {
                 content.innerHTML = `
-                    <p style="color: rgba(255,255,255,.9); font-size: .9em; margin-bottom: 12px;">⏳ Completa la configurazione per ricevere pagamenti</p>
+                    <p style="color: rgba(255,255,255,.9); font-size: .9em; margin-bottom: 12px;">⏳ ${UI.stripeCompleta}</p>
                     <button onclick="startStripeOnboarding()" style="width: 100%; padding: 12px; background: white; color: #2e7d32; border: none; border-radius: 10px; font-weight: 600; cursor: pointer; font-size: .9em; transition: all .2s;">
-                        🔗 Completa Configurazione
+                        🔗 ${UI.stripeCompletaBtn}
                     </button>
                 `;
             } else {
                 content.innerHTML = `
-                    <p style="color: rgba(255,255,255,.9); font-size: .9em; margin-bottom: 12px;">Inserisci IBAN e/o carta di credito per ricevere i pagamenti sui tuoi conti tramite Stripe</p>
+                    <p style="color: rgba(255,255,255,.9); font-size: .9em; margin-bottom: 12px;">${UI.stripeIban}</p>
                     <button onclick="startStripeOnboarding()" style="width: 100%; padding: 12px; background: white; color: #2e7d32; border: none; border-radius: 10px; font-weight: 600; cursor: pointer; font-size: .9em; transition: all .2s;">
-                        🔗 Collega Conto Stripe
+                        🔗 ${UI.stripeCollega}
                     </button>
                 `;
             }
@@ -1409,10 +1430,10 @@
             if (data.success && data.url) {
                 window.location.href = data.url;
             } else {
-                alert('Errore: ' + (data.detail || 'Impossibile avviare la configurazione'));
+                alert('Errore: ' + (data.detail || UI.stripeAvvio));
             }
         } catch (e) {
-            alert('Errore di connessione');
+            alert(UI.erroreRete);
         }
     }
 
@@ -1613,7 +1634,7 @@
 
         // Almeno una lingua: senza, il profilo non compare in nessun filtro
         if (langCodes.length === 0) {
-            errorDiv.textContent = 'Scegli almeno una lingua in cui puoi fare consulenze.';
+            errorDiv.textContent = UI.scegliLingua;
             errorDiv.style.display = 'block';
             document.querySelector('input[name="lang_it"]')?.scrollIntoView({ block: 'center', behavior: 'smooth' });
             return;
@@ -1790,15 +1811,15 @@
 
     function updateCharCounter() {
         const length = descrizioneTextarea.value.length;
-        charCounter.textContent = `${length}/200 caratteri`;
+        charCounter.textContent = `${length}/200 ${UI.caratteri}`;
         if (length >= 200) {
             charCounter.style.color = '#28a745';
             descrizioneHint.style.color = '#28a745';
-            descrizioneHint.textContent = '✓ La descrizione soddisfa i requisiti per la verifica del profilo.';
+            descrizioneHint.textContent = '✓ ' + UI.descrizioneOk;
         } else {
             charCounter.style.color = '#dc3545';
             descrizioneHint.style.color = '#dc3545';
-            descrizioneHint.textContent = `La descrizione deve essere di almeno 200 caratteri per richiedere la verifica del profilo. (ne mancano ${200 - length})`;
+            descrizioneHint.textContent = UI.descrizioneMancano.replace('{n}', String(200 - length));
         }
     }
 
@@ -1836,14 +1857,14 @@
         const remaining = getAiCooldownRemaining();
         if (remaining > 0 && generateInterestsBtn) {
             generateInterestsBtn.disabled = true;
-            generateInterestsBtn.innerHTML = `🕐 Disponibile tra ${formatCooldownTime(remaining)}`;
+            generateInterestsBtn.innerHTML = '🕐 ' + UI.aiTra.replace('{tempo}', formatCooldownTime(remaining));
             generateInterestsBtn.style.opacity = '0.6';
             generateInterestsBtn.style.cursor = 'not-allowed';
             // Aggiorna il countdown ogni secondo
             setTimeout(applyAiCooldown, 1000);
         } else if (generateInterestsBtn) {
             generateInterestsBtn.disabled = false;
-            generateInterestsBtn.innerHTML = '🤖 Genera con AI';
+            generateInterestsBtn.innerHTML = '🤖 ' + UI.genera;
             generateInterestsBtn.style.opacity = '1';
             generateInterestsBtn.style.cursor = 'pointer';
         }
@@ -1867,17 +1888,17 @@
                 generateInterestsStatus.style.display = 'block';
                 generateInterestsStatus.style.background = '#fff3cd';
                 generateInterestsStatus.style.color = '#856404';
-                generateInterestsStatus.textContent = '⚠️ Scrivi almeno 50 caratteri nella descrizione per generare le aree di interesse.';
+                generateInterestsStatus.textContent = '⚠️ ' + UI.aiMin;
                 return;
             }
 
             // Mostra stato di caricamento
             generateInterestsBtn.disabled = true;
-            generateInterestsBtn.innerHTML = '⏳ Generazione in corso...';
+            generateInterestsBtn.innerHTML = '⏳ ' + UI.aiCorso;
             generateInterestsStatus.style.display = 'block';
             generateInterestsStatus.style.background = '#e8f4fd';
             generateInterestsStatus.style.color = '#0c5460';
-            generateInterestsStatus.textContent = '🤖 L\'AI sta analizzando il tuo profilo...';
+            generateInterestsStatus.textContent = '🤖 ' + UI.aiAnalizza;
 
             try {
                 const response = await fetch('/api/profile/generate-interests', {
@@ -1892,7 +1913,7 @@
                     areeInteresseTextarea.value = data.aree_interesse;
                     generateInterestsStatus.style.background = '#d4edda';
                     generateInterestsStatus.style.color = '#155724';
-                    generateInterestsStatus.textContent = '✅ Aree di interesse generate! Puoi modificarle prima di salvare.';
+                    generateInterestsStatus.textContent = '✅ ' + UI.aiOk;
                     
                     // Salva timestamp per cooldown 24h
                     localStorage.setItem(AI_COOLDOWN_KEY, Date.now().toString());
@@ -1900,17 +1921,17 @@
                 } else {
                     generateInterestsStatus.style.background = '#f8d7da';
                     generateInterestsStatus.style.color = '#721c24';
-                    generateInterestsStatus.textContent = '❌ ' + (data.error || 'Errore durante la generazione.');
+                    generateInterestsStatus.textContent = '❌ ' + (data.error || UI.aiErrore);
                     generateInterestsBtn.disabled = false;
-                    generateInterestsBtn.innerHTML = '🤖 Genera con AI';
+                    generateInterestsBtn.innerHTML = '🤖 ' + UI.genera;
                 }
             } catch (error) {
                 generateInterestsStatus.style.background = '#f8d7da';
                 generateInterestsStatus.style.color = '#721c24';
-                generateInterestsStatus.textContent = '❌ Errore di connessione. Riprova.';
+                generateInterestsStatus.textContent = '❌ ' + UI.aiRete;
                 console.error('Error:', error);
                 generateInterestsBtn.disabled = false;
-                generateInterestsBtn.innerHTML = '🤖 Genera con AI';
+                generateInterestsBtn.innerHTML = '🤖 ' + UI.genera;
             }
         });
     }
@@ -2012,8 +2033,8 @@
             date = new Date();
         }
         
-        const dateStr = date.toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric', month: 'long' });
-        const roleLabel = booking.role === 'client' ? 'Consulenza con' : 'Consulenza richiesta da';
+        const dateStr = date.toLocaleDateString(LOCALE_UI, { weekday: 'long', day: 'numeric', month: 'long' });
+        const roleLabel = booking.role === 'client' ? UI.conChi : UI.richiestaDa;
         
         const minutiLimiteAnnullamento = {{ ore_limite_annullamento }} * 60;
         // Gli orari sono italiani. time_until_minutes e can_join arrivano dal
@@ -2031,61 +2052,57 @@
         // Bottone Rifiuta
         let refuseButtonHTML = '';
         if (booking.role === 'consultant' && booking.status && booking.status !== 'completed' && booking.status !== 'cancelled' && booking.status !== 'no_show' && timeUntilMinutes > -10 && timeUntilMinutes >= minutiLimiteAnnullamento) {
-            refuseButtonHTML = `<button class="btn-refuse" onclick="openRefuseModal(${booking.id}, '${escapeJsString(otherUser.name)}')"><i class="fas fa-times-circle"></i> Rifiuta</button>`;
+            refuseButtonHTML = `<button class="btn-refuse" onclick="openRefuseModal(${booking.id}, '${escapeJsString(otherUser.name)}')"><i class="fas fa-times-circle"></i> ${UI.rifiuta}</button>`;
         }
         
         if (booking.awaiting_acceptance) {
             // Richiesta pagata (importo solo bloccato) che il consulente deve accettare
             const scadenza = booking.acceptance_deadline
-                ? new Date(booking.acceptance_deadline).toLocaleString('it-IT', {
+                ? new Date(booking.acceptance_deadline).toLocaleString(LOCALE_UI, {
                     timeZone: 'Europe/Rome', weekday: 'short', day: 'numeric', month: 'short',
                     hour: '2-digit', minute: '2-digit' })
                 : '';
             refuseButtonHTML = '';
             if (booking.acceptance_expired) {
-                statusHTML = `<div class="appointment-request"><i class="fas fa-hourglass-end"></i><p><strong>Richiesta scaduta.</strong> Non è arrivata una risposta in tempo: la richiesta viene annullata e al cliente non viene addebitato nulla.</p></div>`;
+                statusHTML = `<div class="appointment-request"><i class="fas fa-hourglass-end"></i><p><strong>${UI.scaduta}</strong> ${UI.scadutaTesto}</p></div>`;
             } else if (booking.role === 'consultant') {
-                statusHTML = `<div class="appointment-request"><i class="fas fa-inbox"></i><p><strong>Richiesta da confermare</strong> entro ${escapeHtml(scadenza)}. L'importo del cliente è bloccato e viene addebitato solo se accetti.</p></div>`;
-                actionsHTML = `<button class="btn-accept" onclick="acceptBooking(${booking.id})" id="accept-btn-${booking.id}"><i class="fas fa-check"></i> Accetta</button>`;
-                refuseButtonHTML = `<button class="btn-refuse" onclick="openRefuseModal(${booking.id}, '${escapeJsString(otherUser.name)}', true)"><i class="fas fa-times-circle"></i> Rifiuta</button>`;
+                statusHTML = `<div class="appointment-request"><i class="fas fa-inbox"></i><p><strong>${UI.daConfermare}</strong> ${UI.daConfermareTesto.replace('{quando}', escapeHtml(scadenza))}</p></div>`;
+                actionsHTML = `<button class="btn-accept" onclick="acceptBooking(${booking.id})" id="accept-btn-${booking.id}"><i class="fas fa-check"></i> ${UI.accetta}</button>`;
+                refuseButtonHTML = `<button class="btn-refuse" onclick="openRefuseModal(${booking.id}, '${escapeJsString(otherUser.name)}', true)"><i class="fas fa-times-circle"></i> ${UI.rifiuta}</button>`;
             } else {
-                statusHTML = `<div class="appointment-request"><i class="fas fa-hourglass-half"></i><p><strong>In attesa di conferma.</strong> ${escapeHtml(otherUser.name)} ha tempo fino a ${escapeHtml(scadenza)} per accettare. L'importo è solo bloccato: ti viene addebitato quando accetta.</p></div>`;
+                statusHTML = `<div class="appointment-request"><i class="fas fa-hourglass-half"></i><p><strong>${UI.inAttesa}</strong> ${UI.inAttesaTesto.replace('{nome}', escapeHtml(otherUser.name)).replace('{quando}', escapeHtml(scadenza))}</p></div>`;
             }
         } else if (booking.closed_by_review || booking.closed_by_dispute) {
             // Dopo la recensione o una contestazione la call non si riapre (il
             // server rimanda al profilo): mostrare "Entra in call" apriva solo
             // un duplicato del sito.
             const testo = booking.closed_by_dispute
-                ? (booking.role === 'client'
-                    ? 'Hai aperto una contestazione: non puoi più rientrare in questa call.'
-                    : 'Il cliente ha aperto una contestazione: la call non è più accessibile.')
-                : (booking.role === 'client'
-                    ? 'Hai già lasciato una recensione: non puoi più rientrare in questa call.'
-                    : 'Il cliente ha lasciato la recensione: la consulenza è conclusa.');
+                ? (booking.role === 'client' ? UI.contestazioneTu : UI.contestazioneAltro)
+                : (booking.role === 'client' ? UI.recensioneTu : UI.recensioneAltro);
             statusHTML = `<div class="appointment-closed"><i class="fas fa-check-circle"></i><p>${testo}</p></div>`;
         } else if (timeUntilMinutes > 10) {
             const hours = Math.floor(minutesUntil / 60);
             const mins = minutesUntil % 60;
             const timeText = hours > 0 ? `${hours}h ${mins}min` : `${mins}min`;
-            statusHTML = `<div class="time-until"><i class="fas fa-clock"></i> Inizia tra ${timeText}</div>`;
+            statusHTML = `<div class="time-until"><i class="fas fa-clock"></i> ${UI.iniziaTra.replace('{tempo}', timeText)}</div>`;
         } else if (siPuoEntrare) {
             if (booking.can_start_call) {
-                actionsHTML = `<button class="btn-start-call" onclick="startCall(${booking.id})" id="call-btn-${booking.id}"><i class="fas fa-phone-alt"></i> Entra in Call</button>`;
+                actionsHTML = `<button class="btn-start-call" onclick="startCall(${booking.id})" id="call-btn-${booking.id}"><i class="fas fa-phone-alt"></i> ${UI.entra}</button>`;
             } else if (booking.has_joined) {
-                statusHTML = `<div class="waiting-indicator"><i class="fas fa-hourglass-half"></i> In attesa dell'altro partecipante...</div>`;
-                actionsHTML = `<button class="btn-join" disabled><i class="fas fa-check"></i> Pronto</button>`;
+                statusHTML = `<div class="waiting-indicator"><i class="fas fa-hourglass-half"></i> ${UI.attesaAltro}</div>`;
+                actionsHTML = `<button class="btn-join" disabled><i class="fas fa-check"></i> ${UI.pronto}</button>`;
             } else {
-                actionsHTML = `<button class="btn-join" onclick="joinAppointment(${booking.id})" id="join-btn-${booking.id}"><i class="fas fa-sign-in-alt"></i> Partecipa</button>`;
-                if (booking.other_joined) statusHTML = `<div class="waiting-indicator"><i class="fas fa-user-check"></i> ${escapeHtml(otherUser.name)} è pronto</div>`;
+                actionsHTML = `<button class="btn-join" onclick="joinAppointment(${booking.id})" id="join-btn-${booking.id}"><i class="fas fa-sign-in-alt"></i> ${UI.partecipa}</button>`;
+                if (booking.other_joined) statusHTML = `<div class="waiting-indicator"><i class="fas fa-user-check"></i> ${UI.ePronto.replace('{nome}', escapeHtml(otherUser.name))}</div>`;
             }
         } else if (!siPuoEntrare) {
             if (booking.has_joined && !booking.other_joined) {
-                const whoMissed = booking.role === 'client' ? 'il consulente' : 'il cliente';
-                statusHTML = `<div class="appointment-missed"><i class="fas fa-times-circle"></i><p>Siamo spiacenti ma ${whoMissed} non ha partecipato alla call programmata.</p></div>`;
+                const whoMissed = booking.role === 'client' ? UI.ilConsulente : UI.ilCliente;
+                statusHTML = `<div class="appointment-missed"><i class="fas fa-times-circle"></i><p>${UI.mancato.replace('{chi}', whoMissed)}</p></div>`;
             } else if (!booking.has_joined && booking.other_joined) {
-                statusHTML = `<div class="appointment-missed"><i class="fas fa-exclamation-circle"></i><p>Non hai partecipato a questa consulenza.</p></div>`;
+                statusHTML = `<div class="appointment-missed"><i class="fas fa-exclamation-circle"></i><p>${UI.nonPartecipato}</p></div>`;
             } else if (!booking.has_joined && !booking.other_joined) {
-                statusHTML = `<div class="appointment-missed"><i class="fas fa-ban"></i><p>Questa consulenza non si è svolta.</p></div>`;
+                statusHTML = `<div class="appointment-missed"><i class="fas fa-ban"></i><p>${UI.nonSvolta}</p></div>`;
             }
         }
         
@@ -2113,27 +2130,25 @@
     }
 
     function openRefuseModal(bookingId, clientName, isRequest = false) {
-        const notaPagamento = isRequest
-            ? "Il cliente riceverà una notifica e una mail. Non gli viene addebitato nulla: il blocco dell'importo viene annullato."
-            : "Il cliente riceverà una notifica e una mail. Se già pagato, gli sarà rimborsato l'importo.";
+        const notaPagamento = isRequest ? UI.rifiutaNotaRichiesta : UI.rifiutaNotaPagata;
         const modal = document.createElement('div');
         modal.className = 'modal-overlay';
         modal.id = `refuse-modal-${bookingId}`;
         modal.innerHTML = `
             <div class="modal-content">
                 <div class="modal-header">
-                    <h3>Rifiuta Consulenza</h3>
+                    <h3>${UI.rifiutaTitolo}</h3>
                     <button class="close-btn" onclick="this.closest('.modal-overlay').remove()">✕</button>
                 </div>
                 <div class="modal-body">
-                    <p>Sei sicuro di voler rifiutare questa consulenza con <strong>${escapeHtml(clientName)}</strong>?</p>
+                    <p>${UI.rifiutaSicuro} <strong>${escapeHtml(clientName)}</strong>?</p>
                     <p style="color: #666; font-size: 0.9em;">${notaPagamento}</p>
-                    <textarea id="refuse-reason-${bookingId}" placeholder="Motivo del rifiuto (opzionale)" 
+                    <textarea id="refuse-reason-${bookingId}" placeholder="${UI.motivoRifiuto}" 
                               style="width: 100%; min-height: 80px; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-family: inherit;"></textarea>
                 </div>
                 <div class="modal-footer">
-                    <button class="btn btn-secondary" onclick="this.closest('.modal-overlay').remove()">Annulla</button>
-                    <button class="btn btn-danger" onclick="refuseBooking(${bookingId})"><i class="fas fa-times"></i> Rifiuta Consulenza</button>
+                    <button class="btn btn-secondary" onclick="this.closest('.modal-overlay').remove()">{{ t('comune.annulla') }}</button>
+                    <button class="btn btn-danger" onclick="refuseBooking(${bookingId})"><i class="fas fa-times"></i> ${UI.rifiutaTitolo}</button>
                 </div>
             </div>
         `;
@@ -2143,20 +2158,20 @@
 
     async function acceptBooking(bookingId) {
         const btn = document.getElementById(`accept-btn-${bookingId}`);
-        if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Conferma...'; }
+        if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> ' + UI.confermaCorso; }
         try {
             const response = await fetch(`/api/booking/${bookingId}/accept`, { method: 'POST' });
             const data = await response.json().catch(() => ({}));
             if (response.ok) {
-                showSuccess('✅ Consulenza accettata: il cliente è stato avvisato.');
+                showSuccess('✅ ' + UI.accettata);
                 loadUpcomingAppointments();
                 return;
             }
-            alert(data.detail || 'Non è stato possibile accettare la richiesta.');
+            alert(data.detail || UI.accettaErrore);
         } catch (error) {
-            alert('Errore di connessione: riprova.');
+            alert(UI.reteRiprova);
         }
-        if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-check"></i> Accetta'; }
+        if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-check"></i> ' + UI.accetta; }
     }
 
     async function refuseBooking(bookingId) {
@@ -2169,7 +2184,7 @@
             });
             const data = await response.json();
             if (data.success) {
-                showSuccess('✅ Consulenza rifiutata con successo!');
+                showSuccess('✅ ' + UI.rifiutata);
                 document.getElementById(`refuse-modal-${bookingId}`).remove();
                 setTimeout(() => location.reload(), 1500);
             } else {
@@ -2652,7 +2667,7 @@
             }
             if (callStatus.call_has_started && !callStatus.is_expired) {
                 btn.className = 'btn-resume-call';
-                btn.innerHTML = '<i class="fas fa-phone-alt"></i> Entra in Call';
+                btn.innerHTML = '<i class="fas fa-phone-alt"></i> ' + UI.entra;
             }
             if (await callApertaAltrove(bookingId)) {
                 btn.className = 'btn-resume-call';
@@ -3059,15 +3074,15 @@
             } else {
                 statusDiv.style.background = '#f8d7da';
                 statusDiv.style.color = '#721c24';
-                statusDiv.textContent = '❌ ' + (data.error || 'Errore durante la generazione.');
+                statusDiv.textContent = '❌ ' + (data.error || UI.aiErrore);
             }
         } catch (error) {
             statusDiv.style.background = '#f8d7da';
             statusDiv.style.color = '#721c24';
-            statusDiv.textContent = '❌ Errore di connessione. Riprova.';
+            statusDiv.textContent = '❌ ' + UI.aiRete;
         } finally {
             btn.disabled = false;
-            btn.innerHTML = '🤖 Genera con AI';
+            btn.innerHTML = '🤖 ' + UI.genera;
         }
     }
     

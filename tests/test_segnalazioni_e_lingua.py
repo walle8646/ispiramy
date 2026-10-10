@@ -102,7 +102,7 @@ def _lingua(http, codice):
 def test_le_pagine_pubbliche_in_inglese_non_hanno_i_titoli_italiani(client):
     _lingua(client, "en")
     attese = {
-        "/": "Find the expert who has already faced your challenge",
+        "/": "You have a concrete problem. Somewhere there is a person who has already solved it.",
         "/come-funziona": "How Ispiramy works",
         "/faq": "Frequently asked questions",
         "/contact": "Write a complaint",
@@ -122,6 +122,9 @@ def test_le_pagine_pubbliche_in_inglese_non_hanno_i_titoli_italiani(client):
         assert pagina.status_code == 200, percorso
         assert 'lang="en"' in pagina.text
         assert frase in pagina.text, percorso
+        if percorso == "/":
+            assert "Find the expert who has already faced your challenge" in pagina.text
+            assert "video_homepage_v2.mp4" not in pagina.text
     for percorso, frase in vietate.items():
         assert frase not in client.get(percorso).text, percorso
     _lingua(client, "it")

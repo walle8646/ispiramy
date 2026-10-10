@@ -486,6 +486,26 @@
         border-radius: 16px;
     }
 
+    /* Il filmato ha i titoli in italiano. In inglese al suo posto c'e' la stessa frase, scritta. */
+    .hero-testo-en {
+        height: auto !important;
+        min-height: 140px;
+        background: #fff;
+        color: #1b3a1f;
+        padding: 18px 16px;
+        display: flex;
+        align-items: center;
+        cursor: default;
+        box-sizing: border-box;
+    }
+
+    .hero-testo-en p {
+        margin: 0;
+        font-size: 15px;
+        line-height: 1.45;
+        font-weight: 650;
+    }
+
     .video-play-overlay {
         position: absolute;
         top: 50%;
@@ -1262,6 +1282,11 @@
         </div>
         
         <div class="hero-right">
+            {% if lingua_ui == 'en' %}
+            <div class="hero-video-container hero-testo-en">
+                <p>{{ t('cf.intro') }}</p>
+            </div>
+            {% else %}
             <div class="hero-video-container" id="heroVideoContainer">
                 <video id="heroVideo" preload="auto" playsinline muted autoplay
                        poster="https://ispiramy-images.s3.eu-north-1.amazonaws.com/homepage/video_homepage_v2.jpg">
@@ -1270,6 +1295,7 @@
                 <div class="video-play-overlay" id="videoPlayBtn">▶️</div>
                 <button class="video-unmute-btn" id="videoUnmuteBtn">🔇 {{ t('home.attiva_audio') }}</button>
             </div>
+            {% endif %}
             <a href="/come-funziona" class="hero-spiegazione">
                 {{ t('home.come_funziona') }}
             </a>
