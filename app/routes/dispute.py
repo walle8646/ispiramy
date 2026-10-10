@@ -14,7 +14,7 @@ from app.database import engine
 from app.models import Dispute, DisputeMessage, Booking, User
 from app.routes.auth import get_current_user
 from app.logger_config import logger
-from app.utils.orari import now_italy_naive
+from app.utils.orari import dentro_finestra_contestazione, now_italy_naive
 
 router = APIRouter()
 
@@ -23,6 +23,22 @@ ITALY_TZ = ZoneInfo("Europe/Rome")
 
 class DisputeRequest(BaseModel):
     description: str = Field(min_length=20, max_length=5000)
+
+
+def motivo_blocco_contestazione(booking) -> str | None:
+    """Perché questa consulenza non si può contestare, oppure None se si può.
+
+    Stessa regola della pagina di prenotazione, della call e dello storico:
+    senza registrazione la contestazione non esiste, e dopo 48 ore dalla fine
+    il tempo è scaduto. Una consulenza annullata non si contesta.
+    """
+    if booking.status == "cancelled":
+        return "Non puoi contestare una consulenza annullata"
+    if not booking.recording_requested:
+        return "Senza registrazione non puoi aprire una contestazione"
+    if not dentro_finestra_contestazione(booking):
+        return "Il tempo per aprire una contestazione è scaduto"
+    return None
 
 
 @router.post("/api/booking/{booking_id}/dispute")
@@ -46,6 +62,10 @@ async def open_dispute(booking_id: int, data: DisputeRequest, request: Request):
         ).first()
         if existing:
             raise HTTPException(status_code=400, detail="Hai già aperto una contestazione per questa consulenza")
+
+        blocco = motivo_blocco_contestazione(booking)
+        if blocco:
+            raise HTTPException(status_code=400, detail=blocco)
 
         dispute = Dispute(
             booking_id=booking_id,

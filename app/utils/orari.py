@@ -42,6 +42,11 @@ MINUTI_MARGINE_FINE_CALL = 5
 # cui è scritto questo numero: prenotazioni, job e testi lo leggono da qui.
 ORE_RILASCIO_SENZA_RECENSIONE = 48
 
+# Fino a quante ore dopo la fine il cliente può aprire una contestazione.
+# È un'altra regola rispetto al rilascio del compenso: oggi il numero coincide,
+# ma cambiarne una non deve spostare l'altra.
+ORE_FINESTRA_CONTESTAZIONE = 48
+
 
 # Come si scrive un orario a chi lo legge. Il sito lavora in ora italiana:
 # finche' e' cosi', va detto ogni volta che un orario finisce in un messaggio
@@ -121,6 +126,19 @@ def finestra_ingresso(booking, adesso: Optional[datetime] = None) -> str:
 def scadenza_compenso_senza_recensione(fine: datetime) -> datetime:
     """Quando il compenso parte se il cliente non ha lasciato la recensione."""
     return fine + timedelta(hours=ORE_RILASCIO_SENZA_RECENSIONE)
+
+
+def dentro_finestra_contestazione(booking, adesso: Optional[datetime] = None) -> bool:
+    """True se non sono passate più di 48 ore dalla fine della consulenza.
+
+    Prima della fine il conteggio è negativo: si è ancora in tempo. È la stessa
+    finestra dello storico prenotazioni e dell'apertura della contestazione.
+    """
+    adesso = adesso or now_italy_naive()
+    if adesso.tzinfo is not None:
+        adesso = adesso.astimezone(ITALY_TZ).replace(tzinfo=None)
+    ore = (adesso - fine_consulenza(booking)).total_seconds() / 3600
+    return ore <= ORE_FINESTRA_CONTESTAZIONE
 
 
 def now_italy_naive() -> datetime:

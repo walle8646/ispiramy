@@ -218,6 +218,22 @@ def _limiti_chat_in_ogni_pagina(request: Request) -> dict:
     return {"max_messaggi_conversazione": max_messaggi_per_conversazione()}
 
 
+def _problemi_in_ogni_pagina(request: Request) -> dict:
+    """Quanti movimenti di denaro sono ancora da riprovare, per il badge del menu.
+
+    Solo chi verifica o amministra lo vede. Se la tabella non c'è ancora, la
+    pagina pubblica non deve rompersi.
+    """
+    utente = getattr(request.state, "utente_corrente", None)
+    if not utente or (getattr(utente, "user_type_id", 0) or 0) < 2:
+        return {"problemi_transazione_aperti": 0}
+    try:
+        from app.utils.problemi_transazione import conta_aperti
+        return {"problemi_transazione_aperti": conta_aperti()}
+    except Exception:
+        return {"problemi_transazione_aperti": 0}
+
+
 def _lingua_in_ogni_pagina(request: Request) -> dict:
     # La lingua scelta e la funzione per tradurre, in tutte le pagine.
     from app.utils.lingue_ui import (LINGUE_UI, lingua_di, nome_categoria,
@@ -236,6 +252,7 @@ def _lingua_in_ogni_pagina(request: Request) -> dict:
 
 templates = Jinja2Templates(directory="app/templates",
                             context_processors=[_utente_in_ogni_pagina,
+                                                _problemi_in_ogni_pagina,
                                                 _lingua_in_ogni_pagina,
                                                 _limiti_chat_in_ogni_pagina])
 # Aggiungi filtro personalizzato per nomi utenti
