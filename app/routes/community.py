@@ -1468,4 +1468,7 @@ async def segnala_domanda(question_id: int, request: Request):
         ))
         session.commit()
 
+    # Senza una riga nel log, una segnalazione che non compare in admin
+    # non lascia traccia: il motivo resta nel database, qui solo gli id.
+    logger.info(f"🚩 Segnalazione registrata: domanda {question_id}, utente {current_user.id}")
     return JSONResponse({"success": True}, status_code=201)

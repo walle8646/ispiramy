@@ -237,7 +237,10 @@ def _problemi_in_ogni_pagina(request: Request) -> dict:
     try:
         from app.routes.admin import conta_segnalazioni_aperte
         segnalazioni = conta_segnalazioni_aperte()
-    except Exception:
+    except Exception as e:
+        # Il menu non deve rompere la pagina, ma un conteggio a zero
+        # senza traccia fa sembrare che la segnalazione non sia arrivata.
+        logger.warning(f"Conteggio segnalazioni non disponibile: {e}")
         segnalazioni = 0
     return {
         "problemi_transazione_aperti": aperti,
