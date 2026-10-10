@@ -9,7 +9,7 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from app.logger_config import logger
 from app.routes.auth import verify_token
 from app.utils.email import send_email
-from app.utils.lingue_ui import COOKIE, GIORNI_MEMORIA, lingua_valida
+from app.utils.lingue_ui import COOKIE, GIORNI_MEMORIA, lingua_di, lingua_valida, traduci
 from app.utils.rate_limit import enforce_rate_limit
 
 router = APIRouter()
@@ -78,12 +78,13 @@ async def invia_contatto(
     messaggio = (messaggio or "").strip()
     tipo = tipo if tipo in ("lamentela", "domanda") else "lamentela"
 
+    lingua = lingua_di(request)
     if len(nome) < 2 or not _EMAIL_OK.match(email) or len(messaggio) < 20:
         return request.app.state.templates.TemplateResponse(
             "contact.html",
             _contesto_contatto(
                 request,
-                errore="Servono nome, un'email valida e un messaggio di almeno 20 caratteri.",
+                errore=traduci("contatto.campi", lingua),
                 nome_precompilato=nome,
                 email_precompilata=email,
                 messaggio_precompilato=messaggio,
@@ -94,8 +95,7 @@ async def invia_contatto(
 
     enforce_rate_limit(
         request, "contatto", limit=5, window_seconds=3600, extra_key=email,
-        message="Hai inviato troppi messaggi. Riprova fra {attesa} secondi o scrivi a "
-                + EMAIL_AMMINISTRAZIONE,
+        message=traduci("contatto.troppi", lingua).replace("{email}", EMAIL_AMMINISTRAZIONE),
     )
 
     oggetto = "Lamentela da un utente" if tipo == "lamentela" else "Messaggio dal sito"
@@ -117,7 +117,7 @@ async def invia_contatto(
             "contact.html",
             _contesto_contatto(
                 request,
-                errore=f"Non siamo riusciti a inviare il messaggio. Scrivi direttamente a {EMAIL_AMMINISTRAZIONE}.",
+                errore=traduci("contatto.fallito", lingua).replace("{email}", EMAIL_AMMINISTRAZIONE),
                 nome_precompilato=nome,
                 email_precompilata=email,
                 messaggio_precompilato=messaggio,
@@ -142,9 +142,9 @@ async def terms(request: Request):
 
 @router.get("/lingua/{codice}", include_in_schema=False)
 async def cambia_lingua(codice: str, request: Request):
-    # Cambia la lingua del sito e torna da dove si e' arrivati. La preferenza
-    # sta in un cookie e non nel profilo: vale anche per chi non ha un
-    # account, ed e' la prima cosa che tocca chi arriva da fuori.
+    # Cambia la lingua del sito e torna da dove si e' arrivati. Il cookie vale
+    # anche per chi non ha un account. Se la persona è dentro, la stessa
+    # scelta resta sul profilo: le email e le notifiche la leggono da lì.
     torna_a = request.headers.get("referer") or "/"
 
     # Solo indirizzi di casa nostra: il referer arriva da fuori, non si sa mai
@@ -159,4 +159,16 @@ async def cambia_lingua(codice: str, request: Request):
     if scelta:
         risposta.set_cookie(COOKIE, scelta, max_age=GIORNI_MEMORIA * 86400,
                             samesite="lax", path="/")
+        # Chi è dentro tiene la scelta anche per le email, che non vedono il cookie.
+        from app.database import get_session
+        from app.models import User
+        from app.routes.auth import verify_token
+        utente = verify_token(request)
+        if utente:
+            with get_session() as session:
+                fresco = session.get(User, utente.id)
+                if fresco and fresco.ui_language != scelta:
+                    fresco.ui_language = scelta
+                    session.add(fresco)
+                    session.commit()
     return risposta

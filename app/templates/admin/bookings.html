@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Consulenze - Admin Ispiramy{% endblock %}
+{% block title %}{{ t('admin.consulenze') }} - Admin Ispiramy{% endblock %}
 
 {% block extra_css %}
 <style>
@@ -245,14 +245,15 @@
 {% block content %}
 <div class="admin-container">
     <div class="admin-header">
-        <h1><i class="fas fa-video"></i> Consulenze</h1>
+        <h1><i class="fas fa-video"></i> {{ t('admin.consulenze') }}</h1>
         <nav class="admin-nav">
-            <a href="/admin"><i class="fas fa-chart-bar"></i> Dashboard</a>
-            <a href="/admin/disputes"><i class="fas fa-exclamation-triangle"></i> Contestazioni</a>
+            <a href="/admin"><i class="fas fa-chart-bar"></i> {{ t('admin.dashboard') }}</a>
+            <a href="/admin/disputes"><i class="fas fa-exclamation-triangle"></i> {{ t('admin.contestazioni') }}</a>
             <a href="/admin/transaction-problems"><i class="fas fa-rotate"></i> {{ t('problemi.menu') }}{% if problemi_transazione_aperti %} <span class="nav-badge">{{ problemi_transazione_aperti }}</span>{% endif %}</a>
+            <a href="/admin/reports"><i class="fas fa-flag"></i> {{ t('segnalazioni.menu') }}{% if segnalazioni_aperte %} <span class="nav-badge">{{ segnalazioni_aperte }}</span>{% endif %}</a>
             <a href="/admin/social"><i class="fas fa-bullhorn"></i> Social</a>
-            <a href="/admin/users"><i class="fas fa-users"></i> Utenti</a>
-            <a href="/admin/bookings" class="active"><i class="fas fa-video"></i> Consulenze</a>
+            <a href="/admin/users"><i class="fas fa-users"></i> {{ t('admin.utenti') }}</a>
+            <a href="/admin/bookings" class="active"><i class="fas fa-video"></i> {{ t('admin.consulenze') }}</a>
         </nav>
     </div>
 

@@ -1299,7 +1299,11 @@
         /* Il testo da mettere accanto a un orario: "(ora italiana)" e, se chi
            guarda sta altrove, anche l'ora sua. */
         window.etichettaFuso = function (giorno, ora) {
+            const inglese = (document.documentElement.lang || '').toLowerCase().indexOf('en') === 0;
             const tua = window.oraNelTuoFuso(giorno, ora);
+            if (inglese) {
+                return tua ? `Italian time · ${tua} for you` : 'Italian time';
+            }
             return tua ? `ora italiana · da te le ${tua}` : 'ora italiana';
         };
 

@@ -247,9 +247,9 @@
         </a>
         <div class="chat-header-info">
             <h2>{{ other_user.nome }} {{ other_user.cognome or '' }}</h2>
-            <p>{{ other_user.professione or 'Utente' }}</p>
+            <p>{{ other_user.professione or t('chat.utente') }}</p>
         </div>
-        <a href="/messaggi" style="margin-left: auto; color: white; font-size: 24px; text-decoration: none;" title="Torna all'inbox">
+        <a href="/messaggi" style="margin-left: auto; color: white; font-size: 24px; text-decoration: none;" title="{{ t('chat.torna') }}">
             ⬅️
         </a>
     </div>
@@ -259,10 +259,10 @@
 
     <!-- ✅ BANNER PRENOTA CONSULENZA (MOSTRATO AL LIMITE) -->
     <div id="bookingBanner" style="display: none;" class="booking-banner">
-        <h3>🎯 Vuoi continuare la conversazione?</h3>
-        <p id="bookingLimitText">Hai raggiunto il limite di {% if max_messaggi_conversazione == 1 %}1 messaggio gratuito{% else %}{{ max_messaggi_conversazione }} messaggi gratuiti{% endif %}. Prenota una consulenza per approfondire!</p>
+        <h3>🎯 {{ t('chat.vuoi_continuare') }}</h3>
+        <p id="bookingLimitText">{{ t('chat.limite') }}</p>
         <a href="/booking/{{ other_user.id }}" class="booking-btn">
-            📅 Prenota Consulenza con {{ other_user.nome }}
+            📅 {{ t('chat.prenota_con') }} {{ other_user.nome }}
         </a>
     </div>
 
@@ -270,7 +270,7 @@
     <div class="messages-area" id="messagesArea">
         <div class="empty-chat">
             <div class="empty-chat-icon">💬</div>
-            <p>Caricamento messaggi...</p>
+            <p>{{ t('chat.caricamento') }}</p>
         </div>
     </div>
 
@@ -281,7 +281,7 @@
             <div class="input-wrapper">
                 <textarea 
                     id="messageInput" 
-                    placeholder="Scrivi un messaggio..."
+                    placeholder="{{ t('chat.scrivi') }}"
                     rows="1"
                     maxlength="1000"
                     required
@@ -291,7 +291,7 @@
                 <!-- ✅ CONTATORE CARATTERI -->
                 <div id="charCounter" class="char-counter">0 / 1000</div>
             </div>
-            <button type="submit" id="sendButton">Invia</button>
+            <button type="submit" id="sendButton">{{ t('chat.invia') }}</button>
         </form>
     </div>
 </div>
@@ -419,7 +419,7 @@
                     messagesArea.innerHTML = `
                         <div class="empty-chat">
                             <div class="empty-chat-icon">💬</div>
-                            <p>Nessun messaggio ancora</p>
+                            <p>{{ t('chat.vuoto') }}</p>
                             <p style="font-size: 14px;">Inizia la conversazione! (Max ${fraseGratuiti(MAX_MESSAGES)})</p>
                         </div>
                     `;

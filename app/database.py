@@ -43,6 +43,7 @@ def create_db_and_tables():
         Consultation, 
         Conversation, Message,
         CommunityQuestion,  # ✅ Solo CommunityQuestion, senza CommunityAnswer
+        CommunityReport,  # ✅ Segnalazioni delle domande
         AvailabilityBlock,  # ✅ Gestione disponibilità
         Booking,  # ✅ Gestione prenotazioni
         ConsultationOffer,  # ✅ Gestione offerte consulenze
@@ -124,6 +125,7 @@ COLONNE_AGGIUNTE = [
     ("booking", "paypal_authorization_id", "VARCHAR(64)"),   # migration_add_booking_acceptance
     ("booking", "service_fee", "NUMERIC(10, 2)"),            # migration_add_booking_service_fee
     ("user", "verified_category_ids", "TEXT"),               # migration_add_verified_categories
+    ("user", "ui_language", "VARCHAR(5) DEFAULT 'it'"),      # lingua del sito, per email e notifiche
 ]
 
 

@@ -9,6 +9,7 @@ from html import escape as html_escape
 from app.logger_config import logger
 from app.utils.email import generate_verification_code
 from app.utils.lingue_ui import lingua_di, traduci
+from app.utils.lingua_profilo import applica_lingua
 from app.utils.password import hash_password, verify_password
 from app.utils.rate_limit import clear_attempts, enforce_rate_limit
 from app.utils.orari import now_italy_naive
@@ -175,8 +176,10 @@ async def login(
         request.session["user_nome"] = user.nome or "User"
 
         logger.info(f"✅ User logged in: {user.email}")
-        
-        return RedirectResponse(url="/profile", status_code=303)
+
+        risposta = RedirectResponse(url="/profile", status_code=303)
+        applica_lingua(request, risposta, session, user)
+        return risposta
 
 @router.post("/api/login")
 async def api_login(
@@ -246,7 +249,7 @@ async def api_login(
             logger.info(f"✅ User logged in: {user.nome} ({user.email})")
             logger.debug("Sessione inizializzata per user %s", user.id)
             
-            return JSONResponse({
+            risposta = JSONResponse({
                 "success": True,
                 "message": "Login effettuato con successo",
                 "user": {
@@ -255,6 +258,8 @@ async def api_login(
                     "email": user.email
                 }
             }, status_code=200)
+            applica_lingua(request, risposta, session, user)
+            return risposta
     
     except Exception as e:
         logger.error("Login error: " + str(e).replace("{", "{{").replace("}", "}}"), exc_info=True)
@@ -320,6 +325,7 @@ async def api_register(
                 confirmed=0,
                 confirmation_code=code,
                 confirmation_code_created_at=now_italy_naive(),
+                ui_language=lingua_di(request),
             )
             
             session.add(new_user)

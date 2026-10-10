@@ -412,8 +412,9 @@
         <nav class="admin-nav">
             <a href="/admin/disputes"><i class="fas fa-arrow-left"></i> Torna alla lista</a>
             <a href="/admin/transaction-problems"><i class="fas fa-rotate"></i> {{ t('problemi.menu') }}{% if problemi_transazione_aperti %} <span class="nav-badge">{{ problemi_transazione_aperti }}</span>{% endif %}</a>
-            <a href="/admin/users"><i class="fas fa-users"></i> Utenti</a>
-            <a href="/admin/bookings"><i class="fas fa-video"></i> Consulenze</a>
+            <a href="/admin/reports"><i class="fas fa-flag"></i> {{ t('segnalazioni.menu') }}{% if segnalazioni_aperte %} <span class="nav-badge">{{ segnalazioni_aperte }}</span>{% endif %}</a>
+            <a href="/admin/users"><i class="fas fa-users"></i> {{ t('admin.utenti') }}</a>
+            <a href="/admin/bookings"><i class="fas fa-video"></i> {{ t('admin.consulenze') }}</a>
         </nav>
     </div>
 

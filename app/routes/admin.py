@@ -15,7 +15,7 @@ import os
 from app.database import engine
 from app.models import (
     User, Booking, Dispute, DisputeMessage, Review, CommunityQuestion, Category,
-    TransactionProblem,
+    TransactionProblem, CommunityReport,
 )
 from app.utils.verifica_categorie import id_categorie_verificate, scrivi_categorie_verificate
 from app.routes.auth import verify_token
@@ -1133,3 +1133,106 @@ async def admin_ai_analysis(dispute_id: int, request: Request):
                     os.unlink(video_path)
                 except Exception:
                     pass
+
+
+def conta_segnalazioni_aperte() -> int:
+    """Quante domande segnalate aspettano ancora una decisione."""
+    with Session(engine) as session:
+        return session.exec(
+            select(func.count()).select_from(CommunityReport).where(CommunityReport.status == "open")
+        ).one() or 0
+
+
+@router.get("/reports", response_class=HTMLResponse)
+async def admin_reports(request: Request):
+    """Segnalazioni della community, per chi verifica e per chi amministra."""
+    admin_user = require_admin(request)
+    if not admin_user:
+        return RedirectResponse("/login", status_code=302)
+
+    with Session(engine) as session:
+        righe = session.exec(
+            select(CommunityReport)
+            .where(CommunityReport.status == "open")
+            .order_by(CommunityReport.created_at.desc(), CommunityReport.id.desc())
+        ).all()
+        segnalazioni = []
+        for riga in righe:
+            domanda = session.get(CommunityQuestion, riga.question_id)
+            autore = session.get(User, domanda.user_id) if domanda else None
+            segnalatore = session.get(User, riga.user_id)
+            segnalazioni.append({
+                "id": riga.id,
+                "question_id": riga.question_id,
+                "title": (domanda.title if domanda else "—") or "—",
+                "excerpt": ((domanda.description or "")[:180] if domanda else ""),
+                "hidden_already": bool(domanda and not domanda.validation),
+                "author_name": _nome_persona(autore),
+                "reporter_name": _nome_persona(segnalatore),
+                "reason": riga.reason or "",
+                "created_at": riga.created_at,
+            })
+
+    return request.app.state.templates.TemplateResponse(
+        "admin/reports.html",
+        {
+            "request": request,
+            "user": admin_user,
+            "current_user": admin_user,
+            "segnalazioni": segnalazioni,
+        },
+    )
+
+
+def _chiudi_segnalazione(report_id: int, admin_user: User, nascondi: bool) -> str:
+    """dismiss lascia la domanda visibile. hide la toglie, come un rifiuto dell'AI."""
+    with Session(engine) as session:
+        riga = session.get(CommunityReport, report_id)
+        if not riga or riga.status != "open":
+            return "manca"
+        adesso = now_italy_naive()
+        if nascondi:
+            domanda = session.get(CommunityQuestion, riga.question_id)
+            if domanda:
+                domanda.validation = False
+                session.add(domanda)
+            aperte = session.exec(
+                select(CommunityReport).where(
+                    CommunityReport.question_id == riga.question_id,
+                    CommunityReport.status == "open",
+                )
+            ).all()
+            for altra in aperte:
+                altra.status = "hidden"
+                altra.resolved_at = adesso
+                altra.resolved_by = admin_user.id
+                session.add(altra)
+        else:
+            riga.status = "dismissed"
+            riga.resolved_at = adesso
+            riga.resolved_by = admin_user.id
+            session.add(riga)
+        session.commit()
+    return "ok"
+
+
+@router.post("/api/reports/{report_id}/dismiss")
+async def admin_dismiss_report(report_id: int, request: Request):
+    admin_user = require_admin(request)
+    if not admin_user:
+        raise HTTPException(status_code=401, detail="Non autorizzato")
+    esito = _chiudi_segnalazione(report_id, admin_user, nascondi=False)
+    if esito == "manca":
+        raise HTTPException(status_code=404, detail="Segnalazione non trovata")
+    return JSONResponse({"success": True})
+
+
+@router.post("/api/reports/{report_id}/hide")
+async def admin_hide_report(report_id: int, request: Request):
+    admin_user = require_admin(request)
+    if not admin_user:
+        raise HTTPException(status_code=401, detail="Non autorizzato")
+    esito = _chiudi_segnalazione(report_id, admin_user, nascondi=True)
+    if esito == "manca":
+        raise HTTPException(status_code=404, detail="Segnalazione non trovata")
+    return JSONResponse({"success": True})

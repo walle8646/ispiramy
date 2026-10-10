@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Consulenza in Corso - Ispiramy{% endblock %}
+{% block title %}{{ t('call.titolo') }} - Ispiramy{% endblock %}
 
 {% block content %}
 <style>
@@ -1510,13 +1510,13 @@
     <!-- Connection Status -->
     <div class="connection-status" id="connectionStatus">
         <div class="status-dot connecting" id="statusDot"></div>
-        <span id="statusText">Connessione in corso...</span>
+        <span id="statusText">{{ t('call.connessione') }}</span>
     </div>
     
     <!-- Loading Overlay -->
     <div class="loading-overlay" id="loadingOverlay">
         <i class="fas fa-spinner spinner" id="loadingSpinner"></i>
-        <p style="margin-top: 1rem; font-size: 1.2rem;" id="loadingTitle">Inizializzazione chiamata...</p>
+        <p style="margin-top: 1rem; font-size: 1.2rem;" id="loadingTitle">{{ t('call.avvio') }}</p>
         <p style="margin-top: 0.4rem; font-size: 0.9rem; opacity: 0.75;" id="loadingStep"></p>
         <div id="loadingError" style="display:none; max-width:460px; width:88%; margin-top:1.5rem; text-align:center;">
             <p id="loadingErrorText" style="font-size:1rem; line-height:1.55; margin-bottom:1.25rem;"></p>
@@ -1541,7 +1541,7 @@
             </button>
             <div class="video-placeholder">
                 <i class="fas fa-user"></i>
-                <p>Video locale</p>
+                <p>{{ t('call.video_locale') }}</p>
             </div>
         </div>
         
@@ -1553,7 +1553,7 @@
             </button>
             <div class="video-placeholder">
                 <i class="fas fa-user-friends"></i>
-                <p>In attesa del partecipante...</p>
+                <p>{{ t('call.attesa') }}</p>
             </div>
         </div>
     </div>
@@ -1589,28 +1589,28 @@
                 <div class="bg-panel-title">Effetti sfondo</div>
                 <button type="button" class="bg-option" data-bg="none">
                     <i class="fas fa-ban"></i>
-                    <span>Nessuno</span>
+                    <span>{{ t('call.nessuno') }}</span>
                     <i class="fas fa-check bg-option-check"></i>
                 </button>
                 <button type="button" class="bg-option" data-bg="blur">
                     <i class="fas fa-droplet"></i>
-                    <span>Sfoca lo sfondo</span>
+                    <span>{{ t('call.sfoca') }}</span>
                     <i class="fas fa-check bg-option-check"></i>
                 </button>
                 <button type="button" class="bg-option" data-bg="img">
                     <i class="fas fa-image"></i>
-                    <span>Sfondo Ispiramy</span>
+                    <span>{{ t('call.sfondo') }}</span>
                     <i class="fas fa-check bg-option-check"></i>
                 </button>
                 <button type="button" class="bg-option" data-bg="custom" id="bgCustomOption">
                     <i class="fas fa-upload"></i>
                     <img class="bg-option-thumb" id="bgCustomThumb" alt="" hidden>
-                    <span id="bgCustomLabel">Immagine dal computer</span>
+                    <span id="bgCustomLabel">{{ t('call.immagine') }}</span>
                     <i class="fas fa-check bg-option-check"></i>
                 </button>
                 <button type="button" class="bg-option bg-option-secondaria" id="bgCustomChange" hidden>
                     <i class="fas fa-rotate"></i>
-                    <span>Cambia immagine</span>
+                    <span>{{ t('call.cambia_immagine') }}</span>
                 </button>
                 <!-- Sta dentro il pannello della call: nessuna finestra esterna -->
                 <input type="file" id="bgFileInput" accept="image/png,image/jpeg,image/webp" hidden>
@@ -1644,7 +1644,7 @@
     <div class="chat-header">
         <div class="chat-header-title">
             <i class="fas fa-comments"></i>
-            <span>Chat</span>
+            <span>{{ t('call.chat') }}</span>
         </div>
         <button class="chat-toggle-btn" id="chatCloseBtn" title="Chiudi chat">
             <i class="fas fa-times"></i>
@@ -1690,7 +1690,7 @@
     <div class="chat-attachments-preview" id="chatAttachmentsPreview" style="display: none;">
         <div class="attachments-list" id="attachmentsList"></div>
         <div class="attachments-clear">
-            <button class="clear-attachments-btn" id="clearAttachmentsBtn">Cancella tutti</button>
+            <button class="clear-attachments-btn" id="clearAttachmentsBtn">{{ t('call.cancella') }}</button>
         </div>
     </div>
 </div>
@@ -1700,13 +1700,13 @@
     <div class="attachment-viewer-bar">
         <span class="attachment-viewer-name" id="attachmentViewerName"></span>
         <a id="attachmentViewerNewTab" target="_blank" rel="noopener noreferrer" title="Apri in una nuova scheda">
-            <i class="fas fa-external-link-alt"></i><span class="viewer-label">Nuova scheda</span>
+            <i class="fas fa-external-link-alt"></i><span class="viewer-label">{{ t('call.nuova_scheda') }}</span>
         </a>
         <a id="attachmentViewerDownload" target="_blank" rel="noopener noreferrer" title="Scarica">
-            <i class="fas fa-download"></i><span class="viewer-label">Scarica</span>
+            <i class="fas fa-download"></i><span class="viewer-label">{{ t('call.scarica') }}</span>
         </a>
-        <button type="button" id="attachmentViewerClose" title="Chiudi">
-            <i class="fas fa-times"></i><span class="viewer-label">Chiudi</span>
+        <button type="button" id="attachmentViewerClose" title="{{ t('comune.chiudi') }}">
+            <i class="fas fa-times"></i><span class="viewer-label">{{ t('comune.chiudi') }}</span>
         </button>
     </div>
     <div class="attachment-viewer-body" id="attachmentViewerBody"></div>
@@ -1716,12 +1716,12 @@
 {% if user.id == booking.client_user_id %}
 <div class="review-overlay" id="reviewOverlay">
     <div class="review-modal">
-        <button class="review-close-btn" onclick="window.location.href='/profile'" title="Chiudi">&times;</button>
-        <h2>⭐ Come è andata la consulenza?</h2>
-        <p class="review-subtitle">La tua opinione aiuta altri utenti a scegliere il consulente giusto.</p>
+        <button class="review-close-btn" onclick="window.location.href='/profile'" title="{{ t('comune.chiudi') }}">&times;</button>
+        <h2>⭐ {{ t('recensione.titolo_breve') }}</h2>
+        <p class="review-subtitle">{{ t('recensione.sottotitolo') }}</p>
 
         <div class="review-question">
-            <label>Ti ha aiutato concretamente?</label>
+            <label>{{ t('recensione.aiuto') }}</label>
             <div class="star-rating" data-field="helpful">
                 <input type="radio" name="helpful" value="5" id="h5"><label for="h5">★</label>
                 <input type="radio" name="helpful" value="4" id="h4"><label for="h4">★</label>
@@ -1732,7 +1732,7 @@
         </div>
 
         <div class="review-question">
-            <label>Era preparato sull'argomento?</label>
+            <label>{{ t('recensione.preparato') }}</label>
             <div class="star-rating" data-field="prepared">
                 <input type="radio" name="prepared" value="5" id="p5"><label for="p5">★</label>
                 <input type="radio" name="prepared" value="4" id="p4"><label for="p4">★</label>
@@ -1743,7 +1743,7 @@
         </div>
 
         <div class="review-question">
-            <label>Capacità comunicativa?</label>
+            <label>{{ t('recensione.comunicazione') }}</label>
             <div class="star-rating" data-field="communication">
                 <input type="radio" name="communication" value="5" id="c5"><label for="c5">★</label>
                 <input type="radio" name="communication" value="4" id="c4"><label for="c4">★</label>
@@ -1754,13 +1754,13 @@
         </div>
 
         <div class="review-comment">
-            <label style="display:block;font-weight:600;margin-bottom:8px;color:#333;font-size:0.95rem;">Commento (opzionale)</label>
+            <label style="display:block;font-weight:600;margin-bottom:8px;color:#333;font-size:0.95rem;">{{ t('recensione.commento') }}</label>
             <textarea id="reviewComment" placeholder="Racconta la tua esperienza..." maxlength="2000"></textarea>
         </div>
 
         <div class="review-actions">
-            <button class="review-btn-submit" id="reviewSubmitBtn" onclick="submitReview()">Invia Recensione</button>
-            <button class="review-btn-email" id="reviewEmailBtn" onclick="sendReviewEmail()">📧 Inviami un'email per votare più tardi</button>
+            <button class="review-btn-submit" id="reviewSubmitBtn" onclick="submitReview()">{{ t('recensione.invia') }}</button>
+            <button class="review-btn-email" id="reviewEmailBtn" onclick="sendReviewEmail()">📧 {{ t('recensione.email_dopo') }}</button>
             {% if booking.recording_requested %}
             <button class="review-btn-dispute" onclick="toggleDisputeForm()">⚠️ Apri una contestazione</button>
             {% else %}

@@ -8,6 +8,8 @@ from sqlmodel import Session, select
 from app.database import engine
 from app.models import Notification, NotificationType, User
 from app.utils.notification_email import send_notification_email
+from app.utils.notification_types import soggetto_email
+from app.utils.testi_notifiche import localizza_notifica
 from app.logger_config import logger
 from typing import Optional, Dict
 
@@ -70,6 +72,11 @@ def send_notification(
             # riavvio finche' la contestazione resta aperta. Senza questo il
             # consulente si ritrova la stessa identica notifica decine di
             # volte, una per ogni deploy.
+            lingua = getattr(user, "ui_language", None) or "it"
+            if lingua not in ("it", "en"):
+                lingua = "it"
+            title, message = localizza_notifica(lingua, type_key, title, message, template_data)
+
             if solo_una_volta:
                 condizioni = [Notification.user_id == user_id,
                               Notification.type == type_key]
@@ -134,9 +141,10 @@ def send_notification(
                 email_sent = send_notification_email(
                     to_email=user.email,
                     to_name=user.nome or user.email.split('@')[0],
-                    subject=notif_type.email_subject,
+                    subject=soggetto_email(type_key, notif_type.email_subject, lingua),
                     template_name=notif_type.email_template,
-                    template_data=template_data
+                    template_data=template_data,
+                    lingua=lingua,
                 )
                 
                 if email_sent:

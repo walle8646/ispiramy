@@ -169,21 +169,22 @@
 {% block content %}
 <div class="admin-container">
     <div class="admin-header">
-        <h1><i class="fas fa-shield-alt"></i> Pannello Admin</h1>
+        <h1><i class="fas fa-shield-alt"></i> {{ t('admin.pannello') }}</h1>
         <nav class="admin-nav">
-            <a href="/admin" class="active"><i class="fas fa-chart-bar"></i> Dashboard</a>
-            <a href="/admin/disputes"><i class="fas fa-exclamation-triangle"></i> Contestazioni {% if stats.disputes.open > 0 %}({{ stats.disputes.open }}){% endif %}</a>
+            <a href="/admin" class="active"><i class="fas fa-chart-bar"></i> {{ t('admin.dashboard') }}</a>
+            <a href="/admin/disputes"><i class="fas fa-exclamation-triangle"></i> {{ t('admin.contestazioni') }} {% if stats.disputes.open > 0 %}({{ stats.disputes.open }}){% endif %}</a>
             <a href="/admin/transaction-problems"><i class="fas fa-rotate"></i> {{ t('problemi.menu') }}{% if problemi_transazione_aperti %} <span class="nav-badge">{{ problemi_transazione_aperti }}</span>{% endif %}</a>
+            <a href="/admin/reports"><i class="fas fa-flag"></i> {{ t('segnalazioni.menu') }}{% if segnalazioni_aperte %} <span class="nav-badge">{{ segnalazioni_aperte }}</span>{% endif %}</a>
             <a href="/admin/social"><i class="fas fa-bullhorn"></i> Social</a>
-            <a href="/admin/users"><i class="fas fa-users"></i> Utenti</a>
-            <a href="/admin/bookings"><i class="fas fa-video"></i> Consulenze</a>
+            <a href="/admin/users"><i class="fas fa-users"></i> {{ t('admin.utenti') }}</a>
+            <a href="/admin/bookings"><i class="fas fa-video"></i> {{ t('admin.consulenze') }}</a>
         </nav>
     </div>
 
     <!-- STATS PRINCIPALI -->
     <div class="stats-grid">
         <div class="stat-card">
-            <div class="stat-card-title"><i class="fas fa-users"></i> Utenti registrati</div>
+            <div class="stat-card-title"><i class="fas fa-users"></i> {{ t('admin.utenti_registrati') }}</div>
             <div class="stat-card-value">{{ stats.users.total }}</div>
             <div class="stat-card-detail">
                 <span>+{{ stats.users.new_7d }}</span> ultimi 7gg &middot;
@@ -193,7 +194,7 @@
         </div>
 
         <div class="stat-card green">
-            <div class="stat-card-title"><i class="fas fa-calendar-check"></i> Consulenze</div>
+            <div class="stat-card-title"><i class="fas fa-calendar-check"></i> {{ t('admin.consulenze') }}</div>
             <div class="stat-card-value">{{ stats.bookings.total }}</div>
             <div class="stat-card-detail">
                 <span>+{{ stats.bookings.last_7d }}</span> ultimi 7gg &middot;
@@ -225,7 +226,7 @@
         </div>
 
         <div class="stat-card red">
-            <div class="stat-card-title"><i class="fas fa-exclamation-triangle"></i> Contestazioni</div>
+            <div class="stat-card-title"><i class="fas fa-exclamation-triangle"></i> {{ t('admin.contestazioni') }}</div>
             <div class="stat-card-value">{{ stats.disputes.total }}</div>
             <div class="stat-card-detail">
                 {% if stats.disputes.open > 0 %}

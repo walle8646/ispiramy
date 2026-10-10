@@ -332,11 +332,12 @@
     <div class="admin-header">
         <h1><i class="fas fa-bullhorn"></i> Social</h1>
         <div class="admin-nav">
-            <a href="/admin">Dashboard</a>
-            <a href="/admin/users">Utenti</a>
-            <a href="/admin/bookings">Consulenze</a>
-            <a href="/admin/disputes">Contestazioni</a>
+            <a href="/admin">{{ t('admin.dashboard') }}</a>
+            <a href="/admin/users">{{ t('admin.utenti') }}</a>
+            <a href="/admin/bookings">{{ t('admin.consulenze') }}</a>
+            <a href="/admin/disputes">{{ t('admin.contestazioni') }}</a>
             <a href="/admin/transaction-problems">{{ t('problemi.menu') }}{% if problemi_transazione_aperti %} <span class="nav-badge">{{ problemi_transazione_aperti }}</span>{% endif %}</a>
+            <a href="/admin/reports"><i class="fas fa-flag"></i> {{ t('segnalazioni.menu') }}{% if segnalazioni_aperte %} <span class="nav-badge">{{ segnalazioni_aperte }}</span>{% endif %}</a>
             <a href="/admin/social" class="active">Social</a>
         </div>
     </div>

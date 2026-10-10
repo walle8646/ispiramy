@@ -12,6 +12,8 @@ from sqlmodel import select
 from app.database import get_session
 from app.models import User
 from app.utils.password import UNUSABLE_PASSWORD
+from app.utils.lingue_ui import lingua_di
+from app.utils.lingua_profilo import applica_lingua
 from app.logger_config import logger
 
 import jwt
@@ -114,7 +116,9 @@ async def google_callback(request: Request):
                 # Utente già collegato con Google → login
                 logger.info(f"✅ Google login per utente esistente: {user.email} (ID: {user.id})")
                 _set_session(request, session, user)
-                return RedirectResponse("/profile", status_code=302)
+                risposta = RedirectResponse("/profile", status_code=302)
+                applica_lingua(request, risposta, session, user)
+                return risposta
             
             # 2. Cerca utente per email (account già registrato con email/password)
             user = session.exec(
@@ -134,7 +138,9 @@ async def google_callback(request: Request):
                 
                 logger.info(f"🔗 Account Google collegato a utente esistente: {user.email} (ID: {user.id})")
                 _set_session(request, session, user)
-                return RedirectResponse("/profile", status_code=302)
+                risposta = RedirectResponse("/profile", status_code=302)
+                applica_lingua(request, risposta, session, user)
+                return risposta
             
             # 3. Nuovo utente → crea account.
             # Nessuna password: l'accesso avviene via Google. Il campo resta
@@ -150,6 +156,7 @@ async def google_callback(request: Request):
                 cognome=cognome or None,
                 google_id=google_id,
                 confirmed=1,  # Email già verificata da Google
+                ui_language=lingua_di(request),
             )
             
             session.add(new_user)
@@ -158,7 +165,9 @@ async def google_callback(request: Request):
             
             logger.info(f"✅ Nuovo utente registrato via Google: {email} (ID: {new_user.id})")
             _set_session(request, session, new_user)
-            return RedirectResponse("/profile", status_code=302)
+            risposta = RedirectResponse("/profile", status_code=302)
+            applica_lingua(request, risposta, session, new_user)
+            return risposta
     
     except Exception as e:
         # Caso tipico dopo il passaggio a BASE_URL: l'utente ha avviato il login

@@ -1,4 +1,5 @@
 from sqlmodel import Field, SQLModel, Relationship
+from sqlalchemy import UniqueConstraint
 from datetime import datetime, time
 from typing import Optional, List
 from decimal import Decimal
@@ -73,6 +74,9 @@ class User(SQLModel, table=True):
     auto_accept_bookings: bool = Field(default=True)
     user_type_id: int = Field(default=1)  # 1=Utente, 2=Verificatore, 3=Amministratore
     languages: Optional[str] = Field(default=None)  # JSON array: '["it","en","fr"]'
+    # Lingua del sito scelta da questa persona. Serve alle email e alle
+    # notifiche, che partono anche senza una richiesta (promemoria, pagamenti).
+    ui_language: Optional[str] = Field(default="it")
     
     # Stripe Connect
     stripe_account_id: Optional[str] = Field(default=None)  # Stripe Connected Account ID (acct_xxx)
@@ -193,6 +197,23 @@ class CommunityContact(SQLModel, table=True):
         table_args = (
             {'sqlite_autoincrement': True},
         )
+
+
+class CommunityReport(SQLModel, table=True):
+    """Segnalazione di una domanda. Una sola per persona e per domanda."""
+    __tablename__ = "community_reports"
+    __table_args__ = (
+        UniqueConstraint("question_id", "user_id", name="uq_community_report_utente_domanda"),
+    )
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    question_id: int = Field(foreign_key="community_questions.id", index=True)
+    user_id: int = Field(foreign_key="user.id", index=True)
+    reason: str = Field(max_length=1000)
+    status: str = Field(default="open", index=True)  # open, dismissed, hidden
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    resolved_at: Optional[datetime] = Field(default=None)
+    resolved_by: Optional[int] = Field(default=None, foreign_key="user.id")
 
 
 class CommunityQuestionFollow(SQLModel, table=True):

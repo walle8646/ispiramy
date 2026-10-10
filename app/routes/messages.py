@@ -730,31 +730,22 @@ async def get_user_status(user_id: int, request: Request):
             if not user:
                 return JSONResponse({"error": "Utente non trovato"}, status_code=404)
             
-            status_label = "Offline"
+            from app.utils.lingue_ui import etichetta_attivita, lingua_di, traduci
+            status_label = traduci("presenza.offline", lingua_di(request))
             is_online = False
             
             if user.last_seen:
                 now = datetime.utcnow()
                 diff = now - user.last_seen
                 minutes = int(diff.total_seconds() / 60)
-                
-                if minutes < 5:
-                    status_label = "Online ora"
-                    is_online = True
-                elif minutes < 60:
-                    status_label = f"Attivo {minutes} min fa"
-                elif minutes < 1440:
-                    hours = minutes // 60
-                    status_label = f"Attivo {hours} or{'a' if hours == 1 else 'e'} fa"
-                elif minutes < 43200:
-                    days = minutes // 1440
-                    status_label = f"Attivo {days} giorn{'o' if days == 1 else 'i'} fa"
-                else:
-                    months = minutes // 43200
-                    status_label = f"Attivo {months} mes{'e' if months == 1 else 'i'} fa"
+                status_label, is_online = etichetta_attivita(minutes, lingua_di(request))
             
             return JSONResponse({"status": status_label, "is_online": is_online}, status_code=200)
     
     except Exception as e:
         logger.error(f"Error getting user status: {e}", exc_info=True)
-        return JSONResponse({"status": "Offline", "is_online": False}, status_code=200)
+        from app.utils.lingue_ui import lingua_di, traduci
+        return JSONResponse(
+            {"status": traduci("presenza.offline", lingua_di(request)), "is_online": False},
+            status_code=200,
+        )

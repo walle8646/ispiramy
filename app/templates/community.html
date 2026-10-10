@@ -1238,6 +1238,38 @@
         height: 300px;
     }
     
+    .btn-report {
+        background: none;
+        border: 1px solid #e0e0e0;
+        color: #666;
+        border-radius: 8px;
+        padding: 6px 10px;
+        font-size: 0.82rem;
+        font-weight: 600;
+        cursor: pointer;
+    }
+    .btn-report:hover { border-color: #c62828; color: #c62828; }
+    .report-modal {
+        position: fixed; inset: 0; background: rgba(0,0,0,.45);
+        display: flex; align-items: flex-end; justify-content: center;
+        z-index: 4000; padding: 16px;
+    }
+    .report-box {
+        background: #fff; border-radius: 16px; padding: 20px;
+        width: min(480px, 100%); box-shadow: 0 8px 30px rgba(0,0,0,.2);
+    }
+    .report-box h3 { margin: 0 0 8px; }
+    .report-box textarea {
+        width: 100%; box-sizing: border-box; min-height: 110px;
+        border: 1px solid #ddd; border-radius: 8px; padding: 10px; font: inherit;
+    }
+    .report-azioni { display: flex; gap: 8px; margin-top: 12px; }
+    .report-azioni button { flex: 1; border: none; border-radius: 8px; padding: 10px; font-weight: 600; cursor: pointer; }
+    .report-invia { background: #c62828; color: #fff; }
+    .report-annulla { background: #eceff1; color: #333; }
+    @media (min-width: 700px) {
+        .report-modal { align-items: center; }
+    }
     .btn-like i {
         transition: transform 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
         z-index: 1;
@@ -1954,7 +1986,7 @@
             </h2>
             {% elif search_query %}
             <h2 style="margin-bottom: 16px; font-size: 1.75rem; color: #333;">
-                <i class="fas fa-search" style="color: #43a047;"></i> Risultati per "{{ search_query }}"
+                <i class="fas fa-search" style="color: #43a047;"></i> {{ t('community.risultati_per') }} "{{ search_query }}"
             </h2>
             {% endif %}
 
@@ -2005,7 +2037,7 @@
                         {% endif %}
                         {% if item.can_edit %}
                         <button onclick="openEditQuestionModal({{ item.question.id }})" style="background: none; border: 1px solid #ff9800; color: #ff9800; padding: 4px 10px; border-radius: 6px; font-size: 0.78rem; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; transition: all 0.2s;" onmouseover="this.style.background='#ff9800';this.style.color='white'" onmouseout="this.style.background='none';this.style.color='#ff9800'">
-                            <i class="fas fa-edit"></i> Modifica
+                            <i class="fas fa-edit"></i> {{ t('community.modifica') }}
                         </button>
                         {% endif %}
                         <span class="question-status status-{{ item.question.status }}">
@@ -2070,7 +2102,7 @@
                         </div>
                         
                         <div class="question-meta">
-                            <span class="btn-like" style="cursor:default;" data-tip="Numero di consulenti che hanno scritto al cliente"><i class="fas fa-comment"></i> <span class="views-count">{{ item.question.views }}</span></span>
+                            <span class="btn-like" style="cursor:default;" data-tip="{{ t('community.tip_contatti') }}"><i class="fas fa-comment"></i> <span class="views-count">{{ item.question.views }}</span></span>
                             
                             <!-- Like Button (cliccabile solo se loggato e non è l'autore) -->
                             {% if user and not item.is_owner %}
@@ -2078,14 +2110,19 @@
                                 class="btn-like {% if item.user_liked %}liked{% endif %}" 
                                 data-question-id="{{ item.question.id }}"
                                 onclick="toggleLike({{ item.question.id }})"
-                                data-tip="Metti like per seguire la domanda sul tuo profilo">
+                                data-tip="{{ t('community.tip_like') }}">
                                 <i class="fas fa-thumbs-up"></i>
                                 <span class="upvotes-count">{{ item.question.upvotes }}</span>
                             </button>
                             {% else %}
-                            <span class="btn-like" style="cursor:default;" data-tip="Metti like per seguire la domanda sul tuo profilo">
+                            <span class="btn-like" style="cursor:default;" data-tip="{{ t('community.tip_like') }}">
                                 <i class="fas fa-thumbs-up"></i> {{ item.question.upvotes }}
                             </span>
+                            {% endif %}
+                            {% if user %}
+                            <button type="button" class="btn-report" onclick="apriSegnalazione({{ item.question.id }})">
+                                <i class="fas fa-flag"></i> {{ t('segnalazioni.pulsante') }}
+                            </button>
                             {% endif %}
                         </div>
                     </div>
@@ -2143,9 +2180,9 @@
                                       transition: all 0.2s;">
                                 <i class="fas fa-exclamation-circle"></i>
                                 {% if user.is_verified and not user_has_payment %}
-                                📝 Configura un metodo di pagamento per messaggiare
+                                📝 {{ t('community.pagamento_per_messaggiare') }}
                                 {% else %}
-                                🚀 Diventa consulente per contattare il cliente
+                                🚀 {{ t('community.diventa_per_contattare') }}
                                 {% endif %}
                             </a>
                             
@@ -2168,7 +2205,7 @@
                     <div class="suggested-consultants-new">
                         <div class="suggested-title-new">
                             <i class="fas fa-lightbulb"></i>
-                            Consulenti suggeriti per te
+                            {{ t('community.suggeriti') }}
                         </div>
                         
                         <div class="consultants-grid-mini">
@@ -2187,7 +2224,7 @@
                                 {% endif %}
                                 
                                 <h4>{{ consultant.nome }} {{ consultant.cognome or '' }}</h4>
-                                <div class="consultant-profession-mini">{{ consultant.professione or 'Consulente' }}</div>
+                                <div class="consultant-profession-mini">{{ consultant.professione or t('prenota.consulente') }}</div>
                                 
                                 <div class="consultant-stats-mini">
                                     <span>💼 {{ consultant.consulenze_vendute }} consulenze</span>
@@ -4043,6 +4080,69 @@ async function submitEditQuestion(event) {
         }
     }
 }
+</script>
+
+<div id="reportModal" class="report-modal" style="display:none;" onclick="if (event.target === this) chiudiSegnalazione()">
+    <div class="report-box">
+        <h3>{{ t('segnalazioni.titolo_breve') }}</h3>
+        <p style="margin:0 0 8px;color:#666;">{{ t('segnalazioni.testo') }}</p>
+        <textarea id="reportReason" maxlength="1000" placeholder="{{ t('segnalazioni.placeholder') }}"></textarea>
+        <p id="reportMsg" style="min-height:1.2em;color:#c62828;font-size:.9rem;"></p>
+        <div class="report-azioni">
+            <button type="button" class="report-annulla" onclick="chiudiSegnalazione()">{{ t('segnalazioni.annulla') }}</button>
+            <button type="button" class="report-invia" id="reportSend" onclick="inviaSegnalazione()">{{ t('segnalazioni.invia') }}</button>
+        </div>
+    </div>
+</div>
+<script>
+    let domandaSegnalata = null;
+    const REPORT_MSG = {
+        breve: {{ t('segnalazioni.breve')|tojson }},
+        gia: {{ t('segnalazioni.gia')|tojson }},
+        ok: {{ t('segnalazioni.ok')|tojson }},
+        errore: {{ t('segnalazioni.errore')|tojson }},
+        rete: {{ t('segnalazioni.rete')|tojson }},
+        limite: {{ t('segnalazioni.limite')|tojson }}
+    };
+    function apriSegnalazione(id) {
+        domandaSegnalata = id;
+        document.getElementById('reportReason').value = '';
+        document.getElementById('reportMsg').textContent = '';
+        document.getElementById('reportModal').style.display = 'flex';
+    }
+    function chiudiSegnalazione() {
+        document.getElementById('reportModal').style.display = 'none';
+        domandaSegnalata = null;
+    }
+    async function inviaSegnalazione() {
+        const motivo = document.getElementById('reportReason').value.trim();
+        const msg = document.getElementById('reportMsg');
+        if (motivo.length < 10) {
+            msg.textContent = REPORT_MSG.breve;
+            return;
+        }
+        const btn = document.getElementById('reportSend');
+        btn.disabled = true;
+        try {
+            const resp = await fetch('/api/community/' + domandaSegnalata + '/report', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ reason: motivo })
+            });
+            const data = await resp.json().catch(() => ({}));
+            if (resp.status === 409) { msg.textContent = REPORT_MSG.gia; }
+            else if (resp.status === 429) { msg.textContent = data.error || REPORT_MSG.limite; }
+            else if (!resp.ok) { msg.textContent = data.error || REPORT_MSG.errore; }
+            else {
+                msg.style.color = '#2e7d32';
+                msg.textContent = REPORT_MSG.ok;
+                setTimeout(chiudiSegnalazione, 700);
+            }
+        } catch (e) {
+            msg.textContent = REPORT_MSG.rete;
+        }
+        btn.disabled = false;
+    }
 </script>
 
 <!-- Gallery Lightbox overlay -->

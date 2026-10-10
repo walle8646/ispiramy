@@ -227,11 +227,22 @@ def _problemi_in_ogni_pagina(request: Request) -> dict:
     utente = getattr(request.state, "utente_corrente", None)
     if not utente or (getattr(utente, "user_type_id", 0) or 0) < 2:
         return {"problemi_transazione_aperti": 0}
+    aperti = 0
+    segnalazioni = 0
     try:
         from app.utils.problemi_transazione import conta_aperti
-        return {"problemi_transazione_aperti": conta_aperti()}
+        aperti = conta_aperti()
     except Exception:
-        return {"problemi_transazione_aperti": 0}
+        aperti = 0
+    try:
+        from app.routes.admin import conta_segnalazioni_aperte
+        segnalazioni = conta_segnalazioni_aperte()
+    except Exception:
+        segnalazioni = 0
+    return {
+        "problemi_transazione_aperti": aperti,
+        "segnalazioni_aperte": segnalazioni,
+    }
 
 
 def _lingua_in_ogni_pagina(request: Request) -> dict:

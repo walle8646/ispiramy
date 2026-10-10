@@ -62,6 +62,9 @@ def test_la_lamentela_arriva_all_amministrazione(csrf_client, monkeypatch):
     from app.routes.pages import EMAIL_AMMINISTRAZIONE
     assert inviate[0][0] == EMAIL_AMMINISTRAZIONE
     assert "Lamentela" in inviate[0][1]
+    from app.utils.lingue_ui import COOKIE
+    csrf_client.cookies.delete(COOKIE, path="/")
+    csrf_client.get("/lingua/it", follow_redirects=False)
     pagina = csrf_client.get("/contact").text
     assert 'action="/contact"' in pagina
     assert "Scrivi una lamentela" in pagina
@@ -158,7 +161,7 @@ def test_orari_e_community_e_dicitura_nel_sorgente():
     assert "box-sizing: border-box" in community
 
     profilo = _file("app", "templates", "profile.html")
-    assert "Le richieste di consulenza in arrivo si confermano da sole" in profilo
+    assert "profilo.autoconferma" in profilo
     assert "✅ Conferma automatica delle prenotazioni" not in profilo
     assert "Attiva: chi paga prenota subito." not in profilo
     assert 'id="prenotazione-${b.id}"' in profilo
