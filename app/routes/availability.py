@@ -8,7 +8,7 @@ from typing import List, Optional
 import logging
 
 from app.database import engine
-from app.models import User, AvailabilityBlock
+from app.models import User, AvailabilityBlock, Booking
 from app.routes.auth import verify_token
 from app.utils.orari import ORE_PREAVVISO_PRENOTAZIONE
 
@@ -37,6 +37,40 @@ def format_time_field(time_value) -> str:
     else:
         # Fallback: converti a stringa
         return str(time_value)[:5]
+
+
+def _minuti(valore) -> int:
+    if isinstance(valore, time):
+        return valore.hour * 60 + valore.minute
+    parti = str(valore).strip().split(":")
+    return int(parti[0]) * 60 + int(parti[1])
+
+
+def prenotazioni_non_coperte(session, user_id: int, giorno: str, fasce) -> list:
+    """Prenotazioni del giorno che non stanno interamente in una delle fasce nuove.
+
+    Togliere la fascia non cancella la consulenza, ma lasciava il calendario
+    incoerente: l'ora risultava libera da impostare e occupata da prenotare.
+    """
+    righe = session.exec(
+        select(Booking).where(
+            Booking.consultant_user_id == user_id,
+            func.date(Booking.booking_date) == giorno,
+            Booking.status.notin_(["cancelled", "no_show"]),
+        )
+    ).all()
+    intervalli = [(_minuti(inizio), _minuti(fine)) for inizio, fine in fasce]
+    scoperte = []
+    for riga in righe:
+        inizio = _minuti(riga.start_time)
+        fine = _minuti(riga.end_time) if riga.end_time else inizio + int(riga.duration_minutes or 60)
+        if fine <= inizio:
+            fine += 24 * 60
+        if not any(parte <= inizio and fine <= arriva for parte, arriva in intervalli):
+            scoperte.append(riga)
+    return scoperte
+
+
 logger = logging.getLogger(__name__)
 
 @router.get("/availability", response_class=HTMLResponse)
@@ -153,6 +187,29 @@ async def save_availability(
             )
         
         with Session(engine) as session:
+            fasce_nuove = []
+            for block_data in blocks_data:
+                start_time_str = block_data.get("start_time")
+                end_time_str = block_data.get("end_time")
+                try:
+                    datetime.strptime(start_time_str, "%H:%M")
+                    datetime.strptime(end_time_str, "%H:%M")
+                except (TypeError, ValueError):
+                    continue
+                if _minuti(end_time_str) - _minuti(start_time_str) <= 0:
+                    continue
+                fasce_nuove.append((start_time_str, end_time_str))
+
+            if prenotazioni_non_coperte(session, user.id, target_date.strftime("%Y-%m-%d"), fasce_nuove):
+                return JSONResponse(
+                    status_code=409,
+                    content={
+                        "success": False,
+                        "message": "Ci sono prenotazioni negli orari che stai togliendo. "
+                                   "Puoi cambiare la disponibilità quando quelle consulenze sono annullate.",
+                    },
+                )
+
             # Rimuovi blocchi esistenti per quella data
             existing = session.exec(
                 select(AvailabilityBlock).where(
@@ -246,6 +303,7 @@ async def copy_availability(
             
             copied_count = 0
             skipped_count = 0
+            giorni_con_prenotazioni = 0
             
             for target_date_str in target_dates_list:
                 target_date = datetime.strptime(target_date_str, "%Y-%m-%d").date()
@@ -259,7 +317,21 @@ async def copy_availability(
                     min_start_minutes = min_start.hour * 60 + min_start.minute
                 elif target_date < today_italy and not DEBUG_MODE:
                     continue  # Salta date passate
-                
+
+                fasce_copia = []
+                for source_block in source_blocks:
+                    if min_start_minutes is not None:
+                        src_start = format_time_field(source_block.start_time)
+                        if src_start and _minuti(src_start) < min_start_minutes:
+                            continue
+                    fasce_copia.append((
+                        format_time_field(source_block.start_time),
+                        format_time_field(source_block.end_time),
+                    ))
+                if prenotazioni_non_coperte(session, user.id, target_date_str, fasce_copia):
+                    giorni_con_prenotazioni += 1
+                    continue
+
                 # Rimuovi blocchi esistenti
                 existing = session.exec(
                     select(AvailabilityBlock).where(
@@ -300,6 +372,11 @@ async def copy_availability(
             msg = f"Disponibilità copiata in {len(target_dates_list)} giorni ({copied_count} blocchi totali)"
             if skipped_count > 0:
                 msg += f". {skipped_count} blocco/i esclusi perché troppo vicini all'orario attuale (min. {ORE_PREAVVISO_PRENOTAZIONE} ore)"
+            if giorni_con_prenotazioni:
+                msg += (
+                    f". {giorni_con_prenotazioni} giorno/i non modificati: "
+                    "hanno prenotazioni che la copia avrebbe scoperto"
+                )
             
             return JSONResponse({
                 "success": True,
@@ -322,7 +399,25 @@ async def delete_availability_block(request: Request, block_id: int):
         
         if not block or block.user_id != user.id:
             raise HTTPException(status_code=404, detail="Blocco non trovato")
-        
+
+        giorno = block.date.strftime("%Y-%m-%d") if hasattr(block.date, "strftime") else str(block.date)[:10]
+        altri = session.exec(
+            select(AvailabilityBlock).where(
+                AvailabilityBlock.user_id == user.id,
+                AvailabilityBlock.id != block.id,
+                func.date(AvailabilityBlock.date) == giorno,
+            )
+        ).all()
+        fasce_rimaste = [
+            (format_time_field(altro.start_time), format_time_field(altro.end_time))
+            for altro in altri
+        ]
+        if prenotazioni_non_coperte(session, user.id, giorno, fasce_rimaste):
+            raise HTTPException(
+                status_code=409,
+                detail="Questo orario ha una prenotazione. Non si può togliere finché la consulenza è in corso.",
+            )
+
         session.delete(block)
         session.commit()
         

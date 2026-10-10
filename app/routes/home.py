@@ -31,32 +31,31 @@ async def home(request: Request):
             if current_user:
                 featured_consultants_query = featured_consultants_query.where(User.id != current_user.id)
             featured_users = session.exec(featured_consultants_query).all()
-            
-            # ✅ Crea struttura dati come nel template (con categoria)
+            categorie = {c.id: c for c in session.exec(select(Category)).all()}
+            voti = {}
+            if featured_users:
+                righe_voti = session.exec(
+                    select(
+                        Review.consultant_user_id,
+                        func.count(Review.id),
+                        func.avg(Review.rating_helpful),
+                        func.avg(Review.rating_prepared),
+                        func.avg(Review.rating_communication),
+                    )
+                    .where(Review.consultant_user_id.in_([u.id for u in featured_users]))
+                    .group_by(Review.consultant_user_id)
+                ).all()
+                for riga in righe_voti:
+                    voti[riga[0]] = (round((riga[2] + riga[3] + riga[4]) / 3, 1), riga[1])
+
             consultants = []
             for user in featured_users:
-                category = None
-                if user.category_id:
-                    category = session.get(Category, user.category_id)
-
-                # Rating medio dalle recensioni ricevute
-                reviews = session.exec(
-                    select(Review).where(Review.consultant_user_id == user.id)
-                ).all()
-                review_count = len(reviews)
-                avg_rating = None
-                if reviews:
-                    total = sum(
-                        (r.rating_helpful + r.rating_prepared + r.rating_communication) / 3
-                        for r in reviews
-                    )
-                    avg_rating = round(total / review_count, 1)
-
+                media, quante = voti.get(user.id, (None, 0))
                 consultants.append({
                     "user": user,
-                    "category": category,
-                    "avg_rating": avg_rating,
-                    "review_count": review_count,
+                    "category": categorie.get(user.category_id) if user.category_id else None,
+                    "avg_rating": media,
+                    "review_count": quante,
                 })
             
             # Le ultime domande della community: sul telefono, a chi ha fatto
@@ -74,7 +73,7 @@ async def home(request: Request):
                     .limit(3)
                 ).all()
                 for domanda in righe:
-                    categoria = session.get(Category, domanda.category_id) if domanda.category_id else None
+                    categoria = categorie.get(domanda.category_id) if domanda.category_id else None
                     domande_recenti.append({
                         "id": domanda.id,
                         "titolo": domanda.title,

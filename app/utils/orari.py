@@ -146,6 +146,37 @@ def now_italy_naive() -> datetime:
     return datetime.now(ITALY_TZ).replace(tzinfo=None)
 
 
+def istante_italiano(quando: datetime, fold: int = 0) -> datetime:
+    """L'istante vero di un orario italiano, con il fuso.
+
+    I valori senza fuso sono ora civile di Roma. Nell'ora che non esiste
+    (alle 2 del 29 marzo 2026 l'orologio salta alle 3) il fuso accetta
+    comunque l'orario e lo mette un'ora dopo: se quell'istante non è prima
+    dell'ora successiva, lo si sposta sull'ora valida.
+    """
+    if quando.tzinfo is not None:
+        return quando.astimezone(ITALY_TZ)
+    aware = quando.replace(tzinfo=ITALY_TZ, fold=fold)
+    ora_dopo = (quando + timedelta(hours=1)).replace(tzinfo=ITALY_TZ, fold=0)
+    if aware.timestamp() >= ora_dopo.timestamp():
+        return ora_dopo
+    return aware
+
+
+def ore_reali_fino_a(inizio: datetime, adesso: Optional[datetime] = None) -> float:
+    """Ore vere da adesso all'inizio. Negative se l'inizio è già passato.
+
+    Sottrarre due orari di Roma non basta: il 25 ottobre 2026 le 2:30
+    capitano due volte, a un'ora di distanza, e la differenza sull'orologio
+    è la stessa. Si confrontano gli istanti.
+    """
+    if adesso is None:
+        adesso_vero = datetime.now(ITALY_TZ)
+    else:
+        adesso_vero = istante_italiano(adesso)
+    return (istante_italiano(inizio).timestamp() - adesso_vero.timestamp()) / 3600
+
+
 def iso_ora_italiana(dt: Optional[datetime]) -> Optional[str]:
     """ISO 8601 con il fuso esplicito, per mandare al browser un orario salvato.
 

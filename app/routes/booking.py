@@ -18,9 +18,10 @@ from app.utils_user import has_payment_method
 from app.utils.verifica_categorie import id_categorie_verificate
 from app.utils.orari import (
     ORE_LIMITE_ANNULLAMENTO, ORE_PREAVVISO_PRENOTAZIONE, con_fuso, data_consulenza,
-    finestra_ingresso, iso_ora_italiana, now_italy_naive,
+    finestra_ingresso, iso_ora_italiana, now_italy_naive, ore_reali_fino_a,
     scadenza_compenso_senza_recensione,
 )
+from app.utils.file_immagini import ESTENSIONI_IMMAGINE, MIME_ALLEGATI, tipo_immagine
 from app.utils.booking_requests import (
     RichiestaNonValida, accetta_richiesta, annulla_blocco, avvisa_annullamento,
     richiede_accettazione, scadenza_risposta,
@@ -115,19 +116,58 @@ def motivo_chiusura_call(session, booking_id: int) -> Optional[str]:
     return None
 
 
-def slot_gia_prenotato(session, consultant_user_id: int, giorno: str, start_time: str) -> bool:
-    """True se quell'orario del consulente e' gia' occupato da un'altra prenotazione.
+def _fine_in_minuti(inizio: str, fine, durata) -> int:
+    """Minuti della fine. Se manca l'orario di fine si usa la durata."""
+    partenza = parse_time_to_minutes(inizio)
+    if fine:
+        arrivo = parse_time_to_minutes(fine)
+        if arrivo <= partenza:
+            arrivo += 24 * 60
+        return arrivo
+    return partenza + int(durata or 60)
 
-    Stessa regola per prenotazioni dirette, PayPal e offerte di consulenza:
-    il pagamento di un'offerta non lo controllava affatto.
+
+def slot_gia_prenotato(
+    session, consultant_user_id: int, giorno: str, start_time: str, end_time: Optional[str] = None,
+) -> bool:
+    """True se l'intervallo si accavalla con una prenotazione già presa.
+
+    Non basta lo stesso orario di inizio: 10:15 cade dentro una consulenza
+    delle 10:00–11:00. Occupano lo slot tutti gli stati tranne annullata e
+    assente, come il calendario. Vale per prenotazione diretta, PayPal e offerte.
     """
-    return session.exec(
-        select(Booking.id)
+    inizio = parse_time_to_minutes(start_time)
+    fine = _fine_in_minuti(start_time, end_time, 60)
+    righe = session.exec(
+        select(Booking.start_time, Booking.end_time, Booking.duration_minutes)
         .where(func.date(Booking.booking_date) == giorno)
         .where(Booking.consultant_user_id == consultant_user_id)
-        .where(Booking.start_time == start_time)
-        .where(Booking.status.in_(BLOCKING_BOOKING_STATUSES))
-    ).first() is not None
+        .where(Booking.status.notin_(["cancelled", "no_show"]))
+    ).all()
+    for inizio_altro, fine_altro, durata in righe:
+        altro_da = parse_time_to_minutes(inizio_altro)
+        altro_a = _fine_in_minuti(inizio_altro, fine_altro, durata)
+        if inizio < altro_a and altro_da < fine:
+            return True
+    return False
+
+
+def blocca_agenda(session, consultant_id: Optional[int] = None) -> None:
+    """Impedisce a due prenotazioni dello stesso consulente di passare insieme.
+
+    Su SQLite non ci sono lock di riga: BEGIN IMMEDIATE prende la scrittura
+    prima di leggere, così la seconda richiesta aspetta e poi vede lo slot
+    occupato. Va chiamata prima di ogni altra query della sessione.
+    Su PostgreSQL si blocca la riga del consulente.
+    """
+    if session.get_bind().dialect.name == "sqlite":
+        if session.info.get("agenda_lock"):
+            return
+        session.connection().exec_driver_sql("BEGIN IMMEDIATE")
+        session.info["agenda_lock"] = True
+        return
+    if consultant_id is not None:
+        session.exec(select(User.id).where(User.id == consultant_id).with_for_update())
 
 
 def booking_start_datetime(booking: Booking) -> datetime:
@@ -141,9 +181,12 @@ def booking_start_datetime(booking: Booking) -> datetime:
     return datetime.combine(booking_date, start_time_obj)
 
 
-def hours_until_booking(booking: Booking) -> float:
-    """Ore mancanti all'inizio della consulenza (negative se già iniziata)."""
-    return (booking_start_datetime(booking) - now_italy_naive()).total_seconds() / 3600
+def hours_until_booking(booking: Booking, adesso: Optional[datetime] = None) -> float:
+    """Ore vere mancanti all'inizio (negative se già iniziata).
+
+    `adesso` serve ai controlli sull'ora legale: di solito è l'ora di adesso.
+    """
+    return ore_reali_fino_a(booking_start_datetime(booking), adesso)
 
 
 def parse_time_to_minutes(time_input: Union[str, time]) -> int:
@@ -152,7 +195,8 @@ def parse_time_to_minutes(time_input: Union[str, time]) -> int:
         # Se è già un oggetto time, usa hour e minute
         return time_input.hour * 60 + time_input.minute
     # Se è una stringa, fai il parsing
-    hours, minutes = map(int, time_input.split(':'))
+    ore, minuti = time_input.split(":")[:2]
+    hours, minutes = int(ore), int(minuti)
     return hours * 60 + minutes
 
 def minutes_to_time(minutes: int) -> str:
@@ -529,6 +573,8 @@ async def create_booking(
         raise HTTPException(status_code=400, detail="Non puoi prenotare con te stesso")
     
     with Session(engine) as session:
+        # Prima di leggere: altrimenti due richieste vedono entrambe lo slot libero.
+        blocca_agenda(session, consultant_id)
         # Verifica che il consulente esista
         consultant = session.get(User, consultant_id)
         if not consultant:
@@ -547,7 +593,7 @@ async def create_booking(
         if not DEBUG_MODE:
             # Combina data + ora di inizio (entrambi in ora italiana)
             booking_datetime = datetime.strptime(f"{booking_date_str} {start_time}", '%Y-%m-%d %H:%M')
-            time_until_booking = (booking_datetime - now_italy_naive()).total_seconds() / 3600  # in ore
+            time_until_booking = ore_reali_fino_a(booking_datetime)
 
             if time_until_booking < ORE_PREAVVISO_PRENOTAZIONE:
                 raise HTTPException(
@@ -556,7 +602,7 @@ async def create_booking(
                 )
         
         # Verifica che lo slot sia ancora disponibile (prevenzione double booking)
-        if slot_gia_prenotato(session, consultant_id, booking_date_str, start_time):
+        if slot_gia_prenotato(session, consultant_id, booking_date_str, start_time, end_time):
             raise HTTPException(status_code=409, detail="Questo slot è già stato prenotato")
         
         # Validazione prezzo ricevuto dal frontend
@@ -2287,6 +2333,16 @@ async def upload_chat_attachment(
         if file_extension not in allowed_extensions:
             raise HTTPException(status_code=400, detail=f"Tipo file non supportato. Formati accettati: {', '.join(allowed_extensions)}")
 
+        # Il tipo lo decide il server. Per le immagini i byte devono corrispondere
+        # all'estensione: un HTML rinominato .jpg non passa.
+        if file_extension in ESTENSIONI_IMMAGINE:
+            riconosciuto = tipo_immagine(contents)
+            if not riconosciuto or riconosciuto[0] != ESTENSIONI_IMMAGINE[file_extension]:
+                raise HTTPException(status_code=400, detail="Il file non è un'immagine del formato indicato")
+            content_type = riconosciuto[1]
+        else:
+            content_type = MIME_ALLEGATI[file_extension]
+
         # Moderazione immagini in tempo reale: blocca contenuti osceni/offensivi prima dell'upload.
         # Limitata a immagini fino a 12MB per non inviare base64 enormi alla Moderation API;
         # le immagini più grandi saltano il controllo live e restano coperte dalla verifica dispute.
@@ -2311,10 +2367,7 @@ async def upload_chat_attachment(
         timestamp = datetime.utcnow().strftime("%Y%m%d_%H%M%S_%f")
         safe_filename = _nome_file_sicuro(file.filename, file_extension)
         s3_key = f"call-attachments/{booking_id}/{current_user.id}_{timestamp}_{safe_filename}"
-        
-        # Determina il content-type per il download
-        content_type = file.content_type or "application/octet-stream"
-        
+
         # Esegui l'upload in un thread separato per non bloccare l'event loop
         await asyncio.to_thread(
             s3_client.put_object,

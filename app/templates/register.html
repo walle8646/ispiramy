@@ -1,22 +1,22 @@
 {% extends "base.html" %}
 
-{% block title %}Registrati - Ispiramy{% endblock %}
+{% block title %}{{ t('registrazione.titolo') }} - Ispiramy{% endblock %}
 
 {% block content %}
 <div class="pannello-accesso" style="max-width: 500px; margin: 80px auto; padding: 48px; background: white; border-radius: 16px; box-shadow: 0 4px 16px rgba(0,0,0,0.1);">
     
     <!-- FORM REGISTRAZIONE -->
     <div id="registerStep">
-        <h1 style="text-align: center; margin-bottom: 32px; color: #1a1a1a;">✨ Registrati su Ispiramy</h1>
+        <h1 style="text-align: center; margin-bottom: 32px; color: #1a1a1a;">✨ {{ t('registrazione.titolo') }}</h1>
         
         <form id="registerForm">
             <div style="margin-bottom: 24px;">
-                <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #1a1a1a;">Nome *</label>
+                <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #1a1a1a;">{{ t('registrazione.nome') }} *</label>
                 <input 
                     type="text" 
                     name="nome" 
                     required 
-                    placeholder="Inserisci il tuo nome"
+                    placeholder="{{ t('registrazione.nome_ph') }}"
                     style="width: 100%; padding: 14px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 16px; transition: border-color 0.3s;"
                     onfocus="this.style.borderColor='#43a047'"
                     onblur="this.style.borderColor='#e0e0e0'"
@@ -24,11 +24,11 @@
             </div>
 
             <div style="margin-bottom: 24px;">
-                <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #1a1a1a;">Cognome</label>
+                <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #1a1a1a;">{{ t('registrazione.cognome') }}</label>
                 <input 
                     type="text" 
                     name="cognome" 
-                    placeholder="Inserisci il tuo cognome (facoltativo)"
+                    placeholder="{{ t('registrazione.cognome_ph') }}"
                     style="width: 100%; padding: 14px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 16px; transition: border-color 0.3s;"
                     onfocus="this.style.borderColor='#43a047'"
                     onblur="this.style.borderColor='#e0e0e0'"
@@ -36,7 +36,7 @@
             </div>
 
             <div style="margin-bottom: 24px;">
-                <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #1a1a1a;">Email *</label>
+                <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #1a1a1a;">{{ t('registrazione.email') }} *</label>
                 <input 
                     type="email" 
                     name="email" 
@@ -49,18 +49,18 @@
             </div>
 
             <div style="margin-bottom: 32px;">
-                <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #1a1a1a;">Password *</label>
+                <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #1a1a1a;">{{ t('registrazione.password') }} *</label>
                 <input 
                     type="password" 
                     name="password" 
                     required 
-                    minlength="6" 
+                    minlength="{{ min_password }}" 
                     placeholder="••••••••"
                     style="width: 100%; padding: 14px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 16px; transition: border-color 0.3s;"
                     onfocus="this.style.borderColor='#43a047'"
                     onblur="this.style.borderColor='#e0e0e0'"
                 >
-                <small style="color: #666; font-size: 14px; margin-top: 4px; display: block;">Minimo 6 caratteri</small>
+                <small style="color: #666; font-size: 14px; margin-top: 4px; display: block;">{{ t('registrazione.minimo')|replace('{n}', min_password) }}</small>
             </div>
 
             <div id="registerError" style="display: none; background: #fee; border-left: 4px solid #e74c3c; padding: 16px; border-radius: 8px; margin-bottom: 16px;">
@@ -72,38 +72,38 @@
                 class="hero-btn" 
                 style="width: 100%; padding: 16px; border: none; cursor: pointer; font-size: 18px; font-weight: 600; margin-top: 8px;"
             >
-                Registrati Gratis
+                {{ t('registrazione.invia') }}
             </button>
         </form>
 
         <!-- Separatore -->
         <div style="display: flex; align-items: center; margin: 24px 0;">
             <div style="flex: 1; height: 1px; background: #e0e0e0;"></div>
-            <span style="padding: 0 16px; color: #999; font-size: 14px;">oppure</span>
+            <span style="padding: 0 16px; color: #999; font-size: 14px;">{{ t('accesso.oppure') }}</span>
             <div style="flex: 1; height: 1px; background: #e0e0e0;"></div>
         </div>
 
         <!-- Google Register Button -->
         <a href="/auth/google" style="display: flex; align-items: center; justify-content: center; gap: 12px; width: 100%; padding: 14px; border: 2px solid #e0e0e0; border-radius: 8px; background: white; text-decoration: none; color: #1a1a1a; font-size: 16px; font-weight: 600; transition: border-color 0.3s, box-shadow 0.3s;" onmouseover="this.style.borderColor='#4285f4'; this.style.boxShadow='0 2px 8px rgba(66,133,244,0.2)'" onmouseout="this.style.borderColor='#e0e0e0'; this.style.boxShadow='none'">
             <svg width="20" height="20" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
-            Registrati con Google
+            {{ t('registrazione.google') }}
         </a>
 
         <p style="text-align: center; margin-top: 24px; color: #666;">
-            Hai già un account? <a href="/login" style="color: #43a047; font-weight: 600; text-decoration: none;">Accedi</a>
+            {{ t('registrazione.hai_account') }} <a href="/login" style="color: #43a047; font-weight: 600; text-decoration: none;">{{ t('registrazione.accedi') }}</a>
         </p>
     </div>
 
     <!-- FORM VERIFICA EMAIL -->
     <div id="verifyStep" style="display: none;">
-        <h1 style="text-align: center; margin-bottom: 16px; color: #1a1a1a;">📧 Verifica Email</h1>
+        <h1 style="text-align: center; margin-bottom: 16px; color: #1a1a1a;">📧 {{ t('registrazione.verifica_titolo') }}</h1>
         <p style="text-align: center; color: #666; margin-bottom: 32px;">
-            Abbiamo inviato un codice a 6 cifre a <strong id="verifyEmail" style="color: #43a047;"></strong>
+            {{ t('registrazione.verifica_testo') }} <strong id="verifyEmail" style="color: #43a047;"></strong>
         </p>
 
         <form id="verifyForm">
             <div style="margin-bottom: 24px;">
-                <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #1a1a1a; text-align: center;">Inserisci il codice</label>
+                <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #1a1a1a; text-align: center;">{{ t('registrazione.codice') }}</label>
                 <input 
                     type="text" 
                     name="code" 
@@ -127,13 +127,13 @@
                 class="hero-btn" 
                 style="width: 100%; padding: 16px; border: none; cursor: pointer; font-size: 18px; font-weight: 600;"
             >
-                Verifica Email
+                {{ t('registrazione.verifica_invia') }}
             </button>
         </form>
 
         <p style="text-align: center; margin-top: 24px; color: #666;">
-            Non hai ricevuto il codice? 
-            <a href="#" id="resendBtn" style="color: #43a047; font-weight: 600; text-decoration: none;">Invia di nuovo</a>
+            {{ t('registrazione.reinvia_domanda') }}
+            <a href="#" id="resendBtn" style="color: #43a047; font-weight: 600; text-decoration: none;">{{ t('registrazione.reinvia') }}</a>
         </p>
     </div>
 
@@ -142,6 +142,13 @@
 
 {% block extra_js %}
 <script>
+    const regMsg = {
+        errore: {{ t('registrazione.errore') | tojson }},
+        rete: {{ t('accesso.errore_rete') | tojson }},
+        codice: {{ t('registrazione.codice_errato') | tojson }},
+        inviato: {{ t('registrazione.codice_inviato') | tojson }},
+        vaiLogin: {{ t('registrazione.vai_login') | tojson }}
+    };
     let userEmail = '';
 
     // ========== HANDLE REGISTRAZIONE ==========
@@ -175,20 +182,23 @@
             } else {
                 // Errore durante registrazione
                 if (data.show_login_link) {
-                    errorText.innerHTML = `
-                        ❌ ${data.message || data.error}<br>
-                        <a href="${data.redirect_url}" style="color: #43a047; font-weight: 600; text-decoration: underline; margin-top: 8px; display: inline-block;">
-                            Vai al Login →
-                        </a>
-                    `;
+                    errorText.textContent = '❌ ' + (data.message || data.error || regMsg.errore);
+                    const link = document.createElement('a');
+                    const dest = (typeof data.redirect_url === 'string' && data.redirect_url.startsWith('/') && !data.redirect_url.startsWith('//'))
+                        ? data.redirect_url : '/login';
+                    link.href = dest;
+                    link.textContent = regMsg.vaiLogin;
+                    link.style.cssText = 'color:#43a047;font-weight:600;display:block;margin-top:8px;';
+                    errorText.appendChild(document.createElement('br'));
+                    errorText.appendChild(link);
                 } else {
-                    errorText.textContent = '❌ ' + (data.error || 'Errore durante la registrazione');
+                    errorText.textContent = '❌ ' + (data.error || regMsg.errore);
                 }
                 errorDiv.style.display = 'block';
             }
         } catch (error) {
             console.error('Error:', error);
-            errorText.textContent = '❌ Errore di connessione. Riprova.';
+            errorText.textContent = '❌ ' + regMsg.rete;
             errorDiv.style.display = 'block';
         }
     });
@@ -221,12 +231,12 @@
                 window.location.href = data.redirect_url || '/profile';
             } else {
                 // Codice non valido
-                errorText.textContent = '❌ ' + (data.error || 'Codice non valido');
+                errorText.textContent = '❌ ' + (data.error || regMsg.codice);
                 errorDiv.style.display = 'block';
             }
         } catch (error) {
             console.error('Error:', error);
-            errorText.textContent = '❌ Errore di connessione. Riprova.';
+            errorText.textContent = '❌ ' + regMsg.rete;
             errorDiv.style.display = 'block';
         }
     });
@@ -247,13 +257,13 @@
             const data = await response.json();
             
             if (response.ok) {
-                alert('✅ Codice inviato nuovamente! Controlla la tua email.');
+                alert('✅ ' + regMsg.inviato);
             } else {
-                alert('❌ ' + (data.error || 'Errore. Riprova.'));
+                alert('❌ ' + (data.error || regMsg.errore));
             }
         } catch (error) {
             console.error('Error:', error);
-            alert('❌ Errore di connessione. Riprova.');
+            alert('❌ ' + regMsg.rete);
         }
     });
 </script>

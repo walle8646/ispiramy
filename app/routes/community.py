@@ -15,6 +15,7 @@ from app.routes.auth import verify_token
 from app.utils_user import get_display_name, has_payment_method
 from app.utils.email import send_email
 from app.utils.ai_service import genera_tags, modera_immagine, valida_richiesta, controlla_duplicato
+from app.utils.file_immagini import tipo_immagine
 from loguru import logger
 
 router = APIRouter()
@@ -623,14 +624,6 @@ async def upload_community_image(
         if not current_user:
             return JSONResponse({"error": "Devi essere loggato"}, status_code=401)
         
-        # Verifica formato file
-        allowed_types = ["image/jpeg", "image/png", "image/webp"]
-        if file.content_type not in allowed_types:
-            return JSONResponse(
-                {"error": "Formato non supportato. Usa JPG, PNG o WebP."},
-                status_code=400
-            )
-        
         # Il limite va applicato PRIMA di tenere tutto in memoria, altrimenti
         # un upload enorme viene comunque bufferizzato per intero.
         MAX_UPLOAD = 5 * 1024 * 1024
@@ -647,7 +640,15 @@ async def upload_community_image(
                 {"error": "File troppo grande. Massimo 5MB."},
                 status_code=413
             )
-        
+
+        riconosciuto = tipo_immagine(contents)
+        if riconosciuto is None or riconosciuto[0] == "gif":
+            return JSONResponse(
+                {"error": "Formato non supportato. Usa JPG, PNG o WebP."},
+                status_code=400
+            )
+        file_extension, file_mime = riconosciuto
+
         # ========== MODERAZIONE AI ==========
         image_b64 = base64.b64encode(contents).decode("utf-8")
         moderation = await modera_immagine(image_b64, title, description)
@@ -685,7 +686,6 @@ async def upload_community_image(
             
             # Genera nome unico
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
-            file_extension = file.filename.split(".")[-1].lower() if file.filename else "jpg"
             s3_key = f"community-images/{current_user.id}_{timestamp}.{file_extension}"
             
             await asyncio.to_thread(
@@ -693,7 +693,7 @@ async def upload_community_image(
                 Bucket=s3_bucket,
                 Key=s3_key,
                 Body=contents,
-                ContentType=file.content_type,
+                ContentType=file_mime,
                 CacheControl="max-age=31536000"
             )
             
