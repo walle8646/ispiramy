@@ -259,16 +259,16 @@
 
     <!-- Search -->
     <form class="search-box" method="GET" action="/admin/bookings">
-        <input type="text" name="q" value="{{ search }}" placeholder="Cerca per email, nome o cognome dei partecipanti..." autofocus>
-        <button type="submit"><i class="fas fa-search"></i> Cerca</button>
+        <input type="text" name="q" value="{{ search }}" placeholder="{{ t('admin.cerca_prenotazioni') }}" autofocus>
+        <button type="submit"><i class="fas fa-search"></i> {{ t('admin.cerca') }}</button>
     </form>
 
     <div class="search-info">
         {% if search %}
-            {{ bookings|length }} risultati per "<strong>{{ search }}</strong>" &middot;
-            <a href="/admin/bookings" style="color: #2e7d32;">Mostra tutte</a>
+            {{ bookings|length }} {{ t('admin.risultati_per') }} "<strong>{{ search }}</strong>" &middot;
+            <a href="/admin/bookings" style="color: #2e7d32;">{{ t('admin.mostra_tutte') }}</a>
         {% else %}
-            Ultime 100 consulenze su {{ total_bookings }} totali
+            {{ t('admin.ultime_100') }} {{ total_bookings }} {{ t('admin.totali') }}
         {% endif %}
     </div>
 
@@ -299,25 +299,25 @@
 
             <!-- Status -->
             <span class="status-badge status-{{ b.status }}">
-                {% if b.status == 'completed' %}Completata
-                {% elif b.status == 'confirmed' %}Confermata
-                {% elif b.status == 'pending' %}In attesa
-                {% elif b.status == 'awaiting_acceptance' %}Da accettare
-                {% elif b.status == 'pending_payment' %}Pagamento in corso
-                {% elif b.status == 'cancelled' %}Cancellata
+                {% if b.status == 'completed' %}{{ t('admin.completata') }}
+                {% elif b.status == 'confirmed' %}{{ t('admin.confermata') }}
+                {% elif b.status == 'pending' %}{{ t('admin.in_attesa_n') }}
+                {% elif b.status == 'awaiting_acceptance' %}{{ t('admin.da_accettare') }}
+                {% elif b.status == 'pending_payment' %}{{ t('admin.pagamento_corso') }}
+                {% elif b.status == 'cancelled' %}{{ t('admin.cancellata') }}
                 {% elif b.status == 'no_show' %}No show
                 {% else %}{{ b.status }}{% endif %}
             </span>
 
             <span class="payment-badge payment-{{ b.payment_status }}">
-                {% if b.payment_status == 'paid' %}Pagato
-                {% elif b.payment_status == 'pending' %}Non pagato
-                {% elif b.payment_status == 'authorized' %}Bloccato, non incassato
-                {% elif b.payment_status == 'held' %}Incassato, in attesa di rilascio
-                {% elif b.payment_status == 'released' %}Trasferito al consulente
-                {% elif b.payment_status == 'voided' %}Blocco annullato
-                {% elif b.payment_status == 'refunded' %}Rimborsato
-                {% elif b.payment_status == 'failed' %}Fallito
+                {% if b.payment_status == 'paid' %}{{ t('admin.pagato') }}
+                {% elif b.payment_status == 'pending' %}{{ t('admin.non_pagato') }}
+                {% elif b.payment_status == 'authorized' %}{{ t('admin.bloccato') }}
+                {% elif b.payment_status == 'held' %}{{ t('admin.incassato') }}
+                {% elif b.payment_status == 'released' %}{{ t('admin.trasferito') }}
+                {% elif b.payment_status == 'voided' %}{{ t('admin.blocco_annullato') }}
+                {% elif b.payment_status == 'refunded' %}{{ t('admin.rimborsato') }}
+                {% elif b.payment_status == 'failed' %}{{ t('admin.fallito') }}
                 {% else %}{{ b.payment_status }}{% endif %}
             </span>
 
@@ -328,10 +328,10 @@
                 </div>
                 {% if b.recording_filename %}
                 <button class="download-btn" onclick="downloadRecording({{ b.id }}, this)">
-                    <i class="fas fa-download"></i> Video MP4
+                    <i class="fas fa-download"></i> {{ t('admin.video_mp4') }}
                 </button>
                 {% else %}
-                <span class="no-recording"><i class="fas fa-video-slash"></i> Nessun video</span>
+                <span class="no-recording"><i class="fas fa-video-slash"></i> {{ t('admin.nessun_video') }}</span>
                 {% endif %}
             </div>
         </div>
@@ -340,9 +340,9 @@
         {% if not bookings %}
         <div class="empty-state">
             <i class="fas fa-calendar-times"></i>
-            <h3>Nessuna consulenza trovata</h3>
+            <h3>{{ t('admin.nessuna_consulenza') }}</h3>
             {% if search %}
-            <p>Nessun risultato per "{{ search }}". Prova con un'altra ricerca.</p>
+            <p>{{ t('admin.nessun_risultato') }} "{{ search }}". {{ t('admin.altra_ricerca') }}</p>
             {% endif %}
         </div>
         {% endif %}
@@ -353,7 +353,7 @@
     async function downloadRecording(bookingId, btn) {
         btn.disabled = true;
         const originalText = btn.innerHTML;
-        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Caricamento...';
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> {{ t('comune.caricamento') }}';
 
         try {
             const resp = await fetch(`/admin/api/bookings/${bookingId}/download`);
@@ -361,10 +361,10 @@
             if (resp.ok && data.url) {
                 window.open(data.url, '_blank');
             } else {
-                alert(data.detail || 'Errore nel download');
+                alert(data.detail || {{ t('admin.download_errore')|tojson }});
             }
         } catch (e) {
-            alert('Errore di connessione');
+            alert({{ t('comune.errore_rete')|tojson }});
         }
 
         btn.disabled = false;

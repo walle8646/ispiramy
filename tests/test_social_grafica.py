@@ -164,5 +164,10 @@ def test_la_pagina_offre_i_tre_modi_di_generare():
                             "app", "templates", "admin", "social.html")
     html = io.open(percorso, encoding="utf-8").read()
     assert "generateMedia({{ c.id }}, '{{ tipo }}')" in html
-    for etichetta in ("Genera immagini", "Genera video da immagini", "Genera video completo"):
-        assert etichetta in html
+    for chiave in ("admin.genera_immagini", "admin.genera_video_slide", "admin.genera_video"):
+        assert f"t('{chiave}')" in html
+    import json
+    italiano = json.loads(io.open(os.path.join(os.path.dirname(percorso), "..", "..", "traduzioni", "it.json"), encoding="utf-8").read())
+    assert italiano["admin.genera_immagini"] == "Genera immagini"
+    assert italiano["admin.genera_video_slide"] == "Genera video da immagini"
+    assert italiano["admin.genera_video"] == "Genera video completo"

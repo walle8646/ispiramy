@@ -187,9 +187,9 @@
             <div class="stat-card-title"><i class="fas fa-users"></i> {{ t('admin.utenti_registrati') }}</div>
             <div class="stat-card-value">{{ stats.users.total }}</div>
             <div class="stat-card-detail">
-                <span>+{{ stats.users.new_7d }}</span> ultimi 7gg &middot;
-                <span>+{{ stats.users.new_30d }}</span> ultimi 30gg &middot;
-                {{ stats.users.verified }} verificati
+                <span>+{{ stats.users.new_7d }}</span> {{ t('admin.ultimi_7') }} &middot;
+                <span>+{{ stats.users.new_30d }}</span> {{ t('admin.ultimi_30') }} &middot;
+                {{ stats.users.verified }} {{ t('admin.verificati_n') }}
             </div>
         </div>
 
@@ -197,31 +197,31 @@
             <div class="stat-card-title"><i class="fas fa-calendar-check"></i> {{ t('admin.consulenze') }}</div>
             <div class="stat-card-value">{{ stats.bookings.total }}</div>
             <div class="stat-card-detail">
-                <span>+{{ stats.bookings.last_7d }}</span> ultimi 7gg &middot;
-                <span>+{{ stats.bookings.last_30d }}</span> ultimi 30gg
+                <span>+{{ stats.bookings.last_7d }}</span> {{ t('admin.ultimi_7') }} &middot;
+                <span>+{{ stats.bookings.last_30d }}</span> {{ t('admin.ultimi_30') }}
             </div>
             <div class="sub-stats" style="margin-top: 8px;">
-                <span class="sub-stat"><i class="fas fa-circle" style="color: #43a047;"></i> {{ stats.bookings.completed }} completate</span>
-                <span class="sub-stat"><i class="fas fa-circle" style="color: #ff9800;"></i> {{ stats.bookings.confirmed }} confermate</span>
-                <span class="sub-stat"><i class="fas fa-circle" style="color: #2196f3;"></i> {{ stats.bookings.pending }} in attesa</span>
-                <span class="sub-stat"><i class="fas fa-circle" style="color: #e74c3c;"></i> {{ stats.bookings.cancelled }} cancellate</span>
+                <span class="sub-stat"><i class="fas fa-circle" style="color: #43a047;"></i> {{ stats.bookings.completed }} {{ t('admin.completate') }}</span>
+                <span class="sub-stat"><i class="fas fa-circle" style="color: #ff9800;"></i> {{ stats.bookings.confirmed }} {{ t('admin.confermate') }}</span>
+                <span class="sub-stat"><i class="fas fa-circle" style="color: #2196f3;"></i> {{ stats.bookings.pending }} {{ t('admin.in_attesa_n') }}</span>
+                <span class="sub-stat"><i class="fas fa-circle" style="color: #e74c3c;"></i> {{ stats.bookings.cancelled }} {{ t('admin.cancellate') }}</span>
             </div>
         </div>
 
         <div class="stat-card orange">
-            <div class="stat-card-title"><i class="fas fa-euro-sign"></i> Fatturato</div>
+            <div class="stat-card-title"><i class="fas fa-euro-sign"></i> {{ t('admin.fatturato') }}</div>
             <div class="stat-card-value">&euro;{{ "%.2f"|format(stats.revenue.total) }}</div>
             <div class="stat-card-detail">
-                <span>&euro;{{ "%.2f"|format(stats.revenue.last_30d) }}</span> ultimi 30gg &middot;
-                {{ stats.revenue.paid_count }} pagamenti
+                <span>&euro;{{ "%.2f"|format(stats.revenue.last_30d) }}</span> {{ t('admin.ultimi_30') }} &middot;
+                {{ stats.revenue.paid_count }} {{ t('admin.pagamenti_n') }}
             </div>
         </div>
 
         <div class="stat-card purple">
-            <div class="stat-card-title"><i class="fas fa-star"></i> Recensioni</div>
+            <div class="stat-card-title"><i class="fas fa-star"></i> {{ t('admin.recensioni') }}</div>
             <div class="stat-card-value">{{ stats.reviews.total }}</div>
             <div class="stat-card-detail">
-                Media: <span>{{ stats.reviews.avg_rating }}/5</span>
+                {{ t('admin.media') }} <span>{{ stats.reviews.avg_rating }}/5</span>
             </div>
         </div>
 
@@ -230,18 +230,18 @@
             <div class="stat-card-value">{{ stats.disputes.total }}</div>
             <div class="stat-card-detail">
                 {% if stats.disputes.open > 0 %}
-                <span style="color: #e74c3c;">{{ stats.disputes.open }} aperte</span> &middot;
+                <span style="color: #e74c3c;">{{ stats.disputes.open }} {{ t('admin.aperte_n') }}</span> &middot;
                 {% endif %}
-                {{ stats.disputes.in_review }} in revisione &middot;
-                {{ stats.disputes.resolved }} risolte
+                {{ stats.disputes.in_review }} {{ t('admin.revisione_n') }} &middot;
+                {{ stats.disputes.resolved }} {{ t('admin.risolte_n') }}
             </div>
         </div>
 
         <div class="stat-card teal">
-            <div class="stat-card-title"><i class="fas fa-comments"></i> Community</div>
+            <div class="stat-card-title"><i class="fas fa-comments"></i> {{ t('admin.community') }}</div>
             <div class="stat-card-value">{{ stats.community.total_questions }}</div>
             <div class="stat-card-detail">
-                <span>+{{ stats.community.last_30d }}</span> ultimi 30gg
+                <span>+{{ stats.community.last_30d }}</span> {{ t('admin.ultimi_30') }}
             </div>
         </div>
     </div>
@@ -249,13 +249,13 @@
     <!-- DUE COLONNE: Ultimi utenti + Ultime contestazioni -->
     <div class="two-columns">
         <div class="admin-section">
-            <h2><i class="fas fa-user-plus"></i> Ultimi utenti registrati</h2>
+            <h2><i class="fas fa-user-plus"></i> {{ t('admin.ultimi_utenti') }}</h2>
             <table class="admin-table">
                 <thead>
                     <tr>
-                        <th>Nome</th>
-                        <th>Email</th>
-                        <th>Data</th>
+                        <th>{{ t('admin.nome') }}</th>
+                        <th>{{ t('admin.email') }}</th>
+                        <th>{{ t('admin.data') }}</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -267,21 +267,21 @@
                     </tr>
                     {% endfor %}
                     {% if not recent_users %}
-                    <tr><td colspan="3" style="text-align:center;color:#999;">Nessun utente</td></tr>
+                    <tr><td colspan="3" style="text-align:center;color:#999;">{{ t('admin.nessun_utente') }}</td></tr>
                     {% endif %}
                 </tbody>
             </table>
         </div>
 
         <div class="admin-section">
-            <h2><i class="fas fa-exclamation-triangle"></i> Ultime contestazioni</h2>
+            <h2><i class="fas fa-exclamation-triangle"></i> {{ t('admin.ultime') }}</h2>
             <table class="admin-table">
                 <thead>
                     <tr>
                         <th>ID</th>
-                        <th>Cliente</th>
-                        <th>Stato</th>
-                        <th>Data</th>
+                        <th>{{ t('admin.cliente') }}</th>
+                        <th>{{ t('admin.stato') }}</th>
+                        <th>{{ t('admin.data') }}</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -291,10 +291,10 @@
                         <td>{{ d.client_name }}</td>
                         <td>
                             <span class="badge badge-{{ d.status }}">
-                                {% if d.status == 'open' %}Aperta
-                                {% elif d.status == 'in_review' %}In revisione
-                                {% elif d.status == 'resolved' %}Risolta
-                                {% elif d.status == 'rejected' %}Rifiutata
+                                {% if d.status == 'open' %}{{ t('admin.aperta') }}
+                                {% elif d.status == 'in_review' %}{{ t('admin.in_revisione') }}
+                                {% elif d.status == 'resolved' %}{{ t('admin.risolta') }}
+                                {% elif d.status == 'rejected' %}{{ t('admin.rifiutata') }}
                                 {% endif %}
                             </span>
                         </td>
@@ -302,14 +302,14 @@
                     </tr>
                     {% endfor %}
                     {% if not recent_disputes %}
-                    <tr><td colspan="4" style="text-align:center;color:#999;">Nessuna contestazione</td></tr>
+                    <tr><td colspan="4" style="text-align:center;color:#999;">{{ t('admin.nessuna_contestazione') }}</td></tr>
                     {% endif %}
                 </tbody>
             </table>
             {% if recent_disputes %}
             <div style="text-align: right; margin-top: 12px;">
                 <a href="/admin/disputes" style="color: #2e7d32; font-weight: 500; text-decoration: none;">
-                    Vedi tutte <i class="fas fa-arrow-right"></i>
+                    {{ t('admin.vedi_tutte') }} <i class="fas fa-arrow-right"></i>
                 </a>
             </div>
             {% endif %}

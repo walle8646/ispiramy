@@ -277,7 +277,9 @@ class TestTokenDellaCall:
     def test_la_pagina_aspetta_invece_di_fallire(self):
         pagina = (Path(__file__).resolve().parent.parent / "app" / "templates" / "call.html").read_text(encoding="utf-8-sig")
         assert "throw new Error('Failed to get Agora token')" not in pagina
-        assert "In attesa che ${remoteUserName} entri nella chiamata" in pagina
+        assert "call.attesa_ingresso" in pagina
+        assert "remoteUserName" in pagina
+        assert "In attesa che ${remoteUserName} entri nella chiamata" not in pagina
 
 
 class TestDataDellaConsulenza:

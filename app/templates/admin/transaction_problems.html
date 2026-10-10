@@ -194,9 +194,9 @@
                 return;
             }
             const data = await resp.json().catch(() => ({}));
-            msg.textContent = data.detail || 'Errore';
+            msg.textContent = data.detail || {{ t('comune.errore')|tojson }};
         } catch (e) {
-            msg.textContent = 'Errore di connessione';
+            msg.textContent = {{ t('comune.errore_rete')|tojson }};
         }
         btn.disabled = false;
     }
@@ -217,9 +217,9 @@
                 window.location.reload();
                 return;
             }
-            msg.textContent = data.detail || 'Errore';
+            msg.textContent = data.detail || {{ t('comune.errore')|tojson }};
         } catch (e) {
-            msg.textContent = 'Errore di connessione';
+            msg.textContent = {{ t('comune.errore_rete')|tojson }};
         }
         btn.disabled = false;
     }

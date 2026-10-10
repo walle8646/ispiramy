@@ -31,6 +31,7 @@ from app.utils.notification_email import NOTA_BLOCCO_ANNULLATO, NOTA_RIMBORSO
 DEBUG_MODE = os.getenv("DEBUG", "false").lower() == "true"
 from app.utils.notification_service import send_notification
 from app.utils.rate_limit import enforce_rate_limit
+from app.utils.lingue_ui import lingua_di, traduci
 
 router = APIRouter()
 
@@ -1296,12 +1297,15 @@ async def call_page(booking_id: int, request: Request):
             full = f"{nome} {cognome}".strip()
             return full if full else fallback
         
+        lingua = lingua_di(request)
+        tu = traduci("call.tu", lingua)
+        partecipante = traduci("call.partecipante", lingua)
         if current_user.id == booking.client_user_id:
-            local_user_name = get_full_name(client_user, "Tu")
-            remote_user_name = get_full_name(consultant_user, "Partecipante")
+            local_user_name = get_full_name(client_user, tu)
+            remote_user_name = get_full_name(consultant_user, partecipante)
         else:
-            local_user_name = get_full_name(consultant_user, "Tu")
-            remote_user_name = get_full_name(client_user, "Partecipante")
+            local_user_name = get_full_name(consultant_user, tu)
+            remote_user_name = get_full_name(client_user, partecipante)
         
         return request.app.state.templates.TemplateResponse("call.html", {
             "request": request,

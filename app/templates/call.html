@@ -1503,7 +1503,7 @@
 <div class="call-container">
     <!-- Call Timer -->
     <div class="call-timer" id="callTimer">
-        <div class="call-timer-label">Durata chiamata</div>
+        <div class="call-timer-label">{{ t('call.durata') }}</div>
         <div class="call-timer-time" id="timerDisplay">0:00</div>
     </div>
     
@@ -1522,10 +1522,10 @@
             <p id="loadingErrorText" style="font-size:1rem; line-height:1.55; margin-bottom:1.25rem;"></p>
             <div style="display:flex; gap:12px; justify-content:center; flex-wrap:wrap;">
                 <button id="loadingRetryBtn" style="padding:12px 24px; border:none; border-radius:8px; font-weight:600; font-size:0.95rem; cursor:pointer; background:#2e7d32; color:#fff;">
-                    <i class="fas fa-redo"></i> Riprova
+                    <i class="fas fa-redo"></i> {{ t('call.riprova') }}
                 </button>
                 <button id="loadingExitBtn" style="padding:12px 24px; border:2px solid rgba(255,255,255,0.35); border-radius:8px; font-weight:600; font-size:0.95rem; cursor:pointer; background:transparent; color:#fff;">
-                    Esci
+                    {{ t('call.esci') }}
                 </button>
             </div>
         </div>
@@ -1536,7 +1536,7 @@
         <!-- Local Video -->
         <div class="video-player" id="localPlayer">
             <div class="video-label" id="localLabel">{{ (user.nome or '') ~ ' ' ~ (user.cognome or '') }}</div>
-            <button class="zoom-btn" id="zoomLocalBtn" title="Ingrandisci">
+            <button class="zoom-btn" id="zoomLocalBtn" title="{{ t('call.ingrandisci') }}">
                 <i class="fas fa-search-plus"></i>
             </button>
             <div class="video-placeholder">
@@ -1547,8 +1547,8 @@
         
         <!-- Remote Video (appears when other user joins) -->
         <div class="video-player" id="remotePlayer" style="display: none;">
-            <div class="video-label" id="remoteLabel">{{ remote_user_name|default('In attesa...', true) }}</div>
-            <button class="zoom-btn" id="zoomRemoteBtn" title="Ingrandisci">
+            <div class="video-label" id="remoteLabel">{{ remote_user_name|default(t('call.in_attesa'), true) }}</div>
+            <button class="zoom-btn" id="zoomRemoteBtn" title="{{ t('call.ingrandisci') }}">
                 <i class="fas fa-search-plus"></i>
             </button>
             <div class="video-placeholder">
@@ -1565,20 +1565,20 @@
             <span class="call-logo-text">Ispiramy</span>
         </div>
 
-        <button class="control-btn mic active" id="micBtn" title="Microfono">
+        <button class="control-btn mic active" id="micBtn" title="{{ t('call.microfono') }}">
             <i class="fas fa-microphone"></i>
         </button>
         
-        <button class="control-btn camera active" id="cameraBtn" title="Videocamera">
+        <button class="control-btn camera active" id="cameraBtn" title="{{ t('call.videocamera') }}">
             <i class="fas fa-video"></i>
         </button>
         
-        <button class="control-btn screen-share" id="screenShareBtn" title="Condividi schermo">
+        <button class="control-btn screen-share" id="screenShareBtn" title="{{ t('call.condividi') }}">
             <i class="fas fa-desktop"></i>
         </button>
 
         <div class="bg-effect-wrap" id="bgEffectWrap">
-            <button class="control-btn bg-effect" id="bgEffectBtn" title="Effetti sfondo"
+            <button class="control-btn bg-effect" id="bgEffectBtn" title="{{ t('call.effetti') }}"
                     aria-haspopup="true" aria-expanded="false">
                 <i class="fas fa-image"></i>
             </button>
@@ -1586,7 +1586,7 @@
             <!-- Pannello effetti sfondo: si apre sopra la barra, sempre
                  raggiungibile, senza finestre da trascinare e senza "pausa". -->
             <div class="bg-panel" id="bgPanel">
-                <div class="bg-panel-title">Effetti sfondo</div>
+                <div class="bg-panel-title">{{ t('call.effetti') }}</div>
                 <button type="button" class="bg-option" data-bg="none">
                     <i class="fas fa-ban"></i>
                     <span>{{ t('call.nessuno') }}</span>
@@ -1623,12 +1623,12 @@
             <span id="timerDisplayInline">0:00</span>
         </div>
         
-        <button class="control-btn end-call" id="endCallBtn" title="Termina chiamata">
+        <button class="control-btn end-call" id="endCallBtn" title="{{ t('call.termina') }}">
             <i class="fas fa-phone-slash"></i>
         </button>
         
         <!-- Chat toggle nella barra comandi -->
-        <button class="control-btn chat-toggle-ctrl" id="chatToggleBtn" title="Chat" style="background: #4a5568; position: relative;">
+        <button class="control-btn chat-toggle-ctrl" id="chatToggleBtn" title="{{ t('call.chat') }}" style="background: #4a5568; position: relative;">
             <i class="fas fa-comments"></i>
             <div class="chat-badge" id="chatBadge" style="display: none;">0</div>
         </button>
@@ -1646,14 +1646,14 @@
             <i class="fas fa-comments"></i>
             <span>{{ t('call.chat') }}</span>
         </div>
-        <button class="chat-toggle-btn" id="chatCloseBtn" title="Chiudi chat">
+        <button class="chat-toggle-btn" id="chatCloseBtn" title="{{ t('call.chiudi_chat') }}">
             <i class="fas fa-times"></i>
         </button>
     </div>
     
     <div class="chat-messages" id="chatMessages">
         <div style="color: #718096; font-size: 0.85rem; text-align: center; margin: auto; padding: 10px;">
-            Nessun messaggio ancora
+            {{ t('call.nessun_messaggio') }}
         </div>
     </div>
     
@@ -1662,7 +1662,7 @@
             type="text" 
             class="chat-input" 
             id="chatInput" 
-            placeholder="Scrivi un messaggio..." 
+            placeholder="{{ t('call.scrivi') }}" 
             autocomplete="off"
         />
         
@@ -1676,12 +1676,12 @@
         />
         
         <!-- Pulsante Allegati -->
-        <button class="chat-attach-btn" id="chatAttachBtn" title="Allega file">
+        <button class="chat-attach-btn" id="chatAttachBtn" title="{{ t('call.allega') }}">
             <i class="fas fa-paperclip"></i>
         </button>
         
         <!-- Pulsante Invia -->
-        <button class="chat-send-btn" id="chatSendBtn" title="Invia">
+        <button class="chat-send-btn" id="chatSendBtn" title="{{ t('call.invia') }}">
             <i class="fas fa-paper-plane"></i>
         </button>
     </div>
@@ -1699,10 +1699,10 @@
 <div class="attachment-viewer" id="attachmentViewer" hidden role="dialog" aria-modal="true" aria-labelledby="attachmentViewerName">
     <div class="attachment-viewer-bar">
         <span class="attachment-viewer-name" id="attachmentViewerName"></span>
-        <a id="attachmentViewerNewTab" target="_blank" rel="noopener noreferrer" title="Apri in una nuova scheda">
+        <a id="attachmentViewerNewTab" target="_blank" rel="noopener noreferrer" title="{{ t('call.nuova_scheda') }}">
             <i class="fas fa-external-link-alt"></i><span class="viewer-label">{{ t('call.nuova_scheda') }}</span>
         </a>
-        <a id="attachmentViewerDownload" target="_blank" rel="noopener noreferrer" title="Scarica">
+        <a id="attachmentViewerDownload" target="_blank" rel="noopener noreferrer" title="{{ t('call.scarica') }}">
             <i class="fas fa-download"></i><span class="viewer-label">{{ t('call.scarica') }}</span>
         </a>
         <button type="button" id="attachmentViewerClose" title="{{ t('comune.chiudi') }}">
@@ -1755,29 +1755,29 @@
 
         <div class="review-comment">
             <label style="display:block;font-weight:600;margin-bottom:8px;color:#333;font-size:0.95rem;">{{ t('recensione.commento') }}</label>
-            <textarea id="reviewComment" placeholder="Racconta la tua esperienza..." maxlength="2000"></textarea>
+            <textarea id="reviewComment" placeholder="{{ t('recensione.commento_ph') }}" maxlength="2000"></textarea>
         </div>
 
         <div class="review-actions">
             <button class="review-btn-submit" id="reviewSubmitBtn" onclick="submitReview()">{{ t('recensione.invia') }}</button>
             <button class="review-btn-email" id="reviewEmailBtn" onclick="sendReviewEmail()">📧 {{ t('recensione.email_dopo') }}</button>
             {% if booking.recording_requested %}
-            <button class="review-btn-dispute" onclick="toggleDisputeForm()">⚠️ Apri una contestazione</button>
+            <button class="review-btn-dispute" onclick="toggleDisputeForm()">⚠️ {{ t('recensione.apri') }}</button>
             {% else %}
             <p style="font-size:0.82rem;color:#999;margin-top:8px;text-align:center;">
-                <i class="fas fa-info-circle"></i> La contestazione non è disponibile perché hai scelto di non registrare la consulenza.
+                <i class="fas fa-info-circle"></i> {{ t('call.non_disponibile') }}
             </p>
             {% endif %}
         </div>
 
         <!-- Form contestazione (nascosto) -->
         <div class="dispute-form-container" id="disputeFormContainer">
-            <h3>⚠️ Apri una contestazione</h3>
-            <p>Descrivi qual era l'obiettivo della consulenza e cosa non ha funzionato. Fornisci più dettagli possibile per aiutarci a valutare la situazione.</p>
-            <textarea id="disputeDescription" placeholder="Es: Ho richiesto la consulenza per risolvere un problema di... ma il consulente non ha affrontato il tema, oppure le informazioni fornite erano errate perché..." maxlength="5000" oninput="updateDisputeCharCount()"></textarea>
+            <h3>⚠️ {{ t('recensione.apri') }}</h3>
+            <p>{{ t('call.contestazione_testo') }}</p>
+            <textarea id="disputeDescription" placeholder="{{ t('call.contestazione_ph') }}" maxlength="5000" oninput="updateDisputeCharCount()"></textarea>
             <div class="dispute-char-count"><span id="disputeCharCount">0</span>/5000</div>
-            <button class="dispute-btn-submit" id="disputeSubmitBtn" onclick="submitDispute()">Invia contestazione</button>
-            <button class="dispute-btn-cancel" onclick="toggleDisputeForm()">Annulla</button>
+            <button class="dispute-btn-submit" id="disputeSubmitBtn" onclick="submitDispute()">{{ t('recensione.invia_contestazione') }}</button>
+            <button class="dispute-btn-cancel" onclick="toggleDisputeForm()">{{ t('comune.annulla') }}</button>
         </div>
 
         <div id="reviewMsg" class="review-msg" style="display:none;"></div>
@@ -1793,6 +1793,106 @@
 <script src="https://cdn.jsdelivr.net/npm/agora-extension-virtual-background@2.1.0/agora-extension-virtual-background.js"></script>
 
 <script>
+    const C = {
+        fileGrande: {{ t('call.file_grande')|tojson }},
+        tempoFinito: {{ t('call.tempo_finito')|tojson }},
+        mancano5: {{ t('call.mancano_5')|tojson }},
+        manca1: {{ t('call.manca_1')|tojson }},
+        init: {{ t('call.init')|tojson }},
+        impossibile: {{ t('call.impossibile')|tojson }},
+        connesso: {{ t('call.connesso')|tojson }},
+        erroreRete: {{ t('comune.errore_rete')|tojson }},
+        timeout: {{ t('call.timeout')|tojson }},
+        timeoutTesto: {{ t('call.timeout_testo')|tojson }},
+        fase: {{ t('call.fase')|tojson }},
+        browserApp: {{ t('call.browser_app')|tojson }},
+        apriSafari: {{ t('call.apri_safari')|tojson }},
+        perPartecipare: {{ t('call.per_partecipare')|tojson }},
+        https: {{ t('call.https')|tojson }},
+        apriHttps: {{ t('call.apri_https')|tojson }},
+        browserNo: {{ t('call.browser_no')|tojson }},
+        usaSafari: {{ t('call.usa_safari')|tojson }},
+        permesso: {{ t('call.permesso')|tojson }},
+        iphonePermesso: {{ t('call.iphone_permesso')|tojson }},
+        lucchetto: {{ t('call.lucchetto')|tojson }},
+        nienteDevice: {{ t('call.niente_device')|tojson }},
+        occupato: {{ t('call.occupato')|tojson }},
+        chiudiApp: {{ t('call.chiudi_app')|tojson }},
+        qualita: {{ t('call.qualita')|tojson }},
+        attesaIngresso: {{ t('call.attesa_ingresso')|tojson }},
+        consenti: {{ t('call.consenti')|tojson }},
+        verifica: {{ t('call.verifica')|tojson }},
+        sala: {{ t('call.sala')|tojson }},
+        alServer: {{ t('call.al_server')|tojson }},
+        avvioAv: {{ t('call.avvio_av')|tojson }},
+        scaduta: {{ t('call.scaduta')|tojson }},
+        scadutaBreve: {{ t('call.scaduta_breve')|tojson }},
+        audio: {{ t('call.audio')|tojson }},
+        schermo: {{ t('call.schermo')|tojson }},
+        terminaSicuro: {{ t('call.termina_sicuro')|tojson }},
+        voto: {{ t('call.voto')|tojson }},
+        invio: {{ t('recensione.invio')|tojson }},
+        grazie: {{ t('call.grazie_stella')|tojson }},
+        erroreInvio: {{ t('recensione.errore')|tojson }},
+        inviaRecensione: {{ t('recensione.invia')|tojson }},
+        invioEmail: {{ t('call.invio_email')|tojson }},
+        emailOk: {{ t('call.email_ok')|tojson }},
+        emailDopo: {{ t('recensione.email_dopo')|tojson }},
+        errore: {{ t('comune.errore')|tojson }},
+        minimo: {{ t('recensione.minimo')|tojson }},
+        inviaContestazione: {{ t('recensione.invia_contestazione')|tojson }},
+        contestazioneOk: {{ t('recensione.contestazione_ok')|tojson }},
+        giaAperta: {{ t('call.gia_aperta')|tojson }},
+        giaApertaTesto: {{ t('call.gia_aperta_testo')|tojson }},
+        sposta: {{ t('call.sposta')|tojson }},
+        chiudiScheda: {{ t('call.chiudi_scheda')|tojson }},
+        spostata: {{ t('call.spostata')|tojson }},
+        spostataTesto: {{ t('call.spostata_testo')|tojson }},
+        rientra: {{ t('call.rientra')|tojson }},
+        clienteCollegato: {{ t('call.cliente_collegato')|tojson }},
+        tocca: {{ t('call.tocca')|tojson }},
+        entra: {{ t('call.entra')|tojson }},
+        attesaCliente: {{ t('call.attesa_cliente')|tojson }},
+        attesaClienteTesto: {{ t('call.attesa_cliente_testo')|tojson }},
+        server: {{ t('call.server')|tojson }},
+        controlla: {{ t('call.controlla')|tojson }},
+        confermaReg: {{ t('call.conferma_reg')|tojson }},
+        confermaSenza: {{ t('call.conferma_senza')|tojson }},
+        sicuroSi: {{ t('call.sicuro_si')|tojson }},
+        sicuroNo: {{ t('call.sicuro_no')|tojson }},
+        siRegistra: {{ t('call.si_registra')|tojson }},
+        siSenza: {{ t('call.si_senza')|tojson }},
+        noRegistra: {{ t('call.no_registra')|tojson }},
+        noVoglio: {{ t('call.no_voglio')|tojson }},
+        aggiornamento: {{ t('call.aggiornamento')|tojson }},
+        preferenza: {{ t('call.preferenza')|tojson }},
+        rete: {{ t('call.rete')|tojson }},
+        chiudiSicuro: {{ t('call.chiudi_sicuro')|tojson }},
+        nessunMessaggio: {{ t('call.nessun_messaggio')|tojson }},
+        rimuovi: {{ t('call.rimuovi')|tojson }},
+        invioFile: {{ t('call.invio_file')|tojson }},
+        tuaImmagine: {{ t('call.tua_immagine')|tojson }},
+        dalComputer: {{ t('call.dal_computer')|tojson }},
+        nonLetta: {{ t('call.non_letta')|tojson }},
+        effettoDettaglio: {{ t('call.effetto_dettaglio')|tojson }},
+        erroreBreve: {{ t('call.errore_breve')|tojson }},
+        verificaImg: {{ t('call.verifica_img')|tojson }},
+        nonAdatta: {{ t('call.non_adatta')|tojson }},
+        serveImmagine: {{ t('call.serve_immagine')|tojson }},
+        troppoPesante: {{ t('call.troppo_pesante')|tojson }},
+        controllo: {{ t('call.controllo')|tojson }},
+        effettoNessuno: {{ t('call.effetto_nessuno')|tojson }},
+        effettoSfoca: {{ t('call.effetto_sfoca')|tojson }},
+        effettoIspiramy: {{ t('call.effetto_ispiramy')|tojson }},
+        effettoTua: {{ t('call.effetto_tua')|tojson }},
+        effetti: {{ t('call.effetti')|tojson }},
+        attivazione: {{ t('call.attivazione')|tojson }},
+        effettoResta: {{ t('call.effetto_resta')|tojson }},
+        moduloLento: {{ t('call.modulo_lento')|tojson }},
+        effettiBrowser: {{ t('call.effetti_browser')|tojson }},
+        verificaHttp: {{ t('call.verifica_http')|tojson }}
+    };
+
     const bookingId = {{ booking.id }};
     const bookingDuration = {{ booking.duration_minutes }};
     const bookingDate = "{{ booking.booking_date.strftime('%Y-%m-%d') }}";
@@ -1803,7 +1903,7 @@
     // La call è già partita almeno una volta: chi rientra (ricarica, cambio
     // scheda) ha già confermato la registrazione e non va interrogato di nuovo.
     const callGiaAvviata = {{ 'true' if booking.call_started_at else 'false' }};
-    let remoteUserName = "{{ remote_user_name|default('Partecipante', true) }}";
+    let remoteUserName = {{ remote_user_name|default(t('call.partecipante'), true)|tojson }};
     
     let client = null;
     let localTracks = {
@@ -1928,8 +2028,8 @@
             try { if (vbProcessor && vbProcessor.release) vbProcessor.release(); } catch (err) { /* ignora */ }
             vbProcessor = null;
             vbUnavailableReason = /^TIMEOUT:/.test((e && e.message) || '')
-                ? 'Caricamento del modulo effetti troppo lento: riprova con una connessione migliore.'
-                : 'Effetti sfondo non attivabili su questo browser (' + ((e && e.message) || 'errore') + ').';
+                ? C.moduloLento
+                : C.effettiBrowser.replace('{dettaglio}', (e && e.message) || C.erroreBreve);
             return false;
         }
     }
@@ -1982,25 +2082,25 @@
             }, 30000);
             const esito = await risposta.json().catch(() => ({}));
             if (!risposta.ok) {
-                return { ok: false, motivo: esito.detail || esito.error || `verifica non riuscita (${risposta.status}).` };
+                return { ok: false, motivo: esito.detail || esito.error || C.verificaHttp.replace('{codice}', risposta.status) };
             }
             return esito.approved
                 ? { ok: true }
-                : { ok: false, motivo: esito.reason || 'Immagine non adatta a una consulenza.' };
+                : { ok: false, motivo: esito.reason || C.nonAdatta };
         } catch (e) {
-            return { ok: false, motivo: 'Non è stato possibile verificare l\'immagine: controlla la connessione e riprova.' };
+            return { ok: false, motivo: C.verificaImg };
         }
     }
 
     async function impostaImmagineUtente(file) {
         if (!file) return false;
         if (!/^image\//.test(file.type)) {
-            vbUnavailableReason = 'Serve un file immagine (JPG, PNG o WEBP).';
+            vbUnavailableReason = C.serveImmagine;
             updateBgUi();
             return false;
         }
         if (file.size > VB_PESO_MASSIMO) {
-            vbUnavailableReason = 'Immagine troppo pesante: massimo 10 MB.';
+            vbUnavailableReason = C.troppoPesante;
             updateBgUi();
             return false;
         }
@@ -2009,7 +2109,7 @@
             const ridotta = immagineRidotta(originale);
             URL.revokeObjectURL(originale.src);
 
-            vbUnavailableReason = 'Controllo dell\'immagine in corso...';
+            vbUnavailableReason = C.controllo;
             updateBgUi();
             const verifica = await sfondoApprovato(ridotta);
             if (!verifica.ok) {
@@ -2029,7 +2129,7 @@
             return true;
         } catch (e) {
             console.error('❌ Immagine di sfondo non caricata:', e);
-            vbUnavailableReason = 'Non è stato possibile leggere questa immagine.';
+            vbUnavailableReason = C.nonLetta;
             updateBgUi();
             return false;
         }
@@ -2048,7 +2148,7 @@
         // FontAwesome impone display:inline-block, che vince sull'attributo
         // hidden: l'icona va nascosta con lo stile.
         if (icona) icona.style.display = presente ? 'none' : '';
-        if (etichetta) etichetta.textContent = presente ? 'La tua immagine' : 'Immagine dal computer';
+        if (etichetta) etichetta.textContent = presente ? C.tuaImmagine : C.dalComputer;
         if (cambia) cambia.hidden = !presente;
     }
 
@@ -2111,7 +2211,7 @@
             return true;
         } catch (e) {
             console.error('❌ Errore applyBackground:', e);
-            vbUnavailableReason = 'Non è stato possibile applicare l\'effetto (' + ((e && e.message) || 'errore') + ').';
+            vbUnavailableReason = C.effettoDettaglio.replace('{dettaglio}', (e && e.message) || C.erroreBreve);
             updateBgUi();
             return false;
         }
@@ -2125,12 +2225,12 @@
         if (btn) {
             btn.classList.toggle('active', currentBackground !== 'none');
             const titles = {
-                none: 'Effetti sfondo: nessuno',
-                blur: 'Effetti sfondo: sfocatura',
-                img: 'Effetti sfondo: sfondo Ispiramy',
-                custom: 'Effetti sfondo: la tua immagine'
+                none: C.effettoNessuno,
+                blur: C.effettoSfoca,
+                img: C.effettoIspiramy,
+                custom: C.effettoTua
             };
-            btn.title = titles[currentBackground] || 'Effetti sfondo';
+            btn.title = titles[currentBackground] || C.effetti;
         }
         if (panel) {
             panel.querySelectorAll('.bg-option').forEach(opt => {
@@ -2140,11 +2240,11 @@
         }
         if (hint) {
             if (vbBusy) {
-                hint.textContent = 'Attivazione in corso... al primo utilizzo servono qualche secondo per scaricare il modulo.';
+                hint.textContent = C.attivazione;
             } else if (vbUnavailableReason) {
                 hint.textContent = vbUnavailableReason;
             } else {
-                hint.textContent = 'L\'effetto resta attivo anche se spegni e riaccendi la videocamera.';
+                hint.textContent = C.effettoResta;
             }
         }
     }
@@ -2326,7 +2426,7 @@
                     <span class="attachment-item-name" title="${file.name}">${file.name}</span>
                     <span class="attachment-item-size">${formatFileSize(file.size)}</span>
                 </div>
-                <button class="attachment-item-remove" onclick="removeAttachment(${idx})" title="Rimuovi">
+                <button class="attachment-item-remove" onclick="removeAttachment(${idx})" title="${C.rimuovi}">
                     <i class="fas fa-times"></i>
                 </button>
             </div>
@@ -2377,7 +2477,7 @@
         
         files.forEach(file => {
             if (file.size > maxFileSize) {
-                alert(`File ${file.name} è troppo grande (max 50MB)`);
+                alert('File ' + file.name + ' ' + C.fileGrande);
                 return;
             }
             
@@ -2495,7 +2595,7 @@
                 fetch(`/api/booking/${bookingId}/call-end`, { method: 'POST' })
                     .catch(err => console.error('Errore notifica end call:', err));
 
-                alert('Il tempo della consulenza è terminato. La chiamata verrà chiusa.');
+                alert(C.tempoFinito);
                 isLeavingCall = true;  // Disabilita popup beforeunload
                 leaveCall().then(() => {
                     afterCallEnd();
@@ -2508,12 +2608,12 @@
 
             // Avviso quando mancano 5 minuti
             if (remainingSeconds === 300) {
-                alert('⏰ Attenzione: mancano 5 minuti alla fine della consulenza');
+                alert('⏰ ' + C.mancano5);
             }
 
             // Avviso quando manca 1 minuto
             if (remainingSeconds === 60) {
-                alert('⏰ Attenzione: manca 1 minuto alla fine della consulenza');
+                alert('⏰ ' + C.manca1);
             }
 
             // Cambia colore quando mancano 3 minuti (rosso lampeggiante).
@@ -2555,8 +2655,8 @@
             const spinner = document.getElementById('loadingSpinner');
             const title = document.getElementById('loadingTitle');
             if (spinner) spinner.style.display = '';
-            if (title) title.textContent = 'Inizializzazione chiamata...';
-            updateStatus('connected', 'Connesso');
+            if (title) title.textContent = C.init;
+            updateStatus('connected', C.connesso);
         }
         if (loadingOverlay) loadingOverlay.style.display = 'none';
     }
@@ -2570,12 +2670,12 @@
         const box = document.getElementById('loadingError');
         const txt = document.getElementById('loadingErrorText');
         if (spinner) spinner.style.display = 'none';
-        if (title) title.textContent = 'Impossibile avviare la chiamata';
+        if (title) title.textContent = C.impossibile;
         if (step) step.style.display = 'none';
         if (txt) txt.innerHTML = message;
         if (box) box.style.display = 'block';
         if (loadingOverlay) loadingOverlay.style.display = 'flex';
-        updateStatus('disconnected', 'Errore di connessione');
+        updateStatus('disconnected', C.erroreRete);
     }
 
     // Watchdog "per passo": ogni volta che l'inizializzazione avanza il timer
@@ -2586,11 +2686,7 @@
         clearInitWatchdog();
         initWatchdog = setTimeout(() => {
             if (loadingOverlay && loadingOverlay.style.display !== 'none') {
-                showLoadingError(
-                    'La connessione sta impiegando troppo tempo.<br><br>' +
-                    'Controlla la connessione a internet e riprova. Se sei sotto rete mobile, ' +
-                    'prova a passare al Wi-Fi o a disattivare eventuali VPN.'
-                );
+                showLoadingError(C.timeout + '<br><br>' + C.timeoutTesto);
             }
         }, ms);
     }
@@ -2620,18 +2716,13 @@
     // è che il browser non può proprio accedere a microfono/videocamera.
     function preflightMediaCheck() {
         if (IS_INAPP_BROWSER) {
-            return 'Stai usando il browser interno di un\'altra app (Instagram, Facebook, LinkedIn...), ' +
-                   'che non permette di accedere a microfono e videocamera.<br><br>' +
-                   '<strong>Apri questo link in Safari o Chrome</strong> per partecipare alla consulenza.';
+            return C.browserApp + '<br><br><strong>' + C.apriSafari + '</strong> ' + C.perPartecipare;
         }
         if (!window.isSecureContext) {
-            return 'La pagina non è servita su una connessione sicura (HTTPS): il browser blocca ' +
-                   'l\'accesso a microfono e videocamera.<br><br>Apri il sito con l\'indirizzo <strong>https://</strong>.';
+            return C.https + '<br><br>' + C.apriHttps + ' <strong>https://</strong>.';
         }
         if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-            return 'Questo browser non supporta le videochiamate.<br><br>' +
-                   'Su iPhone/iPad usa <strong>Safari</strong>, su Android usa <strong>Chrome</strong>, ' +
-                   'entrambi aggiornati all\'ultima versione.';
+            return C.browserNo + '<br><br>' + C.usaSafari;
         }
         // NB: NON usiamo AgoraRTC.checkSystemRequirements() come blocco: è
         // deprecata e dà falsi negativi. Se il browser non va, lo scopriamo dal
@@ -2644,30 +2735,22 @@
         const name = ((error && error.name) || '') + ' ' + ((error && error.code) || '');
         const msg = (error && error.message) || '';
         if (/NotAllowedError|PERMISSION_DENIED|Permission denied/i.test(name + msg)) {
-            return 'Hai negato l\'accesso a microfono e videocamera, oppure il browser lo ha bloccato.<br><br>' +
-                   (IS_IOS
-                       ? 'Su iPhone: <strong>Impostazioni → Safari → Fotocamera / Microfono → Chiedi o Consenti</strong>, ' +
-                         'poi ricarica la pagina.'
-                       : 'Tocca l\'icona del lucchetto accanto all\'indirizzo del sito e consenti Fotocamera e Microfono, ' +
-                         'poi riprova.');
+            return C.permesso + '<br><br>' + (IS_IOS ? C.iphonePermesso : C.lucchetto);
         }
         if (/NotFoundError|DEVICE_NOT_FOUND/i.test(name + msg)) {
-            return 'Non è stata trovata nessuna videocamera o microfono su questo dispositivo.';
+            return C.nienteDevice;
         }
         // NB: AbortError NON va qui: è anche il nome dell'errore prodotto da
         // fetchWithTimeout, e finirebbe per mostrare "videocamera occupata"
         // su un banale timeout di rete.
         if (/NotReadableError|NOT_READABLE|TrackStartError/i.test(name + msg)) {
-            return 'Microfono o videocamera risultano occupati da un\'altra app.<br><br>' +
-                   'Chiudi le altre app che usano la fotocamera (o altre schede del browser) e riprova.';
+            return C.occupato + '<br><br>' + C.chiudiApp;
         }
         if (/OverconstrainedError|ConstraintNotSatisfiedError|CONSTRAINT_NOT_SATISFIED/i.test(name + msg)) {
-            return 'La videocamera non supporta la qualità richiesta. Riprova: verrà usata una risoluzione più bassa.';
+            return C.qualita;
         }
         if (/NOT_SUPPORTED|WEB_SECURITY_RESTRICT/i.test(name + msg)) {
-            return 'Questo browser non supporta le videochiamate.<br><br>' +
-                   'Su iPhone/iPad usa <strong>Safari</strong>, su Android usa <strong>Chrome</strong>, ' +
-                   'entrambi aggiornati all\'ultima versione.';
+            return C.browserNo + '<br><br>' + C.usaSafari;
         }
         return null;
     }
@@ -2767,7 +2850,7 @@
 
             // Ripetuto a ogni giro: rimette in moto anche il watchdog, che
             // altrimenti scambierebbe l'attesa per un blocco.
-            setLoadingStep(`In attesa che ${remoteUserName} entri nella chiamata...`, 120000);
+            setLoadingStep(C.attesaIngresso.replace('{nome}', remoteUserName), 120000);
             await new Promise(r => setTimeout(r, 3000));
         }
     }
@@ -2795,13 +2878,13 @@
             // sarebbe già scaduta e getUserMedia resterebbe appesa senza mai mostrare
             // il prompt. È una delle cause dello spinner infinito su mobile.
             // Budget ampio: qui l'utente deve materialmente rispondere al prompt.
-            setLoadingStep('Consenti l\'accesso a microfono e videocamera...', 150000);
+            setLoadingStep(C.consenti, 150000);
             const tracks = await createLocalTracks();
             localTracks.audio = tracks.audio;
             localTracks.video = tracks.video;
 
             // ✅ SECONDO: Verifica che la call sia ancora attiva
-            setLoadingStep('Verifica della consulenza...');
+            setLoadingStep(C.verifica);
             console.log('📞 Verificando se la call è ancora attiva...');
             const statusResponse = await fetchWithTimeout(`/api/booking/${bookingId}/call-status`, {}, 15000);
 
@@ -2817,7 +2900,7 @@
                 // I track sono già aperti: chiudiamoli o la videocamera resta accesa
                 closeLocalTracks();
                 hideLoadingOverlay();
-                alert('Scusa, il tempo della consulenza è scaduto. Non puoi riaccedere a questa call.');
+                alert(C.scaduta);
                 afterCallEnd();
                 return;
             }
@@ -2842,7 +2925,7 @@
             }
 
             // Get Agora token from backend
-            setLoadingStep('Preparazione della sala...');
+            setLoadingStep(C.sala);
             const data = await ottieniTokenAgora();
             console.log('Agora credentials ricevute');
 
@@ -2871,13 +2954,13 @@
             AgoraRTC.onAutoplayFailed = showEnableAudioButton;
 
             // Join channel
-            setLoadingStep('Connessione al server...');
+            setLoadingStep(C.alServer);
             await withTimeout(
                 client.join(data.app_id, data.channel_name, data.token, data.uid),
                 25000,
                 'agora-join'
             );
-            updateStatus('connected', 'Connesso');
+            updateStatus('connected', C.connesso);
 
             // 📞 Marca che la call è stata avviata (in background: non deve bloccare)
             fetchWithTimeout(`/api/booking/${bookingId}/call-start`, {
@@ -2900,7 +2983,7 @@
                 .catch(e => console.error('Errore nel marcare call come avviata:', e));
 
             // I track locali sono già stati creati in testa a questa funzione.
-            setLoadingStep('Avvio audio e video...');
+            setLoadingStep(C.avvioAv);
 
             // Collega il processor Virtual Background al video track (mai bloccante)
             try {
@@ -2992,13 +3075,11 @@
                 const phase = /^TIMEOUT:/.test(error.message || '')
                     ? error.message.replace('TIMEOUT:', '')
                     : 'rete';
-                message = 'La connessione sta impiegando troppo tempo.<br><br>' +
-                          'Controlla la connessione a internet e riprova. Se sei sotto rete mobile, ' +
-                          'prova a passare al Wi-Fi o a disattivare eventuali VPN.' +
-                          '<br><span style="opacity:.6; font-size:.8rem;">(fase: ' + phase + ')</span>';
+                message = C.timeout + '<br><br>' + C.timeoutTesto +
+                          '<br><span style="opacity:.6; font-size:.8rem;">(' + C.fase + ' ' + phase + ')</span>';
             } else {
-                message = 'Si è verificato un errore durante l\'avvio della chiamata.<br><br>' +
-                          '<span style="opacity:.7; font-size:.85rem;">Dettaglio: ' +
+                message = C.erroreAvvio + '<br><br>' +
+                          '<span style="opacity:.7; font-size:.85rem;">' + C.dettaglio + ' ' +
                           escapeHtml(String(error.message || error)) + '</span>';
             }
             showLoadingError(message);
@@ -3012,7 +3093,7 @@
         if (document.getElementById('enableAudioBtn')) return;
         const btn = document.createElement('button');
         btn.id = 'enableAudioBtn';
-        btn.innerHTML = '<i class="fas fa-volume-up"></i> Tocca per attivare l\'audio';
+        btn.innerHTML = '<i class="fas fa-volume-up"></i> ' + C.audio;
         btn.style.cssText = 'position:fixed;bottom:110px;left:50%;transform:translateX(-50%);z-index:99998;' +
                             'padding:14px 22px;border:none;border-radius:30px;background:#2e7d32;color:#fff;' +
                             'font-weight:600;font-size:0.95rem;cursor:pointer;box-shadow:0 6px 20px rgba(0,0,0,.35);';
@@ -3154,7 +3235,7 @@
             
         } catch (error) {
             console.error('Errore avvio screen share:', error);
-            alert('Impossibile condividere lo schermo. Assicurati di dare i permessi necessari.');
+            alert(C.schermo);
         }
     }
     
@@ -3208,7 +3289,7 @@
     // End call
     let isLeavingCall = false;  // Flag per evitare doppio popup beforeunload
     endCallBtn.addEventListener('click', async () => {
-        if (confirm('Sei sicuro di voler terminare la chiamata?')) {
+        if (confirm(C.terminaSicuro)) {
             isLeavingCall = true;  // Disabilita il popup beforeunload
             try {
                 await leaveCall();
@@ -3311,13 +3392,13 @@
         const communication = document.querySelector('input[name="communication"]:checked');
 
         if (!helpful || !prepared || !communication) {
-            showReviewMsg('Per favore, seleziona un voto per ogni domanda.', 'error');
+            showReviewMsg(C.voto, 'error');
             return;
         }
 
         const btn = document.getElementById('reviewSubmitBtn');
         btn.disabled = true;
-        btn.textContent = 'Invio in corso...';
+        btn.textContent = C.invio;
 
         try {
             const resp = await fetch(`/api/booking/${bookingId}/review`, {
@@ -3332,24 +3413,24 @@
             });
             const data = await resp.json();
             if (resp.ok) {
-                showReviewMsg('Grazie per la tua recensione! ⭐', 'success');
+                showReviewMsg(C.grazie, 'success');
                 setTimeout(() => { window.location.href = '/profile'; }, 1500);
             } else {
-                showReviewMsg(data.detail || 'Errore nell\'invio', 'error');
+                showReviewMsg(data.detail || C.erroreInvio, 'error');
                 btn.disabled = false;
-                btn.textContent = 'Invia Recensione';
+                btn.textContent = C.inviaRecensione;
             }
         } catch (e) {
-            showReviewMsg('Errore di connessione', 'error');
+            showReviewMsg(C.erroreRete, 'error');
             btn.disabled = false;
-            btn.textContent = 'Invia Recensione';
+            btn.textContent = C.inviaRecensione;
         }
     }
 
     async function sendReviewEmail() {
         const btn = document.getElementById('reviewEmailBtn');
         btn.disabled = true;
-        btn.textContent = 'Invio email...';
+        btn.textContent = C.invioEmail;
         console.log('📧 [review] Invio richiesta email per booking', bookingId);
 
         try {
@@ -3361,18 +3442,18 @@
             const data = await resp.json();
             console.log('📧 [review] Data:', data);
             if (data.success) {
-                showReviewMsg('Email inviata! Controlla la tua casella di posta. 📧', 'success');
+                showReviewMsg(C.emailOk + ' 📧', 'success');
                 setTimeout(() => { window.location.href = '/profile'; }, 2000);
             } else {
-                showReviewMsg(data.detail || data.message || 'Errore: ' + resp.status, 'error');
+                showReviewMsg(data.detail || data.message || C.errore + ': ' + resp.status, 'error');
                 btn.disabled = false;
-                btn.textContent = '📧 Inviami un\'email per votare più tardi';
+                btn.textContent = '📧 ' + C.emailDopo;
             }
         } catch (e) {
             console.error('📧 [review] Errore:', e);
-            showReviewMsg('Errore: ' + e.message, 'error');
+            showReviewMsg(C.errore + ': ' + e.message, 'error');
             btn.disabled = false;
-            btn.textContent = '📧 Inviami un\'email per votare più tardi';
+            btn.textContent = '📧 ' + C.emailDopo;
         }
     }
 
@@ -3393,12 +3474,12 @@
     async function submitDispute() {
         const desc = document.getElementById('disputeDescription').value.trim();
         if (desc.length < 20) {
-            showReviewMsg('La descrizione deve contenere almeno 20 caratteri.', 'error');
+            showReviewMsg(C.minimo, 'error');
             return;
         }
         const btn = document.getElementById('disputeSubmitBtn');
         btn.disabled = true;
-        btn.textContent = 'Invio in corso...';
+        btn.textContent = C.invio;
         try {
             const resp = await fetch(`/api/booking/${bookingId}/dispute`, {
                 method: 'POST',
@@ -3407,18 +3488,18 @@
             });
             const data = await resp.json();
             if (resp.ok) {
-                showReviewMsg('Contestazione inviata con successo. Ti contatteremo al più presto.', 'success');
+                showReviewMsg(C.contestazioneOk, 'success');
                 document.getElementById('disputeFormContainer').style.display = 'none';
                 document.querySelector('.review-btn-dispute').style.display = 'none';
             } else {
-                showReviewMsg(data.detail || 'Errore nell\'invio', 'error');
+                showReviewMsg(data.detail || C.erroreInvio, 'error');
                 btn.disabled = false;
-                btn.textContent = 'Invia contestazione';
+                btn.textContent = C.inviaContestazione;
             }
         } catch (e) {
-            showReviewMsg('Errore di connessione', 'error');
+            showReviewMsg(C.erroreRete, 'error');
             btn.disabled = false;
-            btn.textContent = 'Invia contestazione';
+            btn.textContent = C.inviaContestazione;
         }
     }
 
@@ -3506,16 +3587,16 @@
         schermataCallAltrove({
             id: 'duplicateTabOverlay',
             icon: '🗂️',
-            title: 'Call già aperta in un\'altra scheda',
-            message: 'Stai già partecipando a questa consulenza da un\'altra scheda del browser. Puoi continuare lì oppure spostare la call in questa scheda.',
+            title: C.giaAperta,
+            message: C.giaApertaTesto,
             actions: [
-                { label: 'Sposta la call qui', primary: true, onClick: () => {
+                { label: C.sposta, primary: true, onClick: () => {
                     callChannel.postMessage({ type: 'takeover', from: CALL_TAB_ID });
                     document.getElementById('duplicateTabOverlay')?.remove();
                     // Lascia all'altra scheda il tempo di uscire dal canale
                     setTimeout(() => avviaCallInQuestaScheda({ dopoSpostamento: true }), 600);
                 } },
-                { label: 'Chiudi questa scheda', primary: false, onClick: chiudiScheda },
+                { label: C.chiudiScheda, primary: false, onClick: chiudiScheda },
             ],
         });
     }
@@ -3527,9 +3608,9 @@
         schermataCallAltrove({
             id: 'movedTabOverlay',
             icon: '↪️',
-            title: 'Call spostata in un\'altra scheda',
-            message: 'La consulenza continua nell\'altra scheda. Questa puoi chiuderla.',
-            actions: [{ label: 'Chiudi questa scheda', primary: true, onClick: chiudiScheda }],
+            title: C.spostata,
+            message: C.spostataTesto,
+            actions: [{ label: C.chiudiScheda, primary: true, onClick: chiudiScheda }],
         });
     }
 
@@ -3548,7 +3629,7 @@
             waitForClientThenStart();
         } else if (dopoSpostamento || registrazioneGiaConfermata()) {
             // Il cliente ha già risposto alla domanda sulla registrazione
-            startCallWithGesture(null, 'Rientra nella consulenza');
+            startCallWithGesture(null, C.rientra);
         } else {
             showRecordingConfirmation();
         }
@@ -3566,7 +3647,7 @@
     // a partire da un'azione dell'utente: se initializeCall parte da un timer il
     // permesso può non venire mai chiesto e la pagina resta in "inizializzazione".
     // Quindi su mobile facciamo comparire un pulsante da toccare.
-    function startCallWithGesture(overlay, titolo = 'Il cliente è collegato') {
+    function startCallWithGesture(overlay, titolo = C.clienteCollegato) {
         if (overlay) overlay.remove();
         // Idempotente: due tick di polling sovrapposti creerebbero due gate, e il
         // secondo (quello visibile) resterebbe senza listener → blocco definitivo.
@@ -3582,9 +3663,9 @@
             <div style="background:#fff;border-radius:16px;padding:32px;max-width:420px;width:90%;text-align:center;box-shadow:0 12px 40px rgba(0,0,0,.3);">
                 <div style="font-size:2.6rem;margin-bottom:12px;">📞</div>
                 <h3 style="margin:0 0 12px;font-size:1.2rem;color:#1a202c;">${titolo}</h3>
-                <p style="color:#555;font-size:0.95rem;line-height:1.5;margin:0 0 22px;">Tocca il pulsante per entrare nella consulenza e consentire l'accesso a microfono e videocamera.</p>
+                <p style="color:#555;font-size:0.95rem;line-height:1.5;margin:0 0 22px;">${C.tocca}</p>
                 <button id="joinGateBtn" style="padding:14px 30px;border:none;border-radius:8px;font-weight:600;font-size:1rem;cursor:pointer;background:#2e7d32;color:#fff;">
-                    <i class="fas fa-video"></i> Entra nella chiamata
+                    <i class="fas fa-video"></i> ${C.entra}
                 </button>
             </div>
         `;
@@ -3615,8 +3696,8 @@
         overlay.innerHTML = `
             <div style="background:#fff;border-radius:16px;padding:32px;max-width:440px;width:90%;text-align:center;box-shadow:0 12px 40px rgba(0,0,0,.3);">
                 <div style="font-size:3rem;margin-bottom:12px;"><i class="fas fa-spinner fa-spin" style="color:#2e7d32;"></i></div>
-                <h3 style="margin:0 0 12px;font-size:1.2rem;color:#1a202c;">In attesa del cliente</h3>
-                <p style="color:#555;font-size:0.95rem;line-height:1.5;margin:0 0 16px;">La chiamata inizier\u00e0 automaticamente quando il cliente si collegher\u00e0.</p>
+                <h3 style="margin:0 0 12px;font-size:1.2rem;color:#1a202c;">${C.attesaCliente}</h3>
+                <p style="color:#555;font-size:0.95rem;line-height:1.5;margin:0 0 16px;">${C.attesaClienteTesto}</p>
                 <p id="waitClientTimer" style="color:#999;font-size:0.85rem;"></p>
             </div>
         `;
@@ -3639,8 +3720,8 @@
                         clearInterval(pollInterval);
                         overlay.remove();
                         showLoadingError(
-                            'Non riusciamo a contattare il server per sapere se il cliente si è collegato.' +
-                            '<br><br>Controlla la connessione e riprova.'
+                            C.server +
+                            '<br><br>' + C.controlla
                         );
                     }
                     return;
@@ -3651,7 +3732,7 @@
                 if (data.is_expired) {
                     clearInterval(pollInterval);
                     overlay.remove();
-                    alert('Il tempo della consulenza \u00e8 scaduto.');
+                    alert(C.scadutaBreve);
                     window.location.href = '/profile';
                     return;
                 }
@@ -3666,8 +3747,8 @@
                     clearInterval(pollInterval);
                     overlay.remove();
                     showLoadingError(
-                        'Non riusciamo a contattare il server per sapere se il cliente si è collegato.' +
-                        '<br><br>Controlla la connessione e riprova.'
+                        C.server +
+                        '<br><br>' + C.controlla
                     );
                 }
             } finally {
@@ -3683,14 +3764,14 @@
         
         const icon = recordingRequested ? '🎥' : '🚫';
         const title = recordingRequested 
-            ? 'Conferma registrazione' 
-            : 'Conferma senza registrazione';
+            ? C.confermaReg 
+            : C.confermaSenza;
         const message = recordingRequested 
-            ? 'Sicuro che accetti di essere registrato per poter accedere ad un\'eventuale contestazione?' 
-            : 'Sicuro che non vuoi essere registrato? Perderai la possibilità di un\'eventuale contestazione.';
+            ? C.sicuroSi 
+            : C.sicuroNo;
         
-        const yesLabel = recordingRequested ? 'Sì, registra' : 'Sì, senza registrazione';
-        const noLabel = recordingRequested ? 'No, non registrare' : 'No, voglio registrare';
+        const yesLabel = recordingRequested ? C.siRegistra : C.siSenza;
+        const noLabel = recordingRequested ? C.noRegistra : C.noVoglio;
         const noIcon = recordingRequested ? 'fa-video-slash' : 'fa-video';
         
         overlay.innerHTML = `
@@ -3715,7 +3796,7 @@
         document.getElementById('recordingConfirmNo').addEventListener('click', async () => {
             const btn = document.getElementById('recordingConfirmNo');
             btn.disabled = true;
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Aggiornamento...';
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> ' + C.aggiornamento;
             
             const newValue = !recordingRequested;
             try {
@@ -3734,12 +3815,12 @@
                     initializeCall();
                 } else {
                     const err = await resp.json();
-                    alert('Errore: ' + (err.detail || 'Impossibile aggiornare la preferenza'));
+                    alert(C.errore + ': ' + (err.detail || C.preferenza));
                     btn.disabled = false;
                     btn.innerHTML = `<i class="fas ${noIcon}"></i> ${noLabel}`;
                 }
             } catch (e) {
-                alert('Errore di rete. Riprova.');
+                alert(C.rete);
                 btn.disabled = false;
                 btn.innerHTML = `<i class="fas ${noIcon}"></i> ${noLabel}`;
             }
@@ -3793,7 +3874,7 @@
         
         // Mostra popup di conferma
         e.preventDefault();
-        e.returnValue = 'Sei sicuro di voler chiudere la chiamata? La registrazione sarà interrotta.';
+        e.returnValue = C.chiudiSicuro;
         
         // Notifica il backend che l'utente è uscito via /leave
         // Il /leave endpoint gestisce sia lo stato utente che lo stop recording
@@ -4019,7 +4100,7 @@
         }
         const dimensione = document.createElement('span');
         dimensione.className = 'attachment-size';
-        dimensione.textContent = inInvio ? 'invio...' : formatFileSize(Number(att.file_size) || 0);
+        dimensione.textContent = inInvio ? C.invioFile : formatFileSize(Number(att.file_size) || 0);
         riga.append(icona, apri, dimensione);
 
         if (!inInvio) {
@@ -4041,7 +4122,7 @@
      */
     function displayChatMessage(message, isOwn) {
         // Se è il primo messaggio, svuota il placeholder
-        const isEmpty = chatUI.msgPanel.innerHTML.includes('Nessun messaggio') || chatUI.msgPanel.children.length === 0;
+        const isEmpty = chatUI.msgPanel.innerHTML.includes(C.nessunMessaggio) || chatUI.msgPanel.children.length === 0;
         if (isEmpty) {
             chatUI.msgPanel.innerHTML = '';
         }
@@ -4108,7 +4189,7 @@
             // Visualizza tutti i messaggi
             chatUI.msgPanel.innerHTML = '';
             if (chatUI.messagesCache.length === 0) {
-                chatUI.msgPanel.innerHTML = '<div style="color: #718096; font-size: 0.85rem; text-align: center; margin: auto; padding: 10px;">Nessun messaggio ancora</div>';
+                chatUI.msgPanel.innerHTML = '<div style="color: #718096; font-size: 0.85rem; text-align: center; margin: auto; padding: 10px;">' + C.nessunMessaggio + '</div>';
                 return;
             }
             

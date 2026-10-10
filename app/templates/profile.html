@@ -1343,7 +1343,68 @@
         accettaErrore: {{ t('profilo.accetta_errore')|tojson }},
         reteRiprova: {{ t('profilo.rete_riprova')|tojson }},
         rifiutata: {{ t('profilo.rifiutata')|tojson }},
-        scegliLingua: {{ t('profilo.scegli_lingua')|tojson }}
+        scegliLingua: {{ t('profilo.scegli_lingua')|tojson }},
+        statoCompletata: {{ t('profilo.stato_completata')|tojson }},
+        statoAnnullata: {{ t('profilo.stato_annullata')|tojson }},
+        statoConfermare: {{ t('profilo.stato_confermare')|tojson }},
+        statoAssente: {{ t('profilo.stato_assente')|tojson }},
+        statoConfermata: {{ t('profilo.stato_confermata')|tojson }},
+        statoAttesa: {{ t('profilo.stato_attesa')|tojson }},
+        annullataTe: {{ t('profilo.annullata_te')|tojson }},
+        annullataDa: {{ t('profilo.annullata_da')|tojson }},
+        annullataAuto: {{ t('profilo.annullata_auto')|tojson }},
+        importoRimborsato: {{ t('profilo.importo_rimborsato')|tojson }},
+        nessunAddebito: {{ t('profilo.nessun_addebito')|tojson }},
+        motivo: {{ t('profilo.motivo')|tojson }},
+        pagamentoAttesa: {{ t('profilo.pagamento_attesa')|tojson }},
+        recensioneInviata: {{ t('profilo.recensione_inviata')|tojson }},
+        recensione: {{ t('profilo.recensione')|tojson }},
+        contestazioneAperta: {{ t('profilo.contestazione_aperta')|tojson }},
+        inRevisione: {{ t('profilo.in_revisione')|tojson }},
+        risolta: {{ t('profilo.risolta')|tojson }},
+        respinta: {{ t('profilo.respinta')|tojson }},
+        contestazione: {{ t('profilo.contestazione')|tojson }},
+        contesta: {{ t('profilo.contesta')|tojson }},
+        voceConsulenza: {{ t('profilo.voce_consulenza')|tojson }},
+        voceServizio: {{ t('profilo.voce_servizio')|tojson }},
+        rimborsati: {{ t('profilo.rimborsati')|tojson }},
+        caricamento: {{ t('profilo.caricamento')|tojson }},
+        apriContestazione: {{ t('recensione.apri')|tojson }},
+        motivoBreve: {{ t('profilo.motivo_breve')|tojson }},
+        problemaPh: {{ t('profilo.problema_ph')|tojson }},
+        annulla: {{ t('comune.annulla')|tojson }},
+        inviaContestazione: {{ t('recensione.invia_contestazione')|tojson }},
+        minimo: {{ t('recensione.minimo')|tojson }},
+        contestazioneOk: {{ t('profilo.contestazione_ok')|tojson }},
+        contestazioneErrore: {{ t('profilo.contestazione_errore')|tojson }},
+        comeAndata: {{ t('profilo.come_andata')|tojson }},
+        opinione: {{ t('profilo.opinione')|tojson }},
+        aiuto: {{ t('recensione.aiuto')|tojson }},
+        preparato: {{ t('recensione.preparato')|tojson }},
+        comunicativa: {{ t('profilo.comunicativa')|tojson }},
+        commento: {{ t('recensione.commento')|tojson }},
+        commentoPh: {{ t('recensione.commento_ph')|tojson }},
+        inviaRecensione: {{ t('recensione.invia')|tojson }},
+        voto: {{ t('call.voto')|tojson }},
+        invio: {{ t('recensione.invio')|tojson }},
+        grazie: {{ t('profilo.grazie_stella')|tojson }},
+        recensioneErrore: {{ t('profilo.recensione_errore')|tojson }},
+        errore: {{ t('comune.errore')|tojson }},
+        erroreRete: {{ t('comune.errore_rete')|tojson }},
+        reteBreve: {{ t('profilo.rete_breve')|tojson }},
+        rifiutaImpossibile: {{ t('profilo.rifiuta_impossibile')|tojson }},
+        salvaCorso: {{ t('profilo.salva_corso')|tojson }},
+        autoSi: {{ t('profilo.auto_si')|tojson }},
+        autoNo: {{ t('profilo.auto_no')|tojson }},
+        nonSalvato: {{ t('profilo.non_salvato')|tojson }},
+        callContestazione: {{ t('profilo.call_contestazione')|tojson }},
+        callPresto: {{ t('profilo.call_presto')|tojson }},
+        callChiusa: {{ t('profilo.call_chiusa')|tojson }},
+        callRecensione: {{ t('profilo.call_recensione')|tojson }},
+        tornaCall: {{ t('profilo.torna_call')|tojson }},
+        callAltra: {{ t('profilo.call_altra')|tojson }},
+        connessione: {{ t('profilo.connessione')|tojson }},
+        erroreConnessione: {{ t('profilo.errore_connessione')|tojson }}
     };
     const LOCALE_UI = {{ ('en-GB' if lingua_ui == 'en' else 'it-IT')|tojson }};
     // ========== PAYPAL EMAIL ==========
@@ -1447,7 +1508,7 @@
                 alert('Errore: ' + (data.detail || 'Impossibile aprire la dashboard'));
             }
         } catch (e) {
-            alert('Errore di connessione');
+            alert(UI.erroreRete);
         }
     }
 
@@ -1546,7 +1607,7 @@
             const valore = autoAcceptToggle.checked;
             autoAcceptToggle.disabled = true;
             stato.style.color = '#666';
-            stato.textContent = 'Salvataggio...';
+            stato.textContent = UI.salvaCorso;
             try {
                 const resp = await fetch('/api/user/set-auto-accept', {
                     method: 'POST',
@@ -1555,13 +1616,11 @@
                 });
                 if (!resp.ok) throw new Error(resp.status);
                 stato.style.color = '#2e7d32';
-                stato.textContent = valore
-                    ? 'Salvato: le richieste in arrivo si confermano da sole.'
-                    : 'Salvato: le richieste in arrivo restano in sospeso finché non le accetti.';
+                stato.textContent = valore ? UI.autoSi : UI.autoNo;
             } catch (e) {
                 autoAcceptToggle.checked = !valore;
                 stato.style.color = '#d32f2f';
-                stato.textContent = 'Non salvato: controlla la connessione e riprova.';
+                stato.textContent = UI.nonSalvato;
             } finally {
                 autoAcceptToggle.disabled = false;
             }
@@ -1579,12 +1638,11 @@
     // chiude e l'avviso compare nel profilo da cui era partita.
     if (urlParams.get('call_closed')) {
         const motiviChiusura = {
-            dispute: 'Non puoi rientrare in call: su questa consulenza è stata aperta una contestazione.',
-            presto: 'La videochiamata si apre 10 minuti prima dell\'orario prenotato.',
-            chiusa: 'Il tempo di questa consulenza è finito: non si può più entrare.',
+            dispute: UI.callContestazione,
+            presto: UI.callPresto,
+            chiusa: UI.callChiusa,
         };
-        const avviso = motiviChiusura[urlParams.get('call_closed')]
-            || 'Non puoi rientrare in call perché hai già rilasciato una recensione.';
+        const avviso = motiviChiusura[urlParams.get('call_closed')] || UI.callRecensione;
         history.replaceState(null, '', window.location.pathname);
         let chiusa = false;
         try {
@@ -1788,7 +1846,7 @@
                     alert(data.error || 'Errore durante l\'upload');
                 }
             } catch (error) {
-                alert('Errore di connessione');
+                alert(UI.erroreRete);
                 console.error(error);
             }
         }, 'image/jpeg', 0.9);
@@ -2188,11 +2246,11 @@
                 document.getElementById(`refuse-modal-${bookingId}`).remove();
                 setTimeout(() => location.reload(), 1500);
             } else {
-                alert('Errore: ' + (data.detail || 'Impossibile rifiutare la consulenza'));
+                alert(UI.errore + ': ' + (data.detail || UI.rifiutaImpossibile));
             }
         } catch (error) {
             console.error('Errore:', error);
-            alert('Errore di connessione');
+            alert(UI.erroreRete);
         }
     }
 
@@ -2218,10 +2276,10 @@
 
     function storicoVoceHTML(b) {
         const otherUser = b.other_user;
-        const roleLabel = b.role === 'client' ? 'Consulenza con' : 'Consulenza richiesta da';
+        const roleLabel = b.role === 'client' ? UI.conChi : UI.richiestaDa;
         let dateParts = b.date.split('-');
         const dateObj = new Date(dateParts[0], dateParts[1] - 1, dateParts[2]);
-        const dateStr = dateObj.toLocaleDateString('it-IT', { weekday: 'short', day: 'numeric', month: 'long', year: 'numeric' });
+        const dateStr = dateObj.toLocaleDateString(LOCALE_UI, { weekday: 'short', day: 'numeric', month: 'long', year: 'numeric' });
         
         const avatarHTML = otherUser.picture
             ? `<img src="${otherUser.picture}" style="width:32px;height:32px;border-radius:50%;object-fit:cover;border:2px solid #2e7d32;">`
@@ -2232,12 +2290,12 @@
             : `<span style="font-weight:600;">${escapeHtml(otherUser.name)}</span>`;
 
         const statusMap = {
-            'completed': '<span style="color:#2e7d32;font-size:0.8rem;"><i class="fas fa-check-circle"></i> Completata</span>',
-            'cancelled': '<span style="color:#dc3545;font-size:0.8rem;"><i class="fas fa-times-circle"></i> Annullata</span>',
-            'awaiting_acceptance': '<span style="color:#b45309;font-size:0.8rem;"><i class="fas fa-inbox"></i> Da confermare</span>',
-            'no_show': '<span style="color:#f59e0b;font-size:0.8rem;"><i class="fas fa-exclamation-circle"></i> Non presentato</span>',
-            'confirmed': '<span style="color:#6b7280;font-size:0.8rem;"><i class="fas fa-clock"></i> Confermata</span>',
-            'pending': '<span style="color:#6b7280;font-size:0.8rem;"><i class="fas fa-hourglass-half"></i> In attesa</span>'
+            'completed': `<span style="color:#2e7d32;font-size:0.8rem;"><i class="fas fa-check-circle"></i> ${UI.statoCompletata}</span>`,
+            'cancelled': `<span style="color:#dc3545;font-size:0.8rem;"><i class="fas fa-times-circle"></i> ${UI.statoAnnullata}</span>`,
+            'awaiting_acceptance': `<span style="color:#b45309;font-size:0.8rem;"><i class="fas fa-inbox"></i> ${UI.statoConfermare}</span>`,
+            'no_show': `<span style="color:#f59e0b;font-size:0.8rem;"><i class="fas fa-exclamation-circle"></i> ${UI.statoAssente}</span>`,
+            'confirmed': `<span style="color:#6b7280;font-size:0.8rem;"><i class="fas fa-clock"></i> ${UI.statoConfermata}</span>`,
+            'pending': `<span style="color:#6b7280;font-size:0.8rem;"><i class="fas fa-hourglass-half"></i> ${UI.statoAttesa}</span>`
         };
         const statusHTML = statusMap[b.status] || '';
 
@@ -2245,44 +2303,44 @@
         let cancelHTML = '';
         if (b.status === 'cancelled') {
             const chi = {
-                'tu': 'Annullata da te',
-                'other': `Annullata da ${escapeHtml(otherUser.name)}`,
-                'system': 'Annullata automaticamente'
-            }[b.cancelled_by] || 'Annullata';
+                'tu': UI.annullataTe,
+                'other': UI.annullataDa.replace('{nome}', escapeHtml(otherUser.name)),
+                'system': UI.annullataAuto
+            }[b.cancelled_by] || UI.statoAnnullata;
             const pagamento = {
-                'refunded': ' · importo rimborsato',
-                'voided': ' · nessun addebito',
+                'refunded': ' · ' + UI.importoRimborsato,
+                'voided': ' · ' + UI.nessunAddebito,
             }[b.payment_status] || '';
             const motivo = b.cancellation_reason
-                ? `<div style="font-size:0.75rem;color:#6b7280;">Motivo: ${escapeHtml(b.cancellation_reason)}</div>`
+                ? `<div style="font-size:0.75rem;color:#6b7280;">${UI.motivo} ${escapeHtml(b.cancellation_reason)}</div>`
                 : '';
             cancelHTML = `<div style="font-size:0.75rem;color:#dc3545;margin-top:2px;">${chi}${pagamento}</div>${motivo}`;
         }
 
         const pagamentoInAttesa = b.payment_status === 'held'
-            ? `<div style="font-size:0.75rem;color:#b45309;margin-top:2px;">Pagamento in attesa</div>`
+            ? `<div style="font-size:0.75rem;color:#b45309;margin-top:2px;">${UI.pagamentoAttesa}</div>`
             : '';
 
         // Review indicator/button
         let reviewHTML = '';
         if (b.has_review) {
-            reviewHTML = `<div style="font-size:0.75rem;color:#2e7d32;margin-top:2px;"><i class="fas fa-star"></i> Recensione inviata</div>`;
+            reviewHTML = `<div style="font-size:0.75rem;color:#2e7d32;margin-top:2px;"><i class="fas fa-star"></i> ${UI.recensioneInviata}</div>`;
         } else if (b.can_review) {
-            reviewHTML = `<button onclick="openHistoryReview(${b.id})" style="margin-top:4px;margin-right:6px;padding:4px 10px;background:#f59e0b;color:white;border:none;border-radius:6px;font-size:0.75rem;font-weight:600;cursor:pointer;transition:all .2s;">⭐ Recensione</button>`;
+            reviewHTML = `<button onclick="openHistoryReview(${b.id})" style="margin-top:4px;margin-right:6px;padding:4px 10px;background:#f59e0b;color:white;border:none;border-radius:6px;font-size:0.75rem;font-weight:600;cursor:pointer;transition:all .2s;">${UI.recensione}</button>`;
         }
 
         // Dispute button HTML
         let disputeHTML = '';
         if (b.has_dispute) {
             const disputeStatusMap = {
-                'open': '📋 Contestazione aperta',
-                'in_review': '🔍 In revisione',
-                'resolved': '✅ Risolta',
-                'rejected': '❌ Respinta'
+                'open': '📋 ' + UI.contestazioneAperta,
+                'in_review': '🔍 ' + UI.inRevisione,
+                'resolved': '✅ ' + UI.risolta,
+                'rejected': '❌ ' + UI.respinta
             };
-            disputeHTML = `<div style="font-size:0.75rem;color:#f59e0b;margin-top:2px;"><i class="fas fa-exclamation-triangle"></i> ${disputeStatusMap[b.dispute_status] || 'Contestazione'}</div>`;
+            disputeHTML = `<div style="font-size:0.75rem;color:#f59e0b;margin-top:2px;"><i class="fas fa-exclamation-triangle"></i> ${disputeStatusMap[b.dispute_status] || UI.contestazione}</div>`;
         } else if (b.can_dispute) {
-            disputeHTML = `<button onclick="openHistoryDispute(${b.id})" style="margin-top:4px;padding:4px 10px;background:#dc3545;color:white;border:none;border-radius:6px;font-size:0.75rem;font-weight:600;cursor:pointer;transition:all .2s;">⚠️ Contesta</button>`;
+            disputeHTML = `<button onclick="openHistoryDispute(${b.id})" style="margin-top:4px;padding:4px 10px;background:#dc3545;color:white;border:none;border-radius:6px;font-size:0.75rem;font-weight:600;cursor:pointer;transition:all .2s;">${UI.contesta}</button>`;
         }
 
         return `
@@ -2318,10 +2376,10 @@
         if (!b.total_paid) return '';
 
         const dettaglio = b.service_fee
-            ? `<div style="color:#6b7280;font-size:0.74rem;">consulenza ${euro(b.price)} + servizio ${euro(b.service_fee)}</div>`
+            ? `<div style="color:#6b7280;font-size:0.74rem;">${UI.voceConsulenza} ${euro(b.price)} + ${UI.voceServizio} ${euro(b.service_fee)}</div>`
             : '';
         const rimborso = b.refund_amount
-            ? `<div style="color:#2e7d32;font-size:0.74rem;">rimborsati ${euro(b.refund_amount)}</div>`
+            ? `<div style="color:#2e7d32;font-size:0.74rem;">${UI.rimborsati} ${euro(b.refund_amount)}</div>`
             : '';
         return `
             <div style="color:#1a202c;font-weight:600;">${euro(b.total_paid)}</div>
@@ -2341,7 +2399,7 @@
     function storicoHTML() {
         if (!storicoAperto) return '';
         if (storicoVoci === null) {
-            return '<div id="storicoLista" style="padding:12px 0;color:#6b7280;"><i class="fas fa-spinner fa-spin"></i> Caricamento…</div>';
+            return `<div id="storicoLista" style="padding:12px 0;color:#6b7280;"><i class="fas fa-spinner fa-spin"></i> ${UI.caricamento}</div>`;
         }
         if (storicoVoci.length === 0) {
             return '<div id="storicoLista" style="padding:12px 0;color:#6b7280;">{{ t("profilo.nessuno_storico") }}</div>';
@@ -2388,21 +2446,21 @@
         overlay.innerHTML = `
             <div style="background:white;border-radius:12px;padding:24px;max-width:500px;width:90%;box-shadow:0 8px 32px rgba(0,0,0,0.2);">
                 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
-                    <h3 style="margin:0;font-size:1.1rem;">⚠️ Apri una contestazione</h3>
+                    <h3 style="margin:0;font-size:1.1rem;">⚠️ ${UI.apriContestazione}</h3>
                     <button onclick="closeHistoryDispute()" style="background:none;border:none;font-size:1.3rem;cursor:pointer;color:#666;">✕</button>
                 </div>
-                <p style="font-size:0.85rem;color:#6b7280;margin-bottom:12px;">Descrivi il motivo della contestazione. Il nostro team esaminerà la tua segnalazione.</p>
+                <p style="font-size:0.85rem;color:#6b7280;margin-bottom:12px;">${UI.motivoBreve}</p>
                 <textarea id="historyDisputeDescription" maxlength="5000" rows="5"
                     style="width:100%;padding:10px;border:1px solid #d1d5db;border-radius:8px;font-size:0.9rem;resize:vertical;box-sizing:border-box;"
-                    placeholder="Descrivi il problema riscontrato (minimo 20 caratteri)..."
+                    placeholder="${UI.problemaPh}"
                     oninput="updateHistoryDisputeCount()"></textarea>
                 <div style="text-align:right;font-size:0.75rem;color:#9ca3af;margin-top:4px;">
                     <span id="historyDisputeCharCount">0</span>/5000
                 </div>
                 <div id="historyDisputeError" style="display:none;color:#dc3545;font-size:0.82rem;margin-top:8px;"></div>
                 <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:16px;">
-                    <button onclick="closeHistoryDispute()" style="padding:8px 16px;background:#f3f4f6;color:#374151;border:none;border-radius:8px;font-size:0.9rem;cursor:pointer;">Annulla</button>
-                    <button onclick="submitHistoryDispute()" style="padding:8px 16px;background:#dc3545;color:white;border:none;border-radius:8px;font-size:0.9rem;font-weight:600;cursor:pointer;">Invia contestazione</button>
+                    <button onclick="closeHistoryDispute()" style="padding:8px 16px;background:#f3f4f6;color:#374151;border:none;border-radius:8px;font-size:0.9rem;cursor:pointer;">${UI.annulla}</button>
+                    <button onclick="submitHistoryDispute()" style="padding:8px 16px;background:#dc3545;color:white;border:none;border-radius:8px;font-size:0.9rem;font-weight:600;cursor:pointer;">${UI.inviaContestazione}</button>
                 </div>
             </div>
         `;
@@ -2427,7 +2485,7 @@
         errorDiv.style.display = 'none';
 
         if (description.length < 20) {
-            errorDiv.textContent = 'La descrizione deve contenere almeno 20 caratteri.';
+            errorDiv.textContent = UI.minimo;
             errorDiv.style.display = 'block';
             return;
         }
@@ -2443,14 +2501,14 @@
                 closeHistoryDispute();
                 // Refresh the history to show updated dispute status
                 aggiornaStorico();
-                showSuccess('Contestazione inviata con successo');
+                showSuccess(UI.contestazioneOk);
             } else {
-                errorDiv.textContent = data.detail || 'Errore durante l\'invio della contestazione.';
+                errorDiv.textContent = data.detail || UI.contestazioneErrore;
                 errorDiv.style.display = 'block';
             }
         } catch (error) {
             console.error('Error submitting dispute:', error);
-            errorDiv.textContent = 'Errore di connessione. Riprova.';
+            errorDiv.textContent = UI.reteBreve;
             errorDiv.style.display = 'block';
         }
     }
@@ -2469,34 +2527,34 @@
         overlay.innerHTML = `
             <div style="background:white;border-radius:12px;padding:24px;max-width:500px;width:90%;box-shadow:0 8px 32px rgba(0,0,0,0.2);max-height:90vh;overflow-y:auto;">
                 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
-                    <h3 style="margin:0;font-size:1.1rem;">⭐ Come è andata la consulenza?</h3>
+                    <h3 style="margin:0;font-size:1.1rem;">⭐ ${UI.comeAndata}</h3>
                     <button onclick="closeHistoryReview()" style="background:none;border:none;font-size:1.3rem;cursor:pointer;color:#666;">✕</button>
                 </div>
-                <p style="font-size:0.85rem;color:#6b7280;margin-bottom:16px;">La tua opinione aiuta altri utenti a scegliere il consulente giusto.</p>
+                <p style="font-size:0.85rem;color:#6b7280;margin-bottom:16px;">${UI.opinione}</p>
 
                 <div style="margin-bottom:14px;">
-                    <label style="display:block;font-weight:600;margin-bottom:6px;font-size:0.9rem;">Ti ha aiutato concretamente?</label>
+                    <label style="display:block;font-weight:600;margin-bottom:6px;font-size:0.9rem;">${UI.aiuto}</label>
                     <div class="history-star-rating" data-field="helpful">${buildStarHTML('hr_helpful')}</div>
                 </div>
                 <div style="margin-bottom:14px;">
-                    <label style="display:block;font-weight:600;margin-bottom:6px;font-size:0.9rem;">Era preparato sull'argomento?</label>
+                    <label style="display:block;font-weight:600;margin-bottom:6px;font-size:0.9rem;">${UI.preparato}</label>
                     <div class="history-star-rating" data-field="prepared">${buildStarHTML('hr_prepared')}</div>
                 </div>
                 <div style="margin-bottom:14px;">
-                    <label style="display:block;font-weight:600;margin-bottom:6px;font-size:0.9rem;">Capacità comunicativa?</label>
+                    <label style="display:block;font-weight:600;margin-bottom:6px;font-size:0.9rem;">${UI.comunicativa}</label>
                     <div class="history-star-rating" data-field="communication">${buildStarHTML('hr_communication')}</div>
                 </div>
 
                 <div style="margin-bottom:14px;">
-                    <label style="display:block;font-weight:600;margin-bottom:8px;font-size:0.9rem;">Commento (opzionale)</label>
-                    <textarea id="historyReviewComment" placeholder="Racconta la tua esperienza..." maxlength="2000" rows="3"
+                    <label style="display:block;font-weight:600;margin-bottom:8px;font-size:0.9rem;">${UI.commento}</label>
+                    <textarea id="historyReviewComment" placeholder="${UI.commentoPh}" maxlength="2000" rows="3"
                         style="width:100%;padding:10px;border:1px solid #d1d5db;border-radius:8px;font-size:0.9rem;resize:vertical;box-sizing:border-box;"></textarea>
                 </div>
 
                 <div id="historyReviewError" style="display:none;color:#dc3545;font-size:0.82rem;margin-top:8px;"></div>
                 <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:16px;">
-                    <button onclick="closeHistoryReview()" style="padding:8px 16px;background:#f3f4f6;color:#374151;border:none;border-radius:8px;font-size:0.9rem;cursor:pointer;">Annulla</button>
-                    <button id="historyReviewSubmitBtn" onclick="submitHistoryReview()" style="padding:8px 16px;background:#f59e0b;color:white;border:none;border-radius:8px;font-size:0.9rem;font-weight:600;cursor:pointer;">Invia Recensione</button>
+                    <button onclick="closeHistoryReview()" style="padding:8px 16px;background:#f3f4f6;color:#374151;border:none;border-radius:8px;font-size:0.9rem;cursor:pointer;">${UI.annulla}</button>
+                    <button id="historyReviewSubmitBtn" onclick="submitHistoryReview()" style="padding:8px 16px;background:#f59e0b;color:white;border:none;border-radius:8px;font-size:0.9rem;font-weight:600;cursor:pointer;">${UI.inviaRecensione}</button>
                 </div>
             </div>
         `;
@@ -2551,14 +2609,14 @@
         errorDiv.style.display = 'none';
 
         if (!helpful || !prepared || !communication) {
-            errorDiv.textContent = 'Per favore, seleziona un voto per ogni domanda.';
+            errorDiv.textContent = UI.voto;
             errorDiv.style.display = 'block';
             return;
         }
 
         const btn = document.getElementById('historyReviewSubmitBtn');
         btn.disabled = true;
-        btn.textContent = 'Invio in corso...';
+        btn.textContent = UI.invio;
 
         try {
             const response = await fetch(`/api/booking/${historyReviewBookingId}/review`, {
@@ -2575,19 +2633,19 @@
             if (response.ok) {
                 closeHistoryReview();
                 aggiornaStorico();
-                showSuccess('Grazie per la tua recensione! ⭐');
+                showSuccess(UI.grazie);
             } else {
-                errorDiv.textContent = data.detail || 'Errore nell\'invio della recensione.';
+                errorDiv.textContent = data.detail || UI.recensioneErrore;
                 errorDiv.style.display = 'block';
                 btn.disabled = false;
-                btn.textContent = 'Invia Recensione';
+                btn.textContent = UI.inviaRecensione;
             }
         } catch (error) {
             console.error('Error submitting review:', error);
-            errorDiv.textContent = 'Errore di connessione. Riprova.';
+            errorDiv.textContent = UI.reteBreve;
             errorDiv.style.display = 'block';
             btn.disabled = false;
-            btn.textContent = 'Invia Recensione';
+            btn.textContent = UI.inviaRecensione;
         }
     }
 
@@ -2595,7 +2653,7 @@
         const btn = document.getElementById(`join-btn-${bookingId}`);
         if (!btn) return;
         btn.disabled = true;
-        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Connessione...';
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> ' + UI.connessione;
         try {
             const response = await fetch(`/api/booking/${bookingId}/join`, {
                 method: 'POST',
@@ -2606,20 +2664,20 @@
                 if (data.can_start_call) {
                     loadUpcomingAppointments();
                 } else {
-                    btn.innerHTML = '<i class="fas fa-check"></i> Pronto';
+                    btn.innerHTML = '<i class="fas fa-check"></i> ' + UI.pronto;
                     const card = document.getElementById(`appointment-${bookingId}`);
                     card.querySelector('.appointment-actions').insertAdjacentHTML('beforebegin', 
-                        '<div class="waiting-indicator"><i class="fas fa-hourglass-half"></i> In attesa dell\'altro partecipante...</div>');
+                        '<div class="waiting-indicator"><i class="fas fa-hourglass-half"></i> ' + UI.attesaAltro + '</div>');
                 }
             } else {
-                alert('Errore durante la connessione');
+                alert(UI.erroreConnessione);
                 btn.disabled = false;
-                btn.innerHTML = '<i class="fas fa-sign-in-alt"></i> Partecipa';
+                btn.innerHTML = '<i class="fas fa-sign-in-alt"></i> ' + UI.partecipa;
             }
         } catch (error) {
-            alert('Errore di connessione');
+            alert(UI.erroreRete);
             btn.disabled = false;
-            btn.innerHTML = '<i class="fas fa-sign-in-alt"></i> Partecipa';
+            btn.innerHTML = '<i class="fas fa-sign-in-alt"></i> ' + UI.partecipa;
         }
     }
     
@@ -2671,8 +2729,8 @@
             }
             if (await callApertaAltrove(bookingId)) {
                 btn.className = 'btn-resume-call';
-                btn.innerHTML = '<i class="fas fa-external-link-alt"></i> Torna alla call';
-                btn.title = 'La call è già aperta in un\'altra scheda';
+                btn.innerHTML = '<i class="fas fa-external-link-alt"></i> ' + UI.tornaCall;
+                btn.title = UI.callAltra;
             }
         } catch (error) {
             console.error(`Errore call status ${bookingId}:`, error);
@@ -3125,7 +3183,7 @@
             }
         } catch (error) {
             console.error('Error saving question:', error);
-            alert('Errore di connessione');
+            alert(UI.erroreRete);
         } finally {
             if (saveBtn) {
                 saveBtn.innerHTML = originalText;

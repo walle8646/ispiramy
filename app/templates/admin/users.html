@@ -286,16 +286,16 @@
 
     <!-- Search -->
     <form class="search-box" method="GET" action="/admin/users">
-        <input type="text" name="q" value="{{ search }}" placeholder="Cerca per email, nome o cognome..." autofocus>
-        <button type="submit"><i class="fas fa-search"></i> Cerca</button>
+        <input type="text" name="q" value="{{ search }}" placeholder="{{ t('admin.cerca_utenti') }}" autofocus>
+        <button type="submit"><i class="fas fa-search"></i> {{ t('admin.cerca') }}</button>
     </form>
 
     <div class="search-info">
         {% if search %}
-            {{ users|length }} risultati per "<strong>{{ search }}</strong>" &middot;
-            <a href="/admin/users" style="color: #2e7d32;">Mostra tutti</a>
+            {{ users|length }} {{ t('admin.risultati_per') }} "<strong>{{ search }}</strong>" &middot;
+            <a href="/admin/users" style="color: #2e7d32;">{{ t('admin.mostra_tutti') }}</a>
         {% else %}
-            Ultimi 50 utenti su {{ total_users }} totali
+            {{ t('admin.ultimi_50') }} {{ total_users }} {{ t('admin.totali') }}
         {% endif %}
     </div>
 
@@ -316,7 +316,7 @@
                 <div class="user-name">
                     <a href="/user/{{ u.id }}">{{ u.nome }} {{ u.cognome }}</a>
                     {% if u.is_verified %}
-                    <span class="verified-badge"><i class="fas fa-check"></i> Verificato</span>
+                    <span class="verified-badge"><i class="fas fa-check"></i> {{ t('admin.verificato') }}</span>
                     {% endif %}
                 </div>
                 <div class="user-email">{{ u.email }}</div>
@@ -325,7 +325,7 @@
                 {% endif %}
                 {% if u.is_verified or u.category_id %}
                 <details class="verifica-categorie">
-                    <summary>Categorie verificate</summary>
+                    <summary>{{ t('admin.categorie_verificate') }}</summary>
                     <form class="verifica-categorie-lista" onsubmit="return salvaCategorieVerificate(event, {{ u.id }})">
                         {% for cat in tutte_categorie %}
                         <label>
@@ -333,7 +333,7 @@
                             {{ cat.icon }} {{ cat.name }}
                         </label>
                         {% endfor %}
-                        <button type="submit">Salva verifica</button>
+                        <button type="submit">{{ t('admin.salva_verifica') }}</button>
                         <span id="verifica-esito-{{ u.id }}"></span>
                     </form>
                 </details>
@@ -344,37 +344,37 @@
             <div class="user-stats">
                 <div class="user-stat">
                     <div class="user-stat-value">{{ u.consulenze_vendute }}</div>
-                    <div class="user-stat-label">Vendute</div>
+                    <div class="user-stat-label">{{ t('admin.vendute') }}</div>
                 </div>
                 <div class="user-stat">
                     <div class="user-stat-value">{{ u.consulenze_acquistate }}</div>
-                    <div class="user-stat-label">Acquistate</div>
+                    <div class="user-stat-label">{{ t('admin.acquistate') }}</div>
                 </div>
                 <div class="user-stat">
                     <div class="user-stat-value">{{ u.review_count }}</div>
-                    <div class="user-stat-label">Recensioni</div>
+                    <div class="user-stat-label">{{ t('admin.recensioni') }}</div>
                 </div>
             </div>
 
             <!-- Meta + Type -->
             <div class="user-meta">
                 <div class="type-selector">
-                    <span class="type-label">Tipo:</span>
+                    <span class="type-label">{{ t('admin.tipo') }}</span>
                     {% if user.user_type_id >= 3 %}
                     <select id="type-{{ u.id }}" onchange="onTypeChange({{ u.id }})">
-                        <option value="1" {% if u.user_type_id == 1 %}selected{% endif %}>1 - Utente</option>
-                        <option value="2" {% if u.user_type_id == 2 %}selected{% endif %}>2 - Verificatore</option>
-                        <option value="3" {% if u.user_type_id == 3 %}selected{% endif %}>3 - Amministratore</option>
+                        <option value="1" {% if u.user_type_id == 1 %}selected{% endif %}>1 - {{ t('admin.ruolo_utente') }}</option>
+                        <option value="2" {% if u.user_type_id == 2 %}selected{% endif %}>2 - {{ t('admin.ruolo_verificatore') }}</option>
+                        <option value="3" {% if u.user_type_id == 3 %}selected{% endif %}>3 - {{ t('admin.ruolo_admin') }}</option>
                     </select>
-                    <button class="save-type-btn" id="save-btn-{{ u.id }}" onclick="saveUserType({{ u.id }})">Salva</button>
+                    <button class="save-type-btn" id="save-btn-{{ u.id }}" onclick="saveUserType({{ u.id }})">{{ t('admin.salva') }}</button>
                     <span class="type-saved" id="saved-{{ u.id }}">✓</span>
                     {% else %}
-                    <span>{% if u.user_type_id == 1 %}Utente{% elif u.user_type_id == 2 %}Verificatore{% elif u.user_type_id == 3 %}Amministratore{% else %}{{ u.user_type_id }}{% endif %}</span>
+                    <span>{% if u.user_type_id == 1 %}{{ t('admin.ruolo_utente') }}{% elif u.user_type_id == 2 %}{{ t('admin.ruolo_verificatore') }}{% elif u.user_type_id == 3 %}{{ t('admin.ruolo_admin') }}{% else %}{{ u.user_type_id }}{% endif %}</span>
                     {% endif %}
                 </div>
                 <div class="user-dates">
-                    Registrato: {{ u.created_at.strftime('%d/%m/%Y') if u.created_at else '-' }}<br>
-                    Ultimo accesso: {{ u.last_seen.strftime('%d/%m/%Y %H:%M') if u.last_seen else 'Mai' }}
+                    {{ t('admin.registrato') }} {{ u.created_at.strftime('%d/%m/%Y') if u.created_at else '-' }}<br>
+                    {{ t('admin.ultimo_accesso') }} {{ u.last_seen.strftime('%d/%m/%Y %H:%M') if u.last_seen else t('admin.mai') }}
                 </div>
             </div>
         </div>
@@ -383,9 +383,9 @@
         {% if not users %}
         <div class="empty-state">
             <i class="fas fa-user-slash"></i>
-            <h3>Nessun utente trovato</h3>
+            <h3>{{ t('admin.nessun_utente_trovato') }}</h3>
             {% if search %}
-            <p>Nessun risultato per "{{ search }}". Prova con un'altra ricerca.</p>
+            <p>{{ t('admin.nessun_risultato') }} "{{ search }}". {{ t('admin.altra_ricerca') }}</p>
             {% endif %}
         </div>
         {% endif %}
@@ -419,13 +419,13 @@
                 saved.style.display = 'inline';
                 setTimeout(() => { saved.style.display = 'none'; }, 3000);
             } else {
-                alert(data.detail || 'Errore nel salvataggio');
+                alert(data.detail || {{ t('admin.errore_salvataggio')|tojson }});
             }
         } catch (e) {
-            alert('Errore di connessione');
+            alert({{ t('comune.errore_rete')|tojson }});
         }
         btn.disabled = false;
-        btn.textContent = 'Salva';
+        btn.textContent = {{ t('admin.salva')|tojson }};
     }
 
     async function salvaCategorieVerificate(event, userId) {
@@ -440,9 +440,9 @@
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ category_ids: ids })
             });
-            esito.textContent = resp.ok ? 'Salvato' : 'Non salvato';
+            esito.textContent = resp.ok ? {{ t('admin.salvato')|tojson }} : {{ t('admin.non_salvato')|tojson }};
         } catch (e) {
-            esito.textContent = 'Non salvato';
+            esito.textContent = {{ t('admin.non_salvato')|tojson }};
         }
         return false;
     }

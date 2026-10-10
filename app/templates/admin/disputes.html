@@ -202,19 +202,19 @@
     <!-- Filter tabs -->
     <div class="filter-tabs">
         <a href="/admin/disputes?status=all" class="filter-tab {% if status_filter == 'all' %}active{% endif %}">
-            Tutte <span class="count">{{ counts.all }}</span>
+            {{ t('admin.tutte') }} <span class="count">{{ counts.all }}</span>
         </a>
         <a href="/admin/disputes?status=open" class="filter-tab {% if status_filter == 'open' %}active{% endif %}">
-            Aperte <span class="count">{{ counts.open }}</span>
+            {{ t('admin.aperte') }} <span class="count">{{ counts.open }}</span>
         </a>
         <a href="/admin/disputes?status=in_review" class="filter-tab {% if status_filter == 'in_review' %}active{% endif %}">
-            In revisione <span class="count">{{ counts.in_review }}</span>
+            {{ t('admin.in_revisione') }} <span class="count">{{ counts.in_review }}</span>
         </a>
         <a href="/admin/disputes?status=resolved" class="filter-tab {% if status_filter == 'resolved' %}active{% endif %}">
-            Risolte <span class="count">{{ counts.resolved }}</span>
+            {{ t('admin.risolte') }} <span class="count">{{ counts.resolved }}</span>
         </a>
         <a href="/admin/disputes?status=rejected" class="filter-tab {% if status_filter == 'rejected' %}active{% endif %}">
-            Rifiutate <span class="count">{{ counts.rejected }}</span>
+            {{ t('admin.rifiutate') }} <span class="count">{{ counts.rejected }}</span>
         </a>
     </div>
 
@@ -226,10 +226,10 @@
                 <div class="dispute-card-top">
                     <span class="dispute-card-id">#{{ d.id }}</span>
                     <span class="badge badge-{{ d.status }}">
-                        {% if d.status == 'open' %}Aperta
-                        {% elif d.status == 'in_review' %}In revisione
-                        {% elif d.status == 'resolved' %}Risolta
-                        {% elif d.status == 'rejected' %}Rifiutata
+                        {% if d.status == 'open' %}{{ t('admin.aperta') }}
+                        {% elif d.status == 'in_review' %}{{ t('admin.in_revisione') }}
+                        {% elif d.status == 'resolved' %}{{ t('admin.risolta') }}
+                        {% elif d.status == 'rejected' %}{{ t('admin.rifiutata') }}
                         {% endif %}
                     </span>
                     <span class="dispute-card-date">{{ d.created_at.strftime('%d/%m/%Y %H:%M') if d.created_at else '-' }}</span>
@@ -241,7 +241,7 @@
                 <div class="dispute-card-meta">
                     <span><i class="fas fa-calendar"></i> Booking #{{ d.booking_id }}{% if d.booking_date %} &middot; {{ d.booking_date.strftime('%d/%m/%Y') }}{% endif %}</span>
                     {% if d.message_count > 0 %}
-                    <span><i class="fas fa-comments"></i> {{ d.message_count }} messaggi</span>
+                    <span><i class="fas fa-comments"></i> {{ d.message_count }} {{ t('admin.messaggi') }}</span>
                     {% endif %}
                 </div>
             </div>
@@ -250,7 +250,7 @@
                 <div class="dispute-card-price">&euro;{{ "%.2f"|format(d.booking_price) }}</div>
                 {% endif %}
                 <div class="dispute-card-msgs">
-                    {% if d.message_count == 0 %}Nessuna risposta{% else %}{{ d.message_count }} msg{% endif %}
+                    {% if d.message_count == 0 %}{{ t('admin.nessuna_risposta') }}{% else %}{{ d.message_count }} msg{% endif %}
                 </div>
             </div>
         </div>
@@ -259,8 +259,8 @@
         {% if not disputes %}
         <div class="empty-state">
             <i class="fas fa-check-circle"></i>
-            <h3>Nessuna contestazione</h3>
-            <p>Non ci sono contestazioni con questo filtro.</p>
+            <h3>{{ t('admin.nessuna_contestazione') }}</h3>
+            <p>{{ t('admin.filtro_vuoto') }}</p>
         </div>
         {% endif %}
     </div>

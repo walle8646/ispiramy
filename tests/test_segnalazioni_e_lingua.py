@@ -276,6 +276,116 @@ def test_si_segnala_una_volta_e_chi_verifica_puo_nascondere(scena, csrf_client):
     _lingua(http, "it")
 
 
+def test_call_storico_e_admin_in_inglese(csrf_client):
+    """Call, storico del profilo e pagine admin seguono la lingua scelta."""
+    from datetime import datetime
+
+    from app.models import Booking
+    from app.utils.orari import now_italy_naive
+
+    http = csrf_client
+    http.get("/logout")
+    password = secrets.token_urlsafe(12)
+    adesso = now_italy_naive()
+    with Session(engine) as s:
+        cliente = User(
+            email=f"call-en-{secrets.token_hex(4)}@test.local",
+            password_md5=hash_password(password), confirmed=1,
+            nome="Anna", cognome="Neri", user_type_id=1,
+        )
+        consulente = User(
+            email=f"call-en-p-{secrets.token_hex(4)}@test.local",
+            password_md5=hash_password(password), confirmed=1,
+            nome="Luca", cognome="Bianchi", user_type_id=1,
+        )
+        admin = User(
+            email=f"call-en-a-{secrets.token_hex(4)}@test.local",
+            password_md5=hash_password(password), confirmed=1,
+            nome="Vera", cognome="Admin", user_type_id=2,
+        )
+        s.add(cliente)
+        s.add(consulente)
+        s.add(admin)
+        s.commit()
+        s.refresh(cliente)
+        s.refresh(consulente)
+        s.refresh(admin)
+        prenotazione = Booking(
+            client_user_id=cliente.id, consultant_user_id=consulente.id,
+            booking_date=datetime(adesso.year, adesso.month, adesso.day),
+            start_time="00:00", end_time="23:59", duration_minutes=60,
+            status="confirmed", payment_status="held",
+            client_joined_at=adesso, consultant_joined_at=adesso,
+            recording_requested=True,
+        )
+        s.add(prenotazione)
+        s.commit()
+        s.refresh(prenotazione)
+        ids = {
+            "cliente": cliente.id, "consulente": consulente.id, "admin": admin.id,
+            "email_cliente": cliente.email, "email_admin": admin.email,
+            "booking": prenotazione.id,
+        }
+
+    call = _file("app", "templates", "call.html")
+    profilo_src = _file("app", "templates", "profile.html")
+    dashboard = _file("app", "templates", "admin", "dashboard.html")
+    assert "call.attesa_ingresso" in call and "call.durata" in call
+    assert "In attesa che ${remoteUserName} entri nella chiamata" not in call
+    assert ">Durata chiamata<" not in call
+    assert "profilo.come_andata" in profilo_src and "profilo.stato_completata" in profilo_src
+    assert "Come è andata la consulenza" not in profilo_src
+    assert "Consulenza con" not in profilo_src
+    assert ">Nessuna contestazione<" not in dashboard
+    assert ">Fatturato<" not in dashboard
+
+    try:
+        _login(http, ids["email_admin"], password)
+        _lingua(http, "en")
+        pagine = {
+            "/admin/": ("Registered users", "Fatturato"),
+            "/admin/disputes": ("In review", "In revisione"),
+            "/admin/users": ("User management", "Gestione Utenti"),
+            "/admin/bookings": ("Consultations", "Cerca per email, nome o cognome dei partecipanti..."),
+            "/admin/transaction-problems": ("Transaction problems", "Problemi transazioni"),
+            "/admin/reports": ("No reports waiting.", "Nessuna segnalazione in attesa."),
+            "/admin/social": ("Image post", "Post con immagini"),
+        }
+        for percorso, (presente, assente) in pagine.items():
+            pagina = http.get(percorso, follow_redirects=True)
+            assert pagina.status_code == 200, (percorso, pagina.status_code, pagina.text[:400])
+            assert 'lang="en"' in pagina.text, percorso
+            assert presente in pagina.text, percorso
+            assert assente not in pagina.text, percorso
+
+        _login(http, ids["email_cliente"], password)
+        _lingua(http, "en")
+        stanza = http.get(f"/booking/call/{ids['booking']}")
+        assert stanza.status_code == 200, stanza.text[:400]
+        assert "Call length" in stanza.text
+        assert "Confirm recording" in stanza.text
+        assert "Durata chiamata" not in stanza.text
+        assert "Waiting for {nome} to join the call..." in stanza.text
+        profilo = http.get("/profile")
+        assert profilo.status_code == 200
+        assert "How did the consultation go?" in profilo.text
+        assert "Come è andata la consulenza" not in profilo.text
+        assert "Review sent" in profilo.text
+    finally:
+        _lingua(http, "it")
+        http.get("/logout")
+        with Session(engine) as s:
+            b = s.get(Booking, ids["booking"])
+            if b:
+                s.delete(b)
+            s.commit()
+            for uid in (ids["cliente"], ids["consulente"], ids["admin"]):
+                u = s.get(User, uid)
+                if u:
+                    s.delete(u)
+            s.commit()
+
+
 def test_la_lingua_scelta_resta_sul_profilo(scena, csrf_client):
     http = csrf_client
     _login(http, scena["email_altro"], scena["password"])
