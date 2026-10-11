@@ -133,3 +133,50 @@ def ensure_notification_types(eng=None) -> list[str]:
     if aggiunti:
         logger.warning(f"🛠️ Tipi di notifica aggiunti: {', '.join(aggiunti)}")
     return aggiunti
+
+
+def sostituisci_marchio_helpy(eng=None) -> int:
+    """Sostituisce il vecchio marchio nei testi già salvati che la persona legge.
+
+    Gli oggetti delle email stanno nel database e ensure_notification_types non
+    riscrive le righe già presenti (un admin può averle personalizzate). Le
+    migrazioni SQL vecchie ci hanno lasciato «su Helpy» e
+    «Qualcuno vuole contattarti su Helpy!»: da qui partono ancora così.
+    Si cambia solo la parola Helpy, il resto dell'oggetto resta com'è.
+
+    Idempotente: alla seconda esecuzione non c'è più niente da sostituire.
+    """
+    from sqlalchemy import inspect, text
+
+    from app.database import engine
+
+    eng = eng or engine
+    tabelle = set(inspect(eng).get_table_names())
+    bersagli = (
+        ("notification_types", ("email_subject", "name", "description")),
+        ("notifications", ("title", "message")),
+    )
+    aggiornati = 0
+    for tabella, colonne in bersagli:
+        if tabella not in tabelle:
+            continue
+        presenti = {c["name"] for c in inspect(eng).get_columns(tabella)}
+        for colonna in colonne:
+            if colonna not in presenti:
+                continue
+            try:
+                with eng.begin() as conn:
+                    risultato = conn.execute(
+                        text(
+                            f'UPDATE "{tabella}" SET "{colonna}" = '
+                            f'REPLACE("{colonna}", :vecchio, :nuovo) '
+                            f'WHERE "{colonna}" LIKE :cerca'
+                        ),
+                        {"vecchio": "Helpy", "nuovo": "Ispiramy", "cerca": "%Helpy%"},
+                    )
+                    aggiornati += risultato.rowcount or 0
+            except Exception as e:  # noqa: BLE001
+                logger.error(f"❌ Marchio non sostituito in {tabella}.{colonna} ({e})")
+    if aggiornati:
+        logger.warning(f"🛠️ Marchio Helpy sostituito con Ispiramy in {aggiornati} testi")
+    return aggiornati

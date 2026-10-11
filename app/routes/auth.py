@@ -117,6 +117,34 @@ VALIDITA_CODICE_VERIFICA = timedelta(minutes=15)
 VALIDITA_CODICE_RESET = timedelta(minutes=10)
 
 
+def _risposta_email_non_confermata(request: Request, email: str, html: bool = False):
+    """Login rifiutato perché l'email non è ancora confermata.
+
+    Il messaggio segue la lingua della pagina (il cookie), non una frase
+    italiana fissa: con l'inglese selezionato prima si leggeva comunque
+    «Conferma prima la tua email».
+    """
+    messaggio = traduci("accesso.conferma_prima", lingua_di(request))
+    if html:
+        return request.app.state.templates.TemplateResponse(
+            "login.html",
+            {
+                "request": request,
+                "error": messaggio,
+                "richiede_conferma": True,
+                "email_da_confermare": email,
+            },
+        )
+    return JSONResponse(
+        {
+            "error": messaggio,
+            "requires_verification": True,
+            "email": email,
+        },
+        status_code=403,
+    )
+
+
 def _password_troppo_debole(password: str, lingua: str = "it") -> Optional[str]:
     """Ritorna il motivo del rifiuto, oppure None se la password va bene."""
     if not password or len(password) < MIN_PASSWORD_LENGTH:
@@ -164,10 +192,7 @@ async def login(
             logger.info(f"🔐 Password migrata a bcrypt per {user.email}")
 
         if user.confirmed != 1:
-            return request.app.state.templates.TemplateResponse(
-                "login.html",
-                {"request": request, "error": "Conferma prima la tua email"}
-            )
+            return _risposta_email_non_confermata(request, email, html=True)
         
         clear_attempts(request, "login", email)
 
@@ -221,14 +246,7 @@ async def api_login(
             # questo endpoint no, quindi la verifica via codice era aggirabile
             # semplicemente usando il login AJAX.
             if user.confirmed != 1:
-                return JSONResponse(
-                    {
-                        "error": "Conferma prima la tua email",
-                        "requires_verification": True,
-                        "email": user.email,
-                    },
-                    status_code=403
-                )
+                return _risposta_email_non_confermata(request, user.email)
             
             # ✅ Genera token JWT
             JWT_SECRET = os.getenv("JWT_SECRET", "your-secret-key-change-in-production")
@@ -422,16 +440,21 @@ async def resend_verification(
     email: str = Form(...)
 ):
     """Reinvia codice di verifica"""
-    enforce_rate_limit(request, "resend_verification", limit=3, window_seconds=900, extra_key=email)
+    lingua = lingua_di(request)
+    # Tre email ogni 15 minuti: il pulsante sul login non deve poter inondare la casella.
+    enforce_rate_limit(
+        request, "resend_verification", limit=3, window_seconds=900, extra_key=email,
+        message=traduci("accesso.reinvia_attesa", lingua),
+    )
     try:
         with get_session() as session:
             user = session.exec(select(User).where(User.email == email)).first()
             
             if not user:
-                return JSONResponse({"error": "Email non trovata"}, status_code=404)
+                return JSONResponse({"error": traduci("accesso.email_sconosciuta", lingua)}, status_code=404)
             
             if user.confirmed == 1:
-                return JSONResponse({"error": "Email già verificata"}, status_code=400)
+                return JSONResponse({"error": traduci("accesso.gia_confermata", lingua)}, status_code=400)
             
             code = generate_verification_code()
             user.confirmation_code = code
@@ -439,15 +462,15 @@ async def resend_verification(
             session.add(user)
             session.commit()
             
-            send_verification_email(email, code, user.nome or "User", lingua_di(request))
+            send_verification_email(email, code, user.nome or "User", lingua)
             
             logger.info(f"♻️ Resent code to {email}")
             
-            return JSONResponse({"message": "Codice inviato nuovamente!"}, status_code=200)
+            return JSONResponse({"message": traduci("accesso.reinvia_ok", lingua)}, status_code=200)
     
     except Exception as e:
         logger.error(f"Error resending code: {e}", exc_info=True)
-        return JSONResponse({"error": "Errore. Riprova."}, status_code=500)
+        return JSONResponse({"error": traduci("accesso.reinvia_errore", lingua)}, status_code=500)
 
 @router.get("/logout")
 async def logout(request: Request):
@@ -564,6 +587,11 @@ async def reset_password(
                 return JSONResponse({"error": "Utente non trovato"}, status_code=404)
             
             user.password_md5 = new_password_hash
+            # Il codice è arrivato su questa casella: l'email è dimostrata,
+            # anche se l'account era ancora in attesa della conferma.
+            user.confirmed = 1
+            user.confirmation_code = None
+            user.confirmation_code_created_at = None
             session.add(user)
             session.commit()
             

@@ -57,6 +57,20 @@ def centesimi(importo) -> int:
     return int(_decimale(importo) * 100)
 
 
+def centesimi_rimborso_contestazione(booking, refund_pct: int) -> int:
+    """Percentuale del solo prezzo della consulenza, in centesimi.
+
+    In una contestazione accolta le spese di servizio restano a Ispiramy:
+    il 100% rende il prezzo della consulenza, non il totale pagato. Una
+    percentuale intermedia si applica a quello stesso prezzo.
+
+    Annullamento in tempo e assenza del consulente non passano di qui:
+    quelli rimborsano l'intero incasso, spese comprese.
+    """
+    pct = max(0, min(100, int(refund_pct)))
+    return (centesimi(getattr(booking, "price", 0)) * pct) // 100
+
+
 def percentuale_commissione(consulente, default: int = COMMISSIONE_DEFAULT) -> int:
     """Percentuale trattenuta da Ispiramy. Se manca, il 20%.
 

@@ -78,6 +78,8 @@ def test_le_cifre_sono_quelle_del_codice(client):
     assert "Senza registrazione la contestazione non si apre" in testo
     assert "Chi verifica i profili o amministra il sito" in testo
     assert "spese di servizio comprese" in testo
+    assert "senza le spese di servizio" in testo
+    assert "che restano a Ispiramy" in testo
     assert "pulsante Segnala" in testo
     assert "non c'è un pulsante" not in testo.lower()
 
@@ -101,6 +103,8 @@ def test_in_inglese_le_stesse_regole(client):
     assert "without a recording the dispute does not open" in testo
     assert f"within {ORE_FINESTRA_CONTESTAZIONE} hours" in testo
     assert "including the service fee" in testo
+    assert "not the service fee" in testo
+    assert "which Ispiramy keeps" in testo
     assert "verify profiles or administer the site" in testo
     assert "Report button" in testo
     assert f"normally {User.model_fields['platform_fee_percent'].default}%" in testo

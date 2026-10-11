@@ -58,8 +58,13 @@ def create_db_and_tables():
     ensure_column_widths()
     ensure_check_constraints()
 
-    from app.utils.notification_types import ensure_notification_types
+    from app.utils.notification_types import ensure_notification_types, sostituisci_marchio_helpy
     ensure_notification_types()
+    # Gli oggetti già salvati (le migrazioni SQL dicevano «Helpy») non vengono
+    # toccati da ensure_notification_types: si sostituisce solo il marchio.
+    sostituisci_marchio_helpy()
+    # Chi esisteva prima dell'obbligo di conferma email restava bloccato al login.
+    conferma_account_precedenti()
 
     ensure_social_contents()
 
@@ -305,3 +310,46 @@ def ensure_added_columns(eng=None) -> list[str]:
             "(la migrazione in sql_update/ non era stata applicata)"
         )
     return aggiunte
+
+
+def conferma_account_precedenti(eng=None) -> int:
+    """Segna come confermati gli account nati prima dell'obbligo di verifica.
+
+    La colonna confirmed è nata a 0 per tutti, anche per chi usava già il sito.
+    Chi si registra adesso riceve sempre un confirmation_code e resta in attesa
+    del codice. Chi non ha un codice in sospeso (e chi entra con Google, la cui
+    email è già verificata dal provider) viene confermato.
+
+    Idempotente: alla seconda esecuzione non c'è più nessuno da aggiornare.
+    """
+    from sqlalchemy import inspect, text
+
+    eng = eng or engine
+    if "user" not in set(inspect(eng).get_table_names()):
+        return 0
+    colonne = {c["name"] for c in inspect(eng).get_columns("user")}
+    if "confirmed" not in colonne:
+        return 0
+
+    motivi = []
+    if "confirmation_code" in colonne:
+        motivi.append("(confirmation_code IS NULL OR confirmation_code = '')")
+    else:
+        # Senza la colonna del codice non esiste una verifica in corso.
+        motivi.append("1 = 1")
+    if "google_id" in colonne:
+        motivi.append("(google_id IS NOT NULL AND google_id != '')")
+
+    sql = text(
+        'UPDATE "user" SET confirmed = 1 '
+        f'WHERE (confirmed IS NULL OR confirmed != 1) AND ({" OR ".join(motivi)})'
+    )
+    try:
+        with eng.begin() as conn:
+            n = conn.execute(sql).rowcount or 0
+    except Exception as e:  # noqa: BLE001
+        logger.error(f"❌ Conferma account precedenti non applicata ({e})")
+        return 0
+    if n:
+        logger.warning(f"🛠️ Account già esistenti segnati come email confermata: {n}")
+    return n

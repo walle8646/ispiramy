@@ -267,6 +267,8 @@ def test_come_funziona_e_faq_spiegano_registrazione_e_analisi(client):
         assert "analisi automatica" in testo
         assert "verifica i profili" in testo
         assert "Senza registrazione" in testo
+        assert "senza le spese di servizio" in testo
+        assert "1,99" in testo
     assert "48 ore" in client.get("/faq").text
 
     _lingua(client, "en")
@@ -275,5 +277,6 @@ def test_come_funziona_e_faq_spiegano_registrazione_e_analisi(client):
         assert "automatic analysis" in testo
         assert "verify profiles" in testo
         assert "Without a recording" in testo
+        assert "not the service fee" in testo
         assert "Come funziona Ispiramy" not in testo
     _lingua(client, "it")
