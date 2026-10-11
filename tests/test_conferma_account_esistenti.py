@@ -6,6 +6,7 @@ sbloccava niente. Un codice arrivato sulla casella, invece, la dimostra.
 """
 import hashlib
 import secrets
+from datetime import datetime
 from pathlib import Path
 
 import pytest
@@ -15,6 +16,7 @@ from app.database import conferma_account_precedenti, engine
 from app.models import Notification, NotificationType, User
 from app.routes import auth
 from app.utils.lingue_ui import COOKIE
+from app.utils.orari import now_italy_naive
 from app.utils.notification_types import sostituisci_marchio_helpy
 from app.utils.password import hash_password, is_legacy_hash, verify_password
 from app.utils.rate_limit import reset_rate_limit
@@ -59,6 +61,13 @@ def _stato(uid):
         return u.confirmed, u.confirmation_code
 
 
+def _azzera_creazione(uid):
+    """La colonna ha un default: per provare created_at assente serve l'SQL."""
+    from sqlalchemy import text
+    with engine.begin() as conn:
+        conn.execute(text('UPDATE "user" SET created_at = NULL WHERE id = :id'), {"id": uid})
+
+
 @pytest.fixture
 def http(csrf_client):
     reset_rate_limit()
@@ -70,9 +79,13 @@ def http(csrf_client):
 
 class TestAccountPrecedenti:
     def test_senza_codice_in_sospeso_diventa_confermato_e_puo_entrare(self, http):
-        vecchio, email = _utente()
-        recente, _ = _utente(confirmation_code="123456")
-        google, _ = _utente(confirmation_code="999999", google_id=f"sub-{secrets.token_hex(4)}")
+        vecchio, email = _utente(created_at=datetime(2026, 10, 9, 18, 0))
+        recente, _ = _utente(confirmation_code="123456", created_at=datetime(2026, 10, 11, 9, 0))
+        google, _ = _utente(
+            confirmation_code="999999",
+            google_id=f"sub-{secrets.token_hex(4)}",
+            created_at=datetime(2026, 10, 11, 9, 0),
+        )
         try:
             conferma_account_precedenti()
             assert _stato(vecchio)[0] == 1
@@ -90,7 +103,7 @@ class TestAccountPrecedenti:
 
     def test_la_password_vecchia_si_migra_e_non_blocca(self, http):
         md5 = hashlib.md5(PASSWORD.encode("utf-8")).hexdigest()
-        uid, email = _utente(password_md5=md5)
+        uid, email = _utente(password_md5=md5, created_at=datetime(2026, 10, 9, 18, 0))
         try:
             conferma_account_precedenti()
             risposta = http.post("/api/login", data={"email": email, "password": PASSWORD})
@@ -100,6 +113,149 @@ class TestAccountPrecedenti:
             assert not is_legacy_hash(salvata)
             assert verify_password(PASSWORD, salvata) == (True, False)
         finally:
+            _cancella(uid)
+
+
+class TestCodiceInSospeso:
+    """Il caso dello staging: account vecchio, codice già in sospeso, e chi è nuovo
+    deve poter scrivere quel codice direttamente nel login."""
+
+    def test_anche_con_un_codice_vecchio_la_migrazione_conferma(self):
+        prima = datetime(2026, 10, 9, 15, 17)
+        uid, _ = _utente(
+            created_at=prima,
+            confirmation_code="111111",
+            confirmation_code_created_at=prima,
+        )
+        dopo = datetime(2026, 10, 11, 9, 0)
+        recente, _ = _utente(
+            created_at=dopo,
+            confirmation_code="222222",
+            confirmation_code_created_at=dopo,
+        )
+        senza_data, _ = _utente(confirmation_code="333333")
+        _azzera_creazione(senza_data)
+        try:
+            conferma_account_precedenti()
+            assert _stato(uid) == (1, None)
+            assert _stato(senza_data) == (1, None)
+            assert _stato(recente) == (0, "222222")
+            conferma_account_precedenti()
+            assert _stato(recente) == (0, "222222")
+            assert _stato(uid) == (1, None)
+        finally:
+            _cancella(uid)
+            _cancella(recente)
+            _cancella(senza_data)
+
+    def test_la_password_giusta_di_un_account_vecchio_non_si_blocca(self, http):
+        prima = datetime(2026, 10, 9, 15, 17)
+        uid, email = _utente(
+            created_at=prima,
+            confirmation_code="111111",
+            confirmation_code_created_at=prima,
+        )
+        try:
+            sbagliata = http.post("/api/login", data={"email": email, "password": "no-non-va-1"})
+            assert sbagliata.status_code == 401
+            assert _stato(uid) == (0, "111111")
+
+            # Nessuna migrazione prima: è chi entra col codice ancora in sospeso.
+            giusto = http.post("/api/login", data={"email": email, "password": PASSWORD})
+            assert giusto.status_code == 200, giusto.text
+            assert _stato(uid) == (1, None)
+
+            senza, email_senza = _utente(confirmation_code="444444")
+            _azzera_creazione(senza)
+            try:
+                entra = http.post("/api/login", data={"email": email_senza, "password": PASSWORD})
+                assert entra.status_code == 200, entra.text
+                assert _stato(senza) == (1, None)
+            finally:
+                _cancella(senza)
+        finally:
+            _cancella(uid)
+
+    def test_un_iscritto_nuovo_resta_fuori_e_conferma_dalla_pagina(self, http, monkeypatch):
+        monkeypatch.setattr(auth, "generate_verification_code", lambda: "654321")
+        monkeypatch.setattr(auth, "send_verification_email", lambda *a, **k: True)
+        uid, email = _utente(
+            created_at=datetime(2026, 10, 11, 10, 0),
+            confirmation_code="000000",
+            confirmation_code_created_at=datetime(2026, 10, 1),
+        )
+        try:
+            _lingua(http, "en")
+            blocco = http.post("/api/login", data={"email": email, "password": PASSWORD})
+            assert blocco.status_code == 403
+            assert blocco.json()["requires_verification"] is True
+            assert _stato(uid) == (0, "000000")
+
+            pagina = http.get("/login").text
+            assert 'id="codiceConferma"' in pagina
+            assert 'id="confermaCodice"' in pagina
+            assert "Confirm email" in pagina
+            assert "/conferma-email" in pagina
+            assert "/api/verify-email" in pagina
+            assert "Conferma email" not in pagina
+
+            _lingua(http, "it")
+            italiana = http.get("/login").text
+            assert "Conferma email" in italiana
+            assert "Confirm email" not in italiana
+
+            reinvio = http.post("/api/resend-verification", data={"email": email})
+            assert reinvio.status_code == 200, reinvio.text
+            verifica = http.post("/api/verify-email", data={"email": email, "code": "654321"})
+            assert verifica.status_code == 200, verifica.text
+            assert verifica.json()["redirect_url"] == "/profile"
+            profilo = http.get("/profile")
+            assert "schedaAccount" in profilo.text
+            assert _stato(uid) == (1, None)
+        finally:
+            _cancella(uid)
+
+    def test_il_link_della_mail_conferma_e_fa_entrare(self, http):
+        uid, email = _utente(
+            created_at=datetime(2026, 10, 11, 10, 0),
+            confirmation_code="654321",
+            confirmation_code_created_at=now_italy_naive(),
+        )
+        try:
+            _lingua(http, "it")
+            italiano, _ = auth.corpo_email_verifica("Mario", "654321", "it", email)
+            inglese, _ = auth.corpo_email_verifica("Mario", "654321", "en", email)
+            assert "/conferma-email?" in italiano
+            assert "code=654321" in italiano
+            assert "pagina di conferma" in italiano
+            assert "/conferma-email?" in inglese
+            assert "code=654321" in inglese
+            assert "confirmation page" in inglese
+            assert "sign-up page" not in inglese
+            assert "Ciao" not in inglese
+
+            solo_pagina = http.get("/conferma-email", params={"email": email})
+            assert solo_pagina.status_code == 200
+            assert 'id="codiceConferma"' in solo_pagina.text
+            assert _stato(uid) == (0, "654321")
+
+            sbagliato = http.get("/conferma-email", params={"email": email, "code": "000000"})
+            assert sbagliato.status_code == 200
+            assert "Codice non valido" in sbagliato.text
+            assert _stato(uid) == (0, "654321")
+
+            risposta = http.get(
+                "/conferma-email",
+                params={"email": email, "code": "654321"},
+                follow_redirects=False,
+            )
+            assert risposta.status_code == 303
+            assert risposta.headers["location"].endswith("/profile")
+            profilo = http.get("/profile")
+            assert "schedaAccount" in profilo.text
+            assert _stato(uid) == (1, None)
+        finally:
+            http.get("/logout")
             _cancella(uid)
 
 

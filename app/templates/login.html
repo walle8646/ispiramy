@@ -40,11 +40,36 @@
 
         <div id="loginError" style="display: {% if error %}block{% else %}none{% endif %}; background: #fee; border-left: 4px solid #e74c3c; padding: 16px; border-radius: 8px; margin-bottom: 16px;">
             <strong style="color: #e74c3c; display: block;">{% if error %}❌ {{ error }}{% endif %}</strong>
+        </div>
+
+        <div id="pannelloConferma" style="display: {% if richiede_conferma %}block{% else %}none{% endif %}; background: #f1f8e9; border: 2px solid #43a047; border-radius: 8px; padding: 16px; margin-bottom: 16px;">
+            <p style="margin: 0 0 12px; color: #1a1a1a;">{{ t('accesso.inserisci_codice') }}</p>
+            <label for="codiceConferma" style="display: block; margin-bottom: 8px; font-weight: 600; color: #1a1a1a;">{{ t('accesso.codice') }}</label>
+            <input
+                type="text"
+                id="codiceConferma"
+                inputmode="numeric"
+                autocomplete="one-time-code"
+                maxlength="6"
+                pattern="[0-9]{6}"
+                placeholder="000000"
+                style="width: 100%; padding: 14px; border: 2px solid #c8e6c9; border-radius: 8px; font-size: 24px; text-align: center; letter-spacing: 6px; font-weight: 700; margin-bottom: 12px;"
+            >
+            <button
+                type="button"
+                id="confermaCodice"
+                style="width: 100%; padding: 14px; border: none; border-radius: 8px; background: #43a047; color: white; font-weight: 600; font-size: 16px; cursor: pointer;"
+            >{{ t('accesso.conferma_codice') }}</button>
             <button
                 type="button"
                 id="reinviaConferma"
-                style="display: {% if richiede_conferma %}block{% else %}none{% endif %}; margin-top: 12px; width: 100%; padding: 12px; border: 2px solid #43a047; border-radius: 8px; background: white; color: #2e7d32; font-weight: 600; cursor: pointer;"
+                style="margin-top: 12px; width: 100%; padding: 12px; border: 2px solid #43a047; border-radius: 8px; background: white; color: #2e7d32; font-weight: 600; cursor: pointer;"
             >{{ t('accesso.reinvia_conferma') }}</button>
+            <a
+                id="linkPaginaConferma"
+                href="/conferma-email{% if email_da_confermare %}?email={{ email_da_confermare | urlencode }}{% endif %}"
+                style="display: block; margin-top: 12px; text-align: center; color: #2e7d32; font-weight: 600;"
+            >{{ t('accesso.pagina_conferma') }}</a>
         </div>
 
         <button 
@@ -85,6 +110,20 @@ const accessoMsg = {
 };
 let emailDaConfermare = {{ (email_da_confermare or '') | tojson }};
 const reinviaBtn = document.getElementById('reinviaConferma');
+const confermaBtn = document.getElementById('confermaCodice');
+const pannelloConferma = document.getElementById('pannelloConferma');
+const linkPaginaConferma = document.getElementById('linkPaginaConferma');
+const campoCodice = document.getElementById('codiceConferma');
+
+function mostraPannello(email) {
+    if (email) {
+        emailDaConfermare = email;
+    }
+    pannelloConferma.style.display = 'block';
+    if (emailDaConfermare) {
+        linkPaginaConferma.href = '/conferma-email?email=' + encodeURIComponent(emailDaConfermare);
+    }
+}
 
 document.getElementById('loginForm').addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -93,9 +132,8 @@ document.getElementById('loginForm').addEventListener('submit', async (e) => {
     const errorDiv = document.getElementById('loginError');
     const errorText = errorDiv.querySelector('strong');
     
-    // Nascondi errore precedente
     errorDiv.style.display = 'none';
-    reinviaBtn.style.display = 'none';
+    pannelloConferma.style.display = 'none';
     
     try {
         const response = await fetch('/api/login', {
@@ -106,15 +144,12 @@ document.getElementById('loginForm').addEventListener('submit', async (e) => {
         const data = await response.json().catch(() => ({}));
         
         if (response.ok) {
-            // Login riuscito: redirect
             window.location.href = data.redirect_url || '/profile';
         } else {
-            // Login fallito: mostra errore
             errorText.textContent = '❌ ' + (data.error || accessoMsg.server);
             errorDiv.style.display = 'block';
             if (data.requires_verification) {
-                emailDaConfermare = data.email || formData.get('email') || '';
-                reinviaBtn.style.display = 'block';
+                mostraPannello(data.email || formData.get('email') || '');
             }
         }
     } catch (error) {
@@ -122,6 +157,42 @@ document.getElementById('loginForm').addEventListener('submit', async (e) => {
         errorText.textContent = '❌ ' + accessoMsg.rete;
         errorDiv.style.display = 'block';
     }
+});
+
+campoCodice.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+        e.preventDefault();
+        confermaBtn.click();
+    }
+});
+
+confermaBtn.addEventListener('click', async () => {
+    if (!emailDaConfermare) {
+        return;
+    }
+    confermaBtn.disabled = true;
+    const errorDiv = document.getElementById('loginError');
+    const errorText = errorDiv.querySelector('strong');
+    const body = new FormData();
+    body.append('email', emailDaConfermare);
+    body.append('code', campoCodice.value.trim());
+    try {
+        const response = await fetch('/api/verify-email', { method: 'POST', body });
+        const data = await response.json().catch(() => ({}));
+        if (response.ok) {
+            window.location.href = data.redirect_url || '/profile';
+            return;
+        }
+        errorText.textContent = '❌ ' + (data.error || accessoMsg.server);
+        errorDiv.style.display = 'block';
+        mostraPannello();
+    } catch (error) {
+        console.error('Error:', error);
+        errorText.textContent = '❌ ' + accessoMsg.rete;
+        errorDiv.style.display = 'block';
+        mostraPannello();
+    }
+    confermaBtn.disabled = false;
 });
 
 reinviaBtn.addEventListener('click', async () => {
@@ -142,10 +213,12 @@ reinviaBtn.addEventListener('click', async () => {
             errorText.textContent = '❌ ' + (data.error || accessoMsg.reinviaErrore);
         }
         errorDiv.style.display = 'block';
+        mostraPannello();
     } catch (error) {
         console.error('Error:', error);
         errorText.textContent = '❌ ' + accessoMsg.rete;
         errorDiv.style.display = 'block';
+        mostraPannello();
     }
     reinviaBtn.disabled = false;
 });

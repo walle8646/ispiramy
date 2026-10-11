@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+
+{% block title %}{{ t('accesso.conferma_codice') }} - Ispiramy{% endblock %}
+
+{% block content %}
+<div class="pannello-accesso" style="max-width: 500px; margin: 80px auto; padding: 48px; background: white; border-radius: 16px; box-shadow: 0 4px 16px rgba(0,0,0,0.1);">
+    <h1 style="text-align: center; margin-bottom: 16px; color: #1a1a1a;">✉️ {{ t('accesso.conferma_codice') }}</h1>
+    <p style="text-align: center; color: #666; margin-bottom: 32px;">{{ t('accesso.inserisci_codice') }}</p>
+
+    <form id="confermaForm">
+        <div style="margin-bottom: 24px;">
+            <label for="emailConferma" style="display: block; margin-bottom: 8px; font-weight: 600; color: #1a1a1a;">{{ t('accesso.email') }}</label>
+            <input
+                type="email"
+                id="emailConferma"
+                name="email"
+                required
+                value="{{ email_da_confermare or '' }}"
+                placeholder="tua@email.com"
+                style="width: 100%; padding: 14px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 16px;"
+            >
+        </div>
+        <div style="margin-bottom: 24px;">
+            <label for="codiceConferma" style="display: block; margin-bottom: 8px; font-weight: 600; color: #1a1a1a; text-align: center;">{{ t('accesso.codice') }}</label>
+            <input
+                type="text"
+                id="codiceConferma"
+                name="code"
+                required
+                inputmode="numeric"
+                autocomplete="one-time-code"
+                maxlength="6"
+                pattern="[0-9]{6}"
+                placeholder="000000"
+                value="{{ codice_iniziale or '' }}"
+                style="width: 100%; padding: 16px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 28px; text-align: center; letter-spacing: 8px; font-weight: bold;"
+            >
+        </div>
+
+        <div id="erroreConferma" style="display: {% if error %}block{% else %}none{% endif %}; background: #fee; border-left: 4px solid #e74c3c; padding: 16px; border-radius: 8px; margin-bottom: 16px;">
+            <strong style="color: #e74c3c;">{% if error %}❌ {{ error }}{% endif %}</strong>
+        </div>
+
+        <button
+            type="submit"
+            id="confermaCodice"
+            class="hero-btn"
+            style="width: 100%; padding: 16px; border: none; cursor: pointer; font-size: 18px; font-weight: 600;"
+        >{{ t('accesso.conferma_codice') }}</button>
+        <button
+            type="button"
+            id="reinviaConferma"
+            style="margin-top: 12px; width: 100%; padding: 12px; border: 2px solid #43a047; border-radius: 8px; background: white; color: #2e7d32; font-weight: 600; cursor: pointer;"
+        >{{ t('accesso.reinvia_conferma') }}</button>
+    </form>
+
+    <p style="text-align: center; margin-top: 24px;">
+        <a href="/login" style="color: #43a047; font-weight: 600; text-decoration: none;">{{ t('accesso.invia') }}</a>
+    </p>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const accessoMsg = {
+    server: {{ t('accesso.errore_server') | tojson }},
+    rete: {{ t('accesso.errore_rete') | tojson }},
+    reinviaOk: {{ t('accesso.reinvia_ok') | tojson }},
+    reinviaErrore: {{ t('accesso.reinvia_errore') | tojson }}
+};
+
+document.getElementById('confermaForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const errorDiv = document.getElementById('erroreConferma');
+    const errorText = errorDiv.querySelector('strong');
+    const bottone = document.getElementById('confermaCodice');
+    bottone.disabled = true;
+    try {
+        const response = await fetch('/api/verify-email', { method: 'POST', body: new FormData(e.target) });
+        const data = await response.json().catch(() => ({}));
+        if (response.ok) {
+            window.location.href = data.redirect_url || '/profile';
+            return;
+        }
+        errorText.textContent = '❌ ' + (data.error || accessoMsg.server);
+        errorDiv.style.display = 'block';
+    } catch (error) {
+        console.error('Error:', error);
+        errorText.textContent = '❌ ' + accessoMsg.rete;
+        errorDiv.style.display = 'block';
+    }
+    bottone.disabled = false;
+});
+
+document.getElementById('reinviaConferma').addEventListener('click', async () => {
+    const email = document.getElementById('emailConferma').value.trim();
+    const errorDiv = document.getElementById('erroreConferma');
+    const errorText = errorDiv.querySelector('strong');
+    if (!email) {
+        return;
+    }
+    const body = new FormData();
+    body.append('email', email);
+    try {
+        const response = await fetch('/api/resend-verification', { method: 'POST', body });
+        const data = await response.json().catch(() => ({}));
+        errorText.textContent = (response.ok ? '✅ ' : '❌ ') + (data.error || data.message || (response.ok ? accessoMsg.reinviaOk : accessoMsg.reinviaErrore));
+        errorDiv.style.display = 'block';
+    } catch (error) {
+        console.error('Error:', error);
+        errorText.textContent = '❌ ' + accessoMsg.rete;
+        errorDiv.style.display = 'block';
+    }
+});
+</script>
+{% endblock %}
