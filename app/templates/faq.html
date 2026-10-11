@@ -20,7 +20,7 @@
 <p>{{ t('pagamenti.faq') }}</p>
 
 <h2>{{ t('faq.annulla') }}</h2>
-<p>{{ t('faq.annulla_testo') }}</p>
+<p>{{ t('faq.annulla_testo').split('{n}')[0] }}{{ spese_servizio_euro }}{{ t('faq.annulla_testo').split('{n}')[1] }}</p>
 
 <h2>{{ t('faq.diventa') }}</h2>
 <p>{{ t('faq.diventa_testo') }}</p>

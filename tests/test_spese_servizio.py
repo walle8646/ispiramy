@@ -92,20 +92,14 @@ def test_una_sessione_senza_spese_nei_metadati_vale_zero():
 
 # --------------------------------------------------------------------------- rimborsi
 
-def test_un_rimborso_totale_restituisce_anche_le_spese():
-    booking = Booking(price=Decimal("60"), service_fee=SPESE_SERVIZIO)
-    totale_cents = centesimi(totale_pagato(booking))
-    assert int(totale_cents * 100 / 100) == 6199
+def test_la_contestazione_accolta_rende_solo_la_consulenza():
+    """Il 100% è il prezzo della consulenza: 1,99 € di spese restano a Ispiramy."""
+    from app.utils.prezzi import centesimi_rimborso_contestazione
 
-
-def test_un_rimborso_parziale_tocca_anche_le_spese_in_proporzione():
     booking = Booking(price=Decimal("60"), service_fee=SPESE_SERVIZIO)
-    totale_cents = centesimi(totale_pagato(booking))
-    rimborso = int(totale_cents * 50 / 100)
-    # al consulente resta la meta' del valore della consulenza, non del totale
-    resto_consulenza = int(float(booking.price) * 100) - int(float(booking.price) * 100 * 50 / 100)
-    assert rimborso == 3099
-    assert resto_consulenza == 3000
+    assert centesimi_rimborso_contestazione(booking, 100) == 6000
+    assert centesimi_rimborso_contestazione(booking, 50) == 3000
+    assert centesimi(totale_pagato(booking)) == 6199
 
 
 # --------------------------------------------------------------------------- codice

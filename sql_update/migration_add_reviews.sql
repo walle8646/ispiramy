@@ -20,5 +20,5 @@ CREATE INDEX IF NOT EXISTS ix_reviews_review_token ON reviews(review_token);
 -- Notification types per review
 INSERT OR IGNORE INTO notification_types (type_key, name, description, in_app, send_email, email_subject, email_template, is_active)
 VALUES 
-    ('review_request', 'Richiesta Recensione', 'Email per votare la consulenza', 0, 1, 'Lascia una recensione per la tua consulenza su Helpy', 'review_request.html', 1),
-    ('review_reminder', 'Promemoria Recensione', 'Promemoria per votare la consulenza dopo 24h', 0, 1, 'Ricordati di lasciare una recensione su Helpy', 'review_reminder.html', 1);
+    ('review_request', 'Richiesta Recensione', 'Email per votare la consulenza', 0, 1, 'Lascia una recensione per la tua consulenza su Ispiramy', 'review_request.html', 1),
+    ('review_reminder', 'Promemoria Recensione', 'Promemoria per votare la consulenza dopo 24h', 0, 1, 'Ricordati di lasciare una recensione su Ispiramy', 'review_reminder.html', 1);

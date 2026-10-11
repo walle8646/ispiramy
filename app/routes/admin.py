@@ -22,7 +22,7 @@ from app.utils.archivio_s3 import servi as foto_pubblica
 from app.routes.auth import verify_token
 from app.logger_config import logger
 from app.utils.orari import now_italy_naive
-from app.utils.prezzi import centesimi, percentuale_commissione, totale_pagato
+from app.utils.prezzi import centesimi, centesimi_rimborso_contestazione, percentuale_commissione, totale_pagato
 
 router = APIRouter(prefix="/admin")
 
@@ -362,11 +362,12 @@ class DisputeStatusRequest(BaseModel):
 
 
 def applica_rimborso_contestazione(session, booking, refund_pct: int) -> None:
-    """Rimborsa al cliente una percentuale del totale pagato, spese di servizio comprese.
+    """Rimborsa al cliente una percentuale del prezzo della consulenza.
 
-    Se il rimborso non è del 100%, il resto della sola consulenza (meno la
-    commissione) va al consulente. Se il rimborso al cliente non riesce, solleva:
-    la contestazione deve restare aperta.     Un trasferimento successivo che fallisce
+    Le spese di servizio restano a Ispiramy, anche al 100%. Se il rimborso
+    non è del 100%, il resto della sola consulenza (meno la commissione) va
+    al consulente. Se il rimborso al cliente non riesce, solleva: la
+    contestazione deve restare aperta. Un trasferimento successivo che fallisce
     non annulla il rimborso già partito: la quota del consulente resta ferma
     e si riprova da sola fra 6 ore, al riavvio, o dal pannello.
     """
@@ -375,8 +376,8 @@ def applica_rimborso_contestazione(session, booking, refund_pct: int) -> None:
     from app.utils.problemi_transazione import accantona_quota, chiudi, quota_consulente_centesimi
 
     amount_cents = centesimi(booking.price)
-    totale_cents = centesimi(totale_pagato(booking))
     refund_pct = max(0, min(100, refund_pct))
+    refund_cents = centesimi_rimborso_contestazione(booking, refund_pct)
     avviso = None
     errore_quota = None
     quota = 0
@@ -388,7 +389,7 @@ def applica_rimborso_contestazione(session, booking, refund_pct: int) -> None:
         from app.utils.paypal_config import refund_capture
 
         if refund_pct > 0:
-            refund_amount = round(totale_cents * refund_pct / 100 / 100, 2)
+            refund_amount = round(refund_cents / 100, 2)
             result = refund_capture(booking.paypal_capture_id, amount=refund_amount, currency="EUR")
             if not result:
                 raise RuntimeError(f"rimborso PayPal non riuscito per booking {booking.id}")
@@ -407,7 +408,7 @@ def applica_rimborso_contestazione(session, booking, refund_pct: int) -> None:
         stripe.api_key = os.getenv("STRIPE_SECRET_KEY")
 
         if refund_pct > 0:
-            refund_amount_cents = int(totale_cents * refund_pct / 100)
+            refund_amount_cents = refund_cents
             refund = stripe.Refund.create(
                 payment_intent=booking.stripe_payment_intent_id,
                 amount=refund_amount_cents,
@@ -530,10 +531,22 @@ def avvisa_decisione_contestazione(session, dispute, booking, status: str, refun
         pct = 100 if refund_pct is None else refund_pct
         if pct >= 100:
             titolo = "Contestazione accolta"
-            cliente_it = f"La contestazione sulla consulenza del {data} è stata accolta. Ti rimborsiamo l'intero importo pagato."
-            cliente_en = f"The dispute about the consultation on {data} was upheld. You will receive a full refund of what you paid."
-            consulente_it = f"La contestazione sulla consulenza del {data} è stata accolta. Il cliente viene rimborsato e il compenso non parte."
-            consulente_en = f"The dispute about the consultation on {data} was upheld. The client is refunded in full and the payout is not sent."
+            cliente_it = (
+                f"La contestazione sulla consulenza del {data} è stata accolta. "
+                "Ti rimborsiamo il prezzo della consulenza. Le spese di servizio restano a Ispiramy."
+            )
+            cliente_en = (
+                f"The dispute about the consultation on {data} was upheld. "
+                "You get back the consultation amount. The service fee stays with Ispiramy."
+            )
+            consulente_it = (
+                f"La contestazione sulla consulenza del {data} è stata accolta. "
+                "Il cliente viene rimborsato del prezzo della consulenza e il compenso non parte."
+            )
+            consulente_en = (
+                f"The dispute about the consultation on {data} was upheld. "
+                "The client is refunded the consultation amount and the payout is not sent."
+            )
         elif pct <= 0:
             titolo = "Contestazione chiusa"
             cliente_it = f"La contestazione sulla consulenza del {data} è stata chiusa senza rimborso."
@@ -542,15 +555,21 @@ def avvisa_decisione_contestazione(session, dispute, booking, status: str, refun
             consulente_en = f"The dispute about the consultation on {data} was closed with no refund. Your payout is being sent."
         else:
             titolo = "Contestazione chiusa"
-            cliente_it = f"La contestazione sulla consulenza del {data} è stata chiusa con un rimborso del {pct}%."
-            cliente_en = f"The dispute about the consultation on {data} was closed with a {pct}% refund."
+            cliente_it = (
+                f"La contestazione sulla consulenza del {data} è stata chiusa con un rimborso "
+                f"del {pct}% del prezzo della consulenza. Le spese di servizio restano a Ispiramy."
+            )
+            cliente_en = (
+                f"The dispute about the consultation on {data} was closed with a {pct}% refund "
+                "of the consultation amount. The service fee stays with Ispiramy."
+            )
             consulente_it = (
-                f"La contestazione sulla consulenza del {data} è stata chiusa con un rimborso del {pct}% al cliente. "
-                "Il resto del compenso ti viene inviato."
+                f"La contestazione sulla consulenza del {data} è stata chiusa con un rimborso "
+                f"del {pct}% del prezzo della consulenza. Il resto del compenso ti viene inviato."
             )
             consulente_en = (
-                f"The dispute about the consultation on {data} was closed with a {pct}% refund to the client. "
-                "The rest of your payout is being sent."
+                f"The dispute about the consultation on {data} was closed with a {pct}% refund "
+                "of the consultation amount. The rest of your payout is being sent."
             )
 
     def manda(user_id, messaggio, inglese):

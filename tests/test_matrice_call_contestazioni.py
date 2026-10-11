@@ -340,7 +340,7 @@ class TestDecisioneAdmin:
         monkeypatch.setattr(stripe.Transfer, "create", transfer)
         return rimborsi, trasferimenti
 
-    def test_rimborso_totale_include_le_spese_e_avvisa_entrambi(self, scena, csrf_client, monkeypatch):
+    def test_rimborso_totale_rende_la_consulenza_e_tiene_le_spese(self, scena, csrf_client, monkeypatch):
         booking_id = _prenota(scena, -30)
         dispute_id = _contestazione(scena, booking_id)
         rimborsi, trasferimenti = self._mock_stripe(monkeypatch)
@@ -351,7 +351,10 @@ class TestDecisioneAdmin:
             json={"status": "resolved", "refund_percentage": 100},
         )
         assert risposta.status_code == 200, risposta.text
-        assert rimborsi[0]["amount"] == 2198
+        assert rimborsi[0]["amount"] == 1999
+        messaggio = _avvisi(scena.cliente, "dispute_decided")[0].message
+        assert "prezzo della consulenza" in messaggio
+        assert "spese di servizio" in messaggio
         assert trasferimenti == []
         assert _stato_pagamento(booking_id) == ("confirmed", "refunded")
         assert _stato_contestazione(dispute_id) == "resolved"
@@ -371,7 +374,7 @@ class TestDecisioneAdmin:
             json={"status": "resolved", "refund_percentage": 50},
         )
         assert risposta.status_code == 200, risposta.text
-        assert rimborsi[0]["amount"] == 1099
+        assert rimborsi[0]["amount"] == 999
         assert trasferimenti[0]["amount"] == 800
         assert _stato_pagamento(booking_id)[1] == "partially_refunded"
         assert len(_avvisi(scena.cliente, "dispute_decided")) == 1
@@ -429,19 +432,22 @@ class TestDecisioneAdmin:
         import re
         assert not re.findall(r"\{[a-z_]+\}", html)
 
-    def test_l_anteprima_usa_il_totale_pagato(self, scena, csrf_client):
+    def test_l_anteprima_rimborsa_solo_la_consulenza(self, scena, csrf_client):
         booking_id = _prenota(scena, -30, recording_filename="booking_demo")
         dispute_id = _contestazione(scena, booking_id)
         _login(csrf_client, scena.email_admin, scena.password)
         pagina = csrf_client.get(f"/admin/disputes/{dispute_id}")
         assert pagina.status_code == 200
-        assert "const TOTALE_PAGATO = 21.98" in pagina.text
         assert "const PREZZO_CONSULENZA = 19.99" in pagina.text
+        assert "const TOTALE_PAGATO" not in pagina.text
+        assert "PREZZO_CONSULENZA * pct / 100" in pagina.text
+        assert "restano a Ispiramy" in pagina.text
         assert "Avvia Analisi AI" in pagina.text
         assert "Scarica MP4" in pagina.text
         assert "Rifiutata" in pagina.text
         testo = pagina.text
         assert dispute_id and booking_id and "21.98" in testo
+        assert "19.99" in testo
 
 
 class TestPermessi:

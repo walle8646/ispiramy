@@ -113,7 +113,14 @@ async def google_callback(request: Request):
             ).first()
             
             if user:
-                # Utente già collegato con Google → login
+                # Utente già collegato con Google → login.
+                # L'email l'ha verificata Google: un confirmed rimasto a 0
+                # (account vecchio) non deve bloccare il prossimo accesso con password.
+                if user.confirmed != 1:
+                    _conferma_da_google(user)
+                    session.add(user)
+                    session.commit()
+                    session.refresh(user)
                 logger.info(f"✅ Google login per utente esistente: {user.email} (ID: {user.id})")
                 _set_session(request, session, user)
                 risposta = RedirectResponse("/profile", status_code=302)
@@ -128,6 +135,7 @@ async def google_callback(request: Request):
             if user:
                 # Collega account Google all'utente esistente
                 user.google_id = google_id
+                _conferma_da_google(user)
                 if not user.nome and nome:
                     user.nome = nome
                 if not user.cognome and cognome:
@@ -184,6 +192,14 @@ async def google_callback(request: Request):
         else:
             logger.error(f"❌ Errore Google OAuth callback: {e}", exc_info=True)
         return RedirectResponse("/login", status_code=302)
+
+
+def _conferma_da_google(user: User) -> None:
+    """Google ha già verificato l'indirizzo."""
+    if user.confirmed != 1:
+        user.confirmed = 1
+        user.confirmation_code = None
+        user.confirmation_code_created_at = None
 
 
 def _set_session(request: Request, session, user: User):

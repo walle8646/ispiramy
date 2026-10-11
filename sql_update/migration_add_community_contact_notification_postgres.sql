@@ -11,7 +11,7 @@ INSERT INTO notification_types (type_key, name, description, in_app, send_email,
     'Notifica quando ricevi un nuovo messaggio o quando una conversazione viene riattivata dopo 30+ minuti',
     TRUE,  -- in_app: SI
     TRUE,  -- send_email: SI
-    '💬 Hai ricevuto un nuovo messaggio su Helpy!',
+    '💬 Hai ricevuto un nuovo messaggio su Ispiramy!',
     'community_contact.html'
 )
 ON CONFLICT (type_key) DO NOTHING;
