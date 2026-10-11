@@ -1,11 +1,12 @@
 ﻿from fastapi import APIRouter, Request, Form, HTTPException
 from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
-from app.database import get_session
+from app.database import account_gia_esistente, get_session
 from app.models import User
 from sqlmodel import select
 import time
 from typing import Optional
 from html import escape as html_escape
+from urllib.parse import quote_plus
 from app.logger_config import logger
 from app.utils.email import generate_verification_code
 from app.utils.lingue_ui import lingua_di, traduci
@@ -145,6 +146,71 @@ def _risposta_email_non_confermata(request: Request, email: str, html: bool = Fa
     )
 
 
+def _sblocca_se_account_precedente(session, user: User) -> None:
+    """Dopo la password giusta, un account precedente entra anche con un codice in sospeso.
+
+    Una password sbagliata non arriva qui, quindi non conferma niente.
+    """
+    if user.confirmed == 1:
+        return
+    if not account_gia_esistente(user.created_at, getattr(user, "google_id", None)):
+        return
+    user.confirmed = 1
+    user.confirmation_code = None
+    user.confirmation_code_created_at = None
+    session.add(user)
+    session.commit()
+    session.refresh(user)
+    logger.info(f"✅ Account precedente confermato al login: {user.email}")
+
+
+def _entra(request: Request, user: User) -> None:
+    """Apre la sessione come il login: JWT e dati utente."""
+    jwt_secret = os.getenv("JWT_SECRET", "your-secret-key-change-in-production")
+    token_data = {
+        "user_id": user.id,
+        "email": user.email,
+        "exp": datetime.utcnow() + timedelta(days=7),
+    }
+    request.session["access_token"] = jwt.encode(token_data, jwt_secret, algorithm="HS256")
+    request.session["user_id"] = user.id
+    request.session["user_email"] = user.email
+    request.session["user_nome"] = user.nome or "User"
+
+
+def _applica_codice(session, email: str, code: str):
+    """Conferma l'email se il codice è quello giusto e non è scaduto.
+
+    Ritorna (utente, errore). errore è None quando la conferma è andata a buon fine.
+    """
+    user = session.exec(select(User).where(User.email == email)).first()
+    if not user:
+        return None, {"chiave": "accesso.email_sconosciuta", "status": 404}
+    if user.confirmed == 1:
+        return user, {"chiave": "accesso.gia_confermata", "status": 400}
+    if not user.confirmation_code or not secrets.compare_digest(
+            user.confirmation_code, (code or "").strip()):
+        logger.warning(f"❌ Invalid code for {email}")
+        return user, {"chiave": "accesso.codice_errato", "status": 400}
+    generato = user.confirmation_code_created_at
+    if generato is None or now_italy_naive() - generato > VALIDITA_CODICE_VERIFICA:
+        return user, {"chiave": "accesso.codice_scaduto", "status": 400, "expired": True}
+    user.confirmed = 1
+    user.confirmation_code = None
+    user.confirmation_code_created_at = None
+    session.add(user)
+    session.commit()
+    return user, None
+
+
+def _url_conferma(email: str, code: str = "") -> str:
+    base = os.getenv("BASE_URL", "http://localhost:8080").rstrip("/")
+    url = f"{base}/conferma-email?email={quote_plus(email or '')}"
+    if code:
+        url += f"&code={quote_plus(code)}"
+    return url
+
+
 def _password_troppo_debole(password: str, lingua: str = "it") -> Optional[str]:
     """Ritorna il motivo del rifiuto, oppure None se la password va bene."""
     if not password or len(password) < MIN_PASSWORD_LENGTH:
@@ -191,6 +257,7 @@ async def login(
             session.refresh(user)
             logger.info(f"🔐 Password migrata a bcrypt per {user.email}")
 
+        _sblocca_se_account_precedente(session, user)
         if user.confirmed != 1:
             return _risposta_email_non_confermata(request, email, html=True)
         
@@ -244,7 +311,9 @@ async def api_login(
 
             # L'email deve essere confermata: il form /login lo controllava gia',
             # questo endpoint no, quindi la verifica via codice era aggirabile
-            # semplicemente usando il login AJAX.
+            # semplicemente usando il login AJAX. Gli account precedenti, anche
+            # con un codice rimasto in sospeso, non vengono più fermati.
+            _sblocca_se_account_precedente(session, user)
             if user.confirmed != 1:
                 return _risposta_email_non_confermata(request, user.email)
             
@@ -380,48 +449,23 @@ async def verify_email(
     """Verifica codice email"""
     # Il codice e' di 6 cifre: senza limite si enumera in poche ore
     enforce_rate_limit(request, "verify_email", limit=10, window_seconds=900, extra_key=email)
+    lingua = lingua_di(request)
     try:
         with get_session() as session:
-            user = session.exec(select(User).where(User.email == email)).first()
-            
-            if not user:
-                return JSONResponse({"error": "Email non trovata"}, status_code=404)
-            
-            if user.confirmed == 1:
-                return JSONResponse({"error": "Email già verificata"}, status_code=400)
-            
-            if not user.confirmation_code or not secrets.compare_digest(
-                    user.confirmation_code, (code or "").strip()):
-                logger.warning(f"❌ Invalid code for {email}")
-                return JSONResponse({"error": "Codice non valido"}, status_code=400)
+            user, esito = _applica_codice(session, email, code)
+            if esito:
+                corpo = {"error": traduci(esito["chiave"], lingua)}
+                if esito.get("expired"):
+                    corpo["expired"] = True
+                return JSONResponse(corpo, status_code=esito["status"])
 
-            # Il codice scade dopo VALIDITA_CODICE_VERIFICA, lo stesso numero dell'email.
-            # Senza data di generazione (codici emessi prima di questa modifica)
-            # lo si tratta come scaduto: basta chiederne uno nuovo.
-            generato = user.confirmation_code_created_at
-            if generato is None or now_italy_naive() - generato > VALIDITA_CODICE_VERIFICA:
-                return JSONResponse({
-                    "error": "Il codice è scaduto. Richiedine uno nuovo.",
-                    "expired": True,
-                }, status_code=400)
-
-            user.confirmed = 1
-            user.confirmation_code = None
-            user.confirmation_code_created_at = None
-            session.add(user)
-            session.commit()
-            
-            request.session["user_id"] = user.id
-            request.session["user_email"] = user.email
-            request.session["user_nome"] = user.nome or "User"
-            
+            _entra(request, user)
             logger.info(f"✅ Email verified for: {email}")
-            
             return JSONResponse({
-                "message": "Email verificata con successo!",
-                "redirect_url": "/profile"
+                "message": traduci("accesso.email_verificata", lingua),
+                "redirect_url": "/profile",
             }, status_code=200)
-    
+
     except Exception as e:
         logger.error(f"Error during verification: {e}", exc_info=True)
         return JSONResponse({"error": "Errore durante la verifica"}, status_code=500)
@@ -432,6 +476,41 @@ async def login_page(request: Request):
     return request.app.state.templates.TemplateResponse(
         "login.html",
         {"request": request}
+    )
+
+
+@router.get("/conferma-email", response_class=HTMLResponse)
+async def pagina_conferma_email(request: Request, email: str = "", code: str = ""):
+    """Pagina per inserire il codice. Con email e codice nel link, conferma e fa entrare.
+
+    Il link con il codice è il pulsante dell'email. Senza codice si mostra solo il modulo:
+    aprirlo non conferma nessuno.
+    """
+    lingua = lingua_di(request)
+    email = (email or "").strip()
+    code = (code or "").strip()
+    errore = None
+    if email and code:
+        enforce_rate_limit(request, "verify_email", limit=10, window_seconds=900, extra_key=email)
+        with get_session() as session:
+            user, esito = _applica_codice(session, email, code)
+            if esito is None and user is not None:
+                _entra(request, user)
+                clear_attempts(request, "login", email)
+                logger.info(f"✅ Email verified via link for: {email}")
+                risposta = RedirectResponse(url="/profile", status_code=303)
+                applica_lingua(request, risposta, session, user)
+                return risposta
+            if esito:
+                errore = traduci(esito["chiave"], lingua)
+    return request.app.state.templates.TemplateResponse(
+        "conferma_email.html",
+        {
+            "request": request,
+            "email_da_confermare": email,
+            "codice_iniziale": code,
+            "error": errore,
+        },
     )
 
 @router.post("/api/resend-verification")
@@ -666,8 +745,12 @@ def send_reset_password_email(email: str, nome: str, reset_code: str, lingua: st
         return False
 
 
-def corpo_email_verifica(nome: str, code: str, lingua: str = "it") -> tuple:
-    """HTML e oggetto dell'email di conferma. I minuti sono quelli del server."""
+def corpo_email_verifica(nome: str, code: str, lingua: str = "it", email: str = "") -> tuple:
+    """HTML e oggetto dell'email di conferma. I minuti sono quelli del server.
+
+    Il pulsante è un link che conferma da solo. Sotto c'è la pagina in cui si
+    può scrivere il codice a mano.
+    """
     from app.utils.notification_email import _branded_email
     minuti = int(VALIDITA_CODICE_VERIFICA.total_seconds() // 60)
     code_box = (
@@ -675,23 +758,33 @@ def corpo_email_verifica(nome: str, code: str, lingua: str = "it") -> tuple:
         'background:#e8f5e9;border-radius:10px;padding:22px;text-align:center;margin:24px 0;">'
         f'{html_escape(code)}</div>'
     )
+    link_clic = html_escape(_url_conferma(email, code))
+    link_pagina = html_escape(_url_conferma(email))
     if lingua == "en":
         body = (
             f"<p>Hi <strong>{html_escape(nome or '')}</strong>,</p>"
-            "<p>Thanks for signing up for Ispiramy. Here is your verification code:</p>"
+            "<p>Here is your Ispiramy verification code:</p>"
             + code_box +
-            "<p>Enter it on the sign-up page to finish. "
+            "<p>Use the button to confirm in one click, or enter the code on "
+            f'<a href="{link_pagina}">the confirmation page</a>. '
             f"The code is valid for <strong>{minuti} minutes</strong>.</p>"
         )
-        return _branded_email("✨", "Confirm your email", "#43a047", "#2e7d32", body), "Ispiramy verification code"
+        return _branded_email(
+            "✨", "Confirm your email", "#43a047", "#2e7d32", body,
+            "Confirm email", link_clic, "en",
+        ), "Ispiramy verification code"
     body = (
         f"<p>Ciao <strong>{html_escape(nome or '')}</strong>,</p>"
         "<p>Grazie per esserti registrato su Ispiramy! Ecco il tuo codice di verifica:</p>"
         + code_box +
-        "<p>Inseriscilo nella pagina di registrazione per completare la verifica. "
+        "<p>Conferma con un clic sul pulsante, oppure inserisci il codice nella "
+        f'<a href="{link_pagina}">pagina di conferma</a>. '
         f"Il codice è valido <strong>{minuti} minuti</strong>.</p>"
     )
-    return _branded_email("✨", "Conferma la tua email", "#43a047", "#2e7d32", body), "Codice di Verifica Ispiramy"
+    return _branded_email(
+        "✨", "Conferma la tua email", "#43a047", "#2e7d32", body,
+        "Conferma email", link_clic, "it",
+    ), "Codice di Verifica Ispiramy"
 
 
 def send_verification_email(to_email: str, code: str, nome: str = "User", lingua: str = "it") -> bool:
@@ -729,7 +822,7 @@ def send_verification_email(to_email: str, code: str, nome: str = "User", lingua
         # ========== STEP 2: Costruisci messaggio HTML ==========
         logger.info("📝 STEP 2: Costruzione messaggio...")
         
-        html_content, oggetto = corpo_email_verifica(nome, code, lingua)
+        html_content, oggetto = corpo_email_verifica(nome, code, lingua, to_email)
 
         # ========== STEP 3: Crea messaggio SendGrid ==========
         message = Mail(

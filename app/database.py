@@ -1,5 +1,6 @@
 from sqlmodel import SQLModel, create_engine, Session
 import os
+from datetime import datetime
 from app.logger_config import logger
 from contextlib import contextmanager
 
@@ -312,14 +313,35 @@ def ensure_added_columns(eng=None) -> list[str]:
     return aggiunte
 
 
+# Dal 10 ottobre 2026 (messa in linea della conferma email, PR #12) un account
+# nuovo resta fuori finché non inserisce il codice. Chi esisteva prima va
+# considerato già confermato, anche se ha un codice di verifica rimasto in sospeso.
+DATA_OBBLIGO_CONFERMA_EMAIL = datetime(2026, 10, 10)
+
+
+def account_gia_esistente(created_at, google_id=None) -> bool:
+    """True se l'account è nato prima dell'obbligo, o se l'email l'ha già verificata Google.
+
+    created_at assente conta come precedente: i nuovi iscritti ricevono sempre la data.
+    """
+    if google_id:
+        return True
+    if created_at is None:
+        return True
+    if getattr(created_at, "tzinfo", None) is not None:
+        created_at = created_at.replace(tzinfo=None)
+    return created_at < DATA_OBBLIGO_CONFERMA_EMAIL
+
+
 def conferma_account_precedenti(eng=None) -> int:
     """Segna come confermati gli account nati prima dell'obbligo di verifica.
 
-    La colonna confirmed è nata a 0 per tutti, anche per chi usava già il sito.
-    Chi si registra adesso riceve sempre un confirmation_code e resta in attesa
-    del codice. Chi non ha un codice in sospeso (e chi entra con Google, la cui
-    email è già verificata dal provider) viene confermato.
+    La colonna confirmed è nata a 0 per tutti, anche per chi usava già il sito
+    e aveva già un codice in sospeso: quel codice non deve tenerli fuori.
+    Chi si registra dal 10 ottobre 2026 in poi resta in attesa del codice.
+    Chi entra con Google ha l'email già verificata dal provider, qualunque sia la data.
 
+    Il codice in sospeso viene cancellato insieme alla conferma.
     Idempotente: alla seconda esecuzione non c'è più nessuno da aggiornare.
     """
     from sqlalchemy import inspect, text
@@ -331,22 +353,29 @@ def conferma_account_precedenti(eng=None) -> int:
     if "confirmed" not in colonne:
         return 0
 
-    motivi = []
+    assegnazioni = ["confirmed = 1"]
     if "confirmation_code" in colonne:
-        motivi.append("(confirmation_code IS NULL OR confirmation_code = '')")
+        assegnazioni.append("confirmation_code = NULL")
+    if "confirmation_code_created_at" in colonne:
+        assegnazioni.append("confirmation_code_created_at = NULL")
+
+    motivi = []
+    if "created_at" in colonne:
+        motivi.append("(created_at IS NULL OR created_at < :limite)")
     else:
-        # Senza la colonna del codice non esiste una verifica in corso.
         motivi.append("1 = 1")
     if "google_id" in colonne:
         motivi.append("(google_id IS NOT NULL AND google_id != '')")
 
     sql = text(
-        'UPDATE "user" SET confirmed = 1 '
+        f'UPDATE "user" SET {", ".join(assegnazioni)} '
         f'WHERE (confirmed IS NULL OR confirmed != 1) AND ({" OR ".join(motivi)})'
     )
     try:
         with eng.begin() as conn:
-            n = conn.execute(sql).rowcount or 0
+            n = conn.execute(
+                sql, {"limite": DATA_OBBLIGO_CONFERMA_EMAIL.strftime("%Y-%m-%d %H:%M:%S")}
+            ).rowcount or 0
     except Exception as e:  # noqa: BLE001
         logger.error(f"❌ Conferma account precedenti non applicata ({e})")
         return 0
