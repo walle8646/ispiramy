@@ -265,8 +265,9 @@
     
     <div class="client-info">
         <div class="client-avatar">
-            {% if client.profile_picture %}
-                <img src="{{ client.profile_picture }}" alt="{{ client.nome }}">
+            {% set foto_cliente = client.profile_picture | foto %}
+            {% if foto_cliente %}
+                <img src="{{ foto_cliente }}" alt="{{ client.nome }}">
             {% else %}
                 {{ client.nome[0] }}{{ client.cognome[0] if client.cognome else '' }}
             {% endif %}

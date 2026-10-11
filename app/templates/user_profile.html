@@ -793,7 +793,7 @@
         <div class="pub-hero">
             <div class="pub-hero-inner" style="position: relative;">
                 <div style="position: relative; flex-shrink: 0; display: flex; flex-direction: column; align-items: center;">
-                <img src="{{ user.profile_picture or user|default_avatar }}" 
+                <img src="{{ user.profile_picture | foto or user|default_avatar }}" 
                      alt="{{ user.nome }}"
                      onerror="this.onerror=null; this.src='{{ user|default_avatar }}'">
                 {% if last_seen_label %}

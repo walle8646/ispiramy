@@ -248,18 +248,22 @@ def ensure_tabelle_nuove(eng=None) -> list[str]:
     """
     from sqlalchemy import inspect
 
-    from app.models import CommunityReport
+    from app.models import CommunityReport, PushSubscription
 
     eng = eng or engine
-    nome = CommunityReport.__tablename__
-    if nome in set(inspect(eng).get_table_names()):
-        return []
-    CommunityReport.__table__.create(eng, checkfirst=True)
-    logger.warning(
-        f"🛠️ Schema: creata la tabella mancante {nome} "
-        "(create_all non l'aveva aggiunta al database già esistente)"
-    )
-    return [nome]
+    presenti = set(inspect(eng).get_table_names())
+    creati = []
+    for modello in (CommunityReport, PushSubscription):
+        nome = modello.__tablename__
+        if nome in presenti:
+            continue
+        modello.__table__.create(eng, checkfirst=True)
+        logger.warning(
+            f"🛠️ Schema: creata la tabella mancante {nome} "
+            "(create_all non l'aveva aggiunta al database già esistente)"
+        )
+        creati.append(nome)
+    return creati
 
 
 def ensure_added_columns(eng=None) -> list[str]:

@@ -229,7 +229,7 @@
                         <!-- Foto a sinistra con categoria sotto -->
                         <div class="consultant-photo-section">
                             <a href="/user/{{ item.id }}" class="consultant-photo-link">
-                                <img src="{{ item.profile_picture or item|default_avatar }}" 
+                                <img src="{{ item.profile_picture | foto or item|default_avatar }}" 
                                      alt="{{ item.nome }}" 
                                      class="consultant-avatar"
                                      onerror="this.onerror=null; this.src='{{ item|default_avatar }}'">
@@ -288,7 +288,7 @@
                             <button class="btn-message-consultant" 
                                     data-consultant-id="{{ item.id }}"
                                     data-consultant-name="{{ item.nome }} {{ item.cognome }}"
-                                    data-consultant-pic="{{ item.profile_picture or item|default_avatar }}"
+                                    data-consultant-pic="{{ item.profile_picture | foto or item|default_avatar }}"
                                     title="{{ t('scheda.messaggio') }}">
                                 <i class="fas fa-envelope"></i> {{ t('esperti.messaggia') }}
                             </button>

@@ -710,7 +710,7 @@
 <div class="booking-container">
     <!-- Header Consulente -->
     <div class="consultant-header">
-        <img src="{{ consultant.profile_picture or consultant|default_avatar }}" 
+        <img src="{{ consultant.profile_picture | foto or consultant|default_avatar }}" 
              alt="{{ consultant.nome }}"
              class="consultant-avatar"
              style="width: 160px; min-height: 100%; border-radius: 14px; object-fit: cover;"

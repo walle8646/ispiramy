@@ -10,6 +10,7 @@ from app.utils.prezzi import PREZZO_ORARIO_MINIMO
 from app.utils_user import has_payment_method
 from app.utils.ai_service import genera_aree_interesse, genera_tags, valida_profilo, modera_immagine
 from app.utils.file_immagini import tipo_immagine
+from app.utils import archivio_s3
 from app.utils.verifica_categorie import (
     categorie_dichiarate,
     etichette_verificate,
@@ -631,143 +632,46 @@ async def upload_profile_picture(request: Request, file: UploadFile = File(...))
                 status_code=400
             )
         
-        # Importa boto3 per S3
-        import boto3
-        from datetime import datetime
-        
-        # Configura AWS S3
-        aws_access_key = os.getenv("AWS_ACCESS_KEY_ID")
-        aws_secret_key = os.getenv("AWS_SECRET_ACCESS_KEY")
-        s3_bucket = os.getenv("S3_BUCKET_NAME", "ispiramy-images")
-        s3_region = os.getenv("AWS_REGION", "eu-west-1")
-        
-        # Mai loggare porzioni della secret key: e' comunque materiale segreto.
-        logger.info(
-            f"🔍 Upload S3 - credenziali {'presenti' if (aws_access_key and aws_secret_key) else 'MANCANTI'}, "
-            f"bucket={s3_bucket}, region={s3_region}"
-        )
-        
-        if not aws_access_key or not aws_secret_key:
-            # Errore: AWS deve essere configurato
-            logger.error("❌ AWS credentials NOT configured - S3 is REQUIRED")
+        # Stesso bucket delle registrazioni, cartella profile-pictures/.
+        # Niente copia sul disco del container: a ogni deploy sparirebbe.
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        s3_key = f"{archivio_s3.PREFISSO_PROFILO}{user.id}_{timestamp}.{file_extension}"
+        try:
+            stabile = await asyncio.to_thread(
+                archivio_s3.carica,
+                s3_key,
+                contents,
+                file_mime,
+                CacheControl="max-age=31536000",
+            )
+        except RuntimeError:
             return JSONResponse({
                 "error": "Errore di configurazione server: AWS S3 non disponibile"
             }, status_code=500)
-        
-        try:
-            logger.info(f"🔍 DEBUG - Creating S3 client...")
-            s3_client = boto3.client(
-                "s3",
-                aws_access_key_id=aws_access_key,
-                aws_secret_access_key=aws_secret_key,
-                region_name=s3_region
-            )
-            logger.info(f"✅ S3 client created successfully")
-            
-            # Genera nome unico per il file
-            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-            s3_key = f"profile-pictures/{user.id}_{timestamp}.{file_extension}"
-            
-            logger.info(f"🔍 DEBUG - Uploading to S3: {s3_bucket}/{s3_key}")
-            # Upload su S3, fuori dall'event loop: boto3 è sincrono e su una
-            # rete lenta terrebbe fermo tutto il sito per l'intera durata.
-            await asyncio.to_thread(
-                s3_client.put_object,
-                Bucket=s3_bucket,
-                Key=s3_key,
-                Body=contents,
-                ContentType=file_mime,
-                CacheControl="max-age=31536000"  # Cache per 1 anno
-            )
-            logger.info(f"✅ File uploaded successfully to S3")
-
-            # Genera URL pubblico (o signed URL se bucket è privato)
-            try:
-                # Prova a generare URL pubblico
-                s3_url = f"https://{s3_bucket}.s3.{s3_region}.amazonaws.com/{s3_key}"
-
-                # Verifica se il file è accessibile
-                try:
-                    await asyncio.to_thread(s3_client.head_object, Bucket=s3_bucket, Key=s3_key)
-                    logger.info(f"✅ File uploaded to S3: {s3_url}")
-                except Exception:
-                    # Se non è accessibile, genera signed URL
-                    s3_url = s3_client.generate_presigned_url(
-                        'get_object',
-                        Params={'Bucket': s3_bucket, 'Key': s3_key},
-                        ExpiresIn=31536000  # 1 anno in secondi
-                    )
-                    logger.info(f"✅ File uploaded to S3 (signed URL): {s3_url}")
-            except Exception as e:
-                logger.warning(f"⚠️ Could not generate URL: {e}")
-                s3_url = f"https://{s3_bucket}.s3.{s3_region}.amazonaws.com/{s3_key}"
-            
-            # Salva URL nel database
-            with get_session() as session:
-                db_user = session.get(User, user.id)
-                db_user.profile_picture = s3_url
-                session.add(db_user)
-                session.commit()
-                logger.info(f"✅ Profile picture updated for user {user.id}")
-            
-            return JSONResponse({
-                "success": True,
-                "url": s3_url,
-                "message": "Immagine caricata con successo!"
-            })
-        
-        except Exception as s3_error:
+        except Exception:
             logger.exception("❌ S3 upload error")
-            # Fallback a salvataggio locale
-            return save_profile_picture_locally(user, contents, file_extension)
-    
-    except Exception as e:
+            return JSONResponse(
+                {"error": "Errore durante il caricamento dell'immagine"},
+                status_code=500,
+            )
+
+        with get_session() as session:
+            db_user = session.get(User, user.id)
+            db_user.profile_picture = stabile
+            session.add(db_user)
+            session.commit()
+            logger.info(f"✅ Profile picture updated for user {user.id}")
+
+        return JSONResponse({
+            "success": True,
+            "url": archivio_s3.firma(s3_key) or stabile,
+            "message": "Immagine caricata con successo!"
+        })
+
+    except Exception:
         logger.exception("❌ Error uploading profile picture")
         return JSONResponse(
             {"error": "Errore durante l'upload"},
-            status_code=500
-        )
-
-
-def save_profile_picture_locally(user, file_contents, extension="jpg"):
-    """Salva immagine profilo localmente come fallback"""
-    try:
-        from datetime import datetime
-        from pathlib import Path
-        
-        upload_dir = Path("uploads/profile_pictures")
-        upload_dir.mkdir(parents=True, exist_ok=True)
-        
-        # Genera nome unico
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        filename = f"{user.id}_{timestamp}.{extension}"
-        file_path = upload_dir / filename
-        
-        # Salva file
-        with open(file_path, "wb") as f:
-            f.write(file_contents)
-        
-        # URL relativo
-        url = f"/uploads/profile_pictures/{filename}"
-        
-        # Aggiorna database
-        with get_session() as session:
-            db_user = session.get(User, user.id)
-            db_user.profile_picture = url
-            session.add(db_user)
-            session.commit()
-            logger.info(f"✅ Profile picture saved locally for user {user.id}: {url}")
-        
-        return JSONResponse({
-            "success": True,
-            "url": url,
-            "message": "Immagine caricata con successo!"
-        })
-    
-    except Exception as e:
-        logger.exception("❌ Error saving profile picture locally")
-        return JSONResponse(
-            {"error": "Errore durante il salvataggio dell'immagine"},
             status_code=500
         )
 

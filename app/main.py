@@ -347,6 +347,23 @@ def _parse_json(value):
         return []
 templates.env.filters['parse_json'] = _parse_json
 
+def _foto(value, segnaposto=""):
+    """URL firmato di una foto utente, o il segnaposto se il file non c'è più."""
+    from app.utils.archivio_s3 import servi
+    return servi(value, segnaposto=segnaposto)
+
+def _immagini(value):
+    """Lista di immagini community pronte da mostrare (firma o segnaposto)."""
+    from app.utils.archivio_s3 import SEGNAPOSTO_IMMAGINE, servi
+    elenco = _parse_json(value) if isinstance(value, str) else (value if isinstance(value, list) else [])
+    return [
+        servi(url, segnaposto=SEGNAPOSTO_IMMAGINE) or SEGNAPOSTO_IMMAGINE
+        for url in elenco
+    ]
+
+templates.env.filters['foto'] = _foto
+templates.env.filters['immagini'] = _immagini
+
 app.state.templates = templates
 
 # Crea directory uploads
@@ -397,9 +414,11 @@ def test_s3_credentials():
         aws_s3_region = os.getenv("AWS_S3_REGION", "eu-south-1")
         
         if not all([aws_access_key_id, aws_secret_access_key, aws_s3_bucket_name]):
-            msg = "⚠️ [S3] AWS credentials non configurate completamente"
+            from app.utils.archivio_s3 import mancanti
+            assenti = mancanti() or ["AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY", "AWS_S3_BUCKET_NAME"]
+            msg = "S3 NON CONFIGURATO. Variabili mancanti: " + ", ".join(assenti)
             print(msg, file=sys.stderr)
-            logger.warning(msg)
+            logger.error(msg)
             return False
         
         msg = "\n🔐 [S3] Testing AWS credentials..."

@@ -6,6 +6,7 @@ from app.logger_config import logger
 from app.utils.template_helpers import get_all_categories
 from app.utils_user import has_payment_method
 from app.utils.verifica_categorie import etichette_verificate, id_categorie_verificate
+from app.utils.archivio_s3 import servi as foto_pubblica
 from sqlmodel import select
 import json
 
@@ -191,7 +192,7 @@ def get_favorites(request: Request):
                     "nome": consultant.nome or "",
                     "cognome": consultant.cognome or "",
                     "professione": consultant.professione or "",
-                    "profile_picture": consultant.profile_picture,
+                    "profile_picture": foto_pubblica(consultant.profile_picture) or None,
                     "prezzo_consulenza": consultant.prezzo_consulenza,
                     "category_name": category.name if category else None,
                     "category_icon": category.icon if category else None,

@@ -7,6 +7,7 @@ paralleli con firme diverse).
 """
 import re
 import secrets
+from datetime import datetime, timedelta
 from pathlib import Path
 
 import pytest
@@ -83,6 +84,98 @@ class TestNotificaMessaggio:
             assert csrf_client.get(notifica.action_url, follow_redirects=False).status_code != 404
         finally:
             csrf_client.get("/logout")
+
+
+def _login(http, email, password):
+    http.get("/logout")
+    reset_rate_limit()
+    marker = 'name="csrf-token" content="'
+    pagina = http.get("/login").text
+    if marker in pagina:
+        http.headers.update({"X-CSRF-Token": pagina.split(marker, 1)[1].split('"', 1)[0]})
+    risposta = http.post("/api/login", data={"email": email, "password": password})
+    assert risposta.status_code == 200, risposta.text
+
+
+class TestRispostaAvvisa:
+    def test_una_risposta_avvisa_anche_se_l_altro_ha_scritto_da_poco(self, csrf_client):
+        """Prima si guardava l'ultimo messaggio di chiunque: una risposta entro
+        30 minuti non creava né la notifica in-app, né l'email, né la push."""
+        reset_rate_limit()
+        password = secrets.token_urlsafe(12)
+        with Session(engine) as s:
+            tipo = s.exec(select(NotificationType).where(NotificationType.type_key == "community_contact")).first()
+            if tipo is None:
+                s.add(NotificationType(type_key="community_contact", name="Nuovo messaggio",
+                                       in_app=True, send_email=False, is_active=True))
+                s.commit()
+            mario = User(email=f"rep-m-{secrets.token_hex(4)}@test.local",
+                         password_md5=hash_password(password), confirmed=1, nome="Mario")
+            anna = User(email=f"rep-a-{secrets.token_hex(4)}@test.local",
+                        password_md5=hash_password(password), confirmed=1, nome="Anna")
+            s.add(mario)
+            s.add(anna)
+            s.commit()
+            s.refresh(mario)
+            s.refresh(anna)
+            ids = (mario.id, anna.id, mario.email, anna.email)
+
+        def quante(utente_id):
+            with Session(engine) as s:
+                return len(s.exec(select(Notification).where(
+                    Notification.user_id == utente_id,
+                    Notification.type == "community_contact",
+                )).all())
+
+        try:
+            _login(csrf_client, ids[2], password)
+            assert csrf_client.post(f"/api/messaggi/{ids[1]}", data={"content": "Ciao Anna"}).status_code == 201
+            assert quante(ids[1]) == 1
+
+            _login(csrf_client, ids[3], password)
+            risposta = csrf_client.post(f"/api/messaggi/{ids[0]}", data={"content": "Ciao Mario"})
+            assert risposta.status_code == 201, risposta.text
+            assert quante(ids[0]) == 1, "la risposta deve avvisare anche se l'altro ha scritto un attimo prima"
+
+            seconda = csrf_client.post(f"/api/messaggi/{ids[0]}", data={"content": "Ci sei?"})
+            assert seconda.status_code == 201, seconda.text
+            assert quante(ids[0]) == 1, "due messaggi ravvicinati dello stesso mittente non riavvisano"
+
+            with Session(engine) as s:
+                conv = s.exec(select(Conversation).where(
+                    Conversation.user1_id == min(ids[0], ids[1]),
+                    Conversation.user2_id == max(ids[0], ids[1]),
+                )).one()
+                for messaggio in s.exec(select(Message).where(
+                    Message.conversation_id == conv.id,
+                    Message.sender_id == ids[1],
+                )).all():
+                    messaggio.created_at = datetime.utcnow() - timedelta(minutes=31)
+                    s.add(messaggio)
+                s.commit()
+
+            assert csrf_client.post(f"/api/messaggi/{ids[0]}", data={"content": "Riprovo"}).status_code == 201
+            assert quante(ids[0]) == 2
+        finally:
+            csrf_client.get("/logout")
+            reset_rate_limit()
+            with Session(engine) as s:
+                for uid in ids[:2]:
+                    for n in s.exec(select(Notification).where(Notification.user_id == uid)).all():
+                        s.delete(n)
+                conv = s.exec(select(Conversation).where(
+                    Conversation.user1_id == min(ids[0], ids[1]),
+                    Conversation.user2_id == max(ids[0], ids[1]),
+                )).first()
+                if conv:
+                    for m in s.exec(select(Message).where(Message.conversation_id == conv.id)).all():
+                        s.delete(m)
+                    s.delete(conv)
+                for uid in ids[:2]:
+                    u = s.get(User, uid)
+                    if u:
+                        s.delete(u)
+                s.commit()
 
 
 class TestNessunLinkAPagineInesistenti:

@@ -18,6 +18,7 @@ import json
 import os
 import threading
 from datetime import datetime
+from urllib.parse import urlparse
 
 from sqlmodel import Session, select
 
@@ -39,8 +40,17 @@ def _chiave_privata() -> str:
 
 
 def _mittente() -> str:
-    """Chi contattare se il servizio di consegna ha problemi con i nostri invii."""
-    return os.getenv("VAPID_SUBJECT", "mailto:admin@ispiramy.com")
+    """Chi contattare se il servizio di consegna ha problemi con i nostri invii.
+
+    pywebpush vuole un mailto: o un https:. Se nelle variabili c'è solo
+    l'indirizzo email, si aggiunge mailto:.
+    """
+    soggetto = (os.getenv("VAPID_SUBJECT") or "mailto:admin@ispiramy.com").strip()
+    if soggetto.startswith("mailto:") or soggetto.startswith("https:"):
+        return soggetto
+    if "@" in soggetto and "://" not in soggetto:
+        return "mailto:" + soggetto
+    return soggetto
 
 
 def configurato() -> bool:
@@ -101,9 +111,18 @@ def dispositivi(user_id: int) -> int:
         ).all())
 
 
-def _consegna(riga_id: int, endpoint: str, p256dh: str, auth: str, carico: str) -> None:
+def _host_consegna(endpoint: str) -> str:
+    """Solo l'host: l'indirizzo completo è un segreto di consegna."""
+    try:
+        return urlparse(endpoint or "").netloc or "sconosciuto"
+    except ValueError:
+        return "sconosciuto"
+
+
+def _consegna(riga_id: int, endpoint: str, p256dh: str, auth: str, carico: str, user_id: int = None) -> None:
     from pywebpush import WebPushException, webpush
 
+    host = _host_consegna(endpoint)
     try:
         webpush(
             subscription_info={"endpoint": endpoint, "keys": {"p256dh": p256dh, "auth": auth}},
@@ -117,12 +136,19 @@ def _consegna(riga_id: int, endpoint: str, p256dh: str, auth: str, carico: str) 
         if stato in (404, 410):
             # Il dispositivo non esiste piu': smettiamo di bussare
             cancella(endpoint)
-            logger.info(f"🔕 Iscrizione push scaduta rimossa ({stato})")
+            logger.warning(
+                f"PUSH FALLITA: iscrizione scaduta status={stato} utente={user_id} host={host}"
+            )
         else:
-            logger.warning(f"⚠️ Push non consegnata ({stato}): {errore}")
+            logger.error(
+                f"PUSH FALLITA: status={stato} utente={user_id} host={host} "
+                f"errore={type(errore).__name__}"
+            )
         return
     except Exception as errore:  # rete, DNS, chiavi sbagliate
-        logger.warning(f"⚠️ Push non consegnata: {errore}")
+        logger.error(
+            f"PUSH FALLITA: utente={user_id} host={host} errore={type(errore).__name__}"
+        )
         return
 
     with Session(engine) as session:
@@ -141,6 +167,14 @@ def invia(user_id: int, titolo: str, testo: str, url: str = "/", tag: str = None
     Google o Apple.
     """
     if not configurato():
+        mancano = []
+        if not chiave_pubblica():
+            mancano.append("VAPID_PUBLIC_KEY")
+        if not _chiave_privata():
+            mancano.append("VAPID_PRIVATE_KEY")
+        logger.error(
+            "PUSH NON INVIATA: chiavi mancanti (" + ", ".join(mancano) + f") utente={user_id}"
+        )
         return 0
 
     with Session(engine) as session:
@@ -150,6 +184,7 @@ def invia(user_id: int, titolo: str, testo: str, url: str = "/", tag: str = None
         destinatari = [(r.id, r.endpoint, r.p256dh, r.auth) for r in righe]
 
     if not destinatari:
+        logger.warning(f"PUSH NON INVIATA: nessun dispositivo iscritto utente={user_id}")
         return 0
 
     carico = json.dumps({
@@ -164,7 +199,7 @@ def invia(user_id: int, titolo: str, testo: str, url: str = "/", tag: str = None
     for riga_id, endpoint, p256dh, auth in destinatari:
         threading.Thread(
             target=_consegna,
-            args=(riga_id, endpoint, p256dh, auth, carico),
+            args=(riga_id, endpoint, p256dh, auth, carico, user_id),
             daemon=True,
         ).start()
 

@@ -32,6 +32,7 @@ DEBUG_MODE = os.getenv("DEBUG", "false").lower() == "true"
 from app.utils.notification_service import send_notification
 from app.utils.rate_limit import enforce_rate_limit
 from app.utils.lingue_ui import lingua_di, traduci
+from app.utils.archivio_s3 import servi as foto_pubblica
 
 router = APIRouter()
 
@@ -765,7 +766,7 @@ async def get_my_bookings(
                     "id": other_user.id,
                     "nome": other_user.nome,
                     "cognome": other_user.cognome,
-                    "profile_picture": other_user.profile_picture
+                    "profile_picture": foto_pubblica(other_user.profile_picture) or None
                 } if other_user else None,
                 "meeting_link": booking.meeting_link,
                 "notes": booking.client_notes if role == 'client' else booking.consultant_notes
@@ -874,7 +875,7 @@ async def get_upcoming_bookings(request: Request):
                     "id": other_user.id if other_user else None,
                     "name": f"{other_user.nome or ''} {other_user.cognome or ''}".strip() if other_user else "Utente",
                     "profession": other_user.professione if other_user else "",
-                    "picture": other_user.profile_picture if other_user else None
+                    "picture": foto_pubblica(other_user.profile_picture) or None if other_user else None
                 },
                 "time_until_minutes": int(time_until),
                 "can_join": can_join,
@@ -1001,7 +1002,7 @@ async def get_booking_history(request: Request):
                     "id": other_user.id if other_user else None,
                     "name": f"{other_user.nome or ''} {other_user.cognome or ''}".strip() if other_user else "Utente",
                     "profession": other_user.professione if other_user else "",
-                    "picture": other_user.profile_picture if other_user else None
+                    "picture": foto_pubblica(other_user.profile_picture) or None if other_user else None
                 }
             })
         
@@ -2178,26 +2179,11 @@ async def get_call_status_extended(
 
 # ========== CALL CHAT ENDPOINTS ==========
 
-# Lazy singleton per il client S3 degli allegati chat
-_chat_s3_client = None
-
 def _get_chat_s3_client():
-    """Restituisce un client S3 riutilizzabile (creato una sola volta)"""
-    global _chat_s3_client
-    if _chat_s3_client is None:
-        import boto3
-        aws_access_key = os.getenv("AWS_ACCESS_KEY_ID")
-        aws_secret_key = os.getenv("AWS_SECRET_ACCESS_KEY")
-        s3_region = os.getenv("AWS_REGION", "eu-west-1")
-        if not aws_access_key or not aws_secret_key:
-            return None
-        _chat_s3_client = boto3.client(
-            "s3",
-            aws_access_key_id=aws_access_key,
-            aws_secret_access_key=aws_secret_key,
-            region_name=s3_region
-        )
-    return _chat_s3_client
+    """Client del bucket delle registrazioni. None se la config manca: lo dice il log."""
+    from app.utils.archivio_s3 import client
+
+    return client()
 
 
 # Estensioni che il browser può mostrare da sé, con il tipo con cui servirle.
@@ -2226,28 +2212,30 @@ def _nome_file_sicuro(nome: str, estensione: str) -> str:
     return base[-120:]
 
 
-def _chiave_allegato_chat(booking_id: int, url: str) -> Optional[str]:
-    """Chiave S3 dell'allegato, solo se appartiene alla chat di questo booking.
+def _meta_allegato_chat(booking_id: int, url: str):
+    """(bucket, chiave) se l'URL è un allegato di questa call.
 
-    Gli allegati sono salvati nei messaggi come URL S3: accettiamo solo quelli
-    del nostro bucket e sotto call-attachments/<booking_id>/, così nessuno può
-    usare l'endpoint per leggere altri file del bucket o di altre consulenze.
+    Solo la cartella call-attachments/<booking_id>/, sul bucket delle
+    registrazioni o su quello storico delle immagini. Niente booking_<id>/
+    (sono i video) e niente altri percorsi.
     """
-    from urllib.parse import unquote, urlparse
+    from app.utils.archivio_s3 import PREFISSO_CHAT, riconosci
 
-    try:
-        parsed = urlparse(url or "")
-    except ValueError:
+    trovato = riconosci(url)
+    if not trovato:
         return None
-    bucket = os.getenv("S3_BUCKET_NAME", "ispiramy-images")
-    if parsed.scheme != "https" or not parsed.netloc.startswith(f"{bucket}.s3."):
-        return None
-    chiave = unquote(parsed.path.lstrip("/"))
-    prefisso = f"call-attachments/{booking_id}/"
+    nome, chiave, _regione = trovato
+    prefisso = f"{PREFISSO_CHAT}{booking_id}/"
     resto = chiave[len(prefisso):]
     if not chiave.startswith(prefisso) or not resto or "/" in resto or ".." in resto:
         return None
-    return chiave
+    return nome, chiave
+
+
+def _chiave_allegato_chat(booking_id: int, url: str) -> Optional[str]:
+    """Chiave S3 dell'allegato, solo se appartiene alla chat di questo booking."""
+    meta = _meta_allegato_chat(booking_id, url)
+    return meta[1] if meta else None
 
 
 def _nome_da_chiave(chiave: str) -> str:
@@ -2360,17 +2348,17 @@ async def upload_chat_attachment(
                 logger.warning(f"🚫 Immagine chat rifiutata nel booking {booking_id} da user {current_user.id}: {moderazione_img['reason']}")
                 raise HTTPException(status_code=400, detail=moderazione_img["reason"])
 
-        # Ottieni client S3 riutilizzabile
+        from app.utils.archivio_s3 import PREFISSO_CHAT, bucket as bucket_registrazioni
+        from app.utils.archivio_s3 import riferimento as riferimento_s3
+
         s3_client = _get_chat_s3_client()
-        if not s3_client:
+        s3_bucket = bucket_registrazioni()
+        if not s3_client or not s3_bucket:
             raise HTTPException(status_code=500, detail="Servizio upload non disponibile")
-        
-        s3_bucket = os.getenv("S3_BUCKET_NAME", "ispiramy-images")
-        s3_region = os.getenv("AWS_REGION", "eu-west-1")
-        
+
         timestamp = datetime.utcnow().strftime("%Y%m%d_%H%M%S_%f")
         safe_filename = _nome_file_sicuro(file.filename, file_extension)
-        s3_key = f"call-attachments/{booking_id}/{current_user.id}_{timestamp}_{safe_filename}"
+        s3_key = f"{PREFISSO_CHAT}{booking_id}/{current_user.id}_{timestamp}_{safe_filename}"
 
         # Esegui l'upload in un thread separato per non bloccare l'event loop
         await asyncio.to_thread(
@@ -2381,8 +2369,8 @@ async def upload_chat_attachment(
             ContentType=content_type,
             ContentDisposition=f'attachment; filename="{safe_filename}"'
         )
-        
-        s3_url = f"https://{s3_bucket}.s3.{s3_region}.amazonaws.com/{s3_key}"
+
+        s3_url = riferimento_s3(s3_key)
         logger.info(f"📎 Allegato call caricato su S3: {safe_filename} ({file_size} bytes) per booking {booking_id}")
         
         return {
@@ -2573,9 +2561,10 @@ async def open_call_attachment(
     if current_user.id not in [booking.client_user_id, booking.consultant_user_id]:
         raise HTTPException(status_code=403, detail="Non autorizzato")
 
-    chiave = _chiave_allegato_chat(booking_id, url)
-    if not chiave:
+    meta = _meta_allegato_chat(booking_id, url)
+    if not meta:
         raise HTTPException(status_code=404, detail="Allegato non trovato")
+    bucket_nome, chiave = meta
 
     s3_client = _get_chat_s3_client()
     if not s3_client:
@@ -2583,7 +2572,7 @@ async def open_call_attachment(
 
     nome = _nome_da_chiave(chiave)
     estensione = nome.rsplit(".", 1)[-1].lower() if "." in nome else ""
-    params = {"Bucket": os.getenv("S3_BUCKET_NAME", "ispiramy-images"), "Key": chiave}
+    params = {"Bucket": bucket_nome, "Key": chiave}
     if mode == "view" and estensione in _ALLEGATI_VISUALIZZABILI:
         params["ResponseContentDisposition"] = "inline"
         params["ResponseContentType"] = _ALLEGATI_VISUALIZZABILI[estensione]
