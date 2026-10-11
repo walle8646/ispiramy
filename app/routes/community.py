@@ -16,9 +16,43 @@ from app.utils_user import get_display_name, has_payment_method
 from app.utils.email import send_email
 from app.utils.ai_service import genera_tags, modera_immagine, valida_richiesta, controlla_duplicato
 from app.utils.file_immagini import tipo_immagine
+from app.utils import archivio_s3
 from loguru import logger
 
 router = APIRouter()
+
+
+def _immagini_community_da_salvare(grezzo):
+    """JSON di URL stabili in community-images/. Il resto non si salva.
+
+    Il browser rimanda l'URL firmato dell'anteprima: si toglie la firma e si
+    tiene solo la cartella delle immagini, non quella dei video.
+    """
+    if not grezzo:
+        return None
+    if isinstance(grezzo, str):
+        try:
+            elenco = json.loads(grezzo)
+        except (json.JSONDecodeError, TypeError):
+            return None
+    elif isinstance(grezzo, list):
+        elenco = grezzo
+    else:
+        return None
+    if not isinstance(elenco, list):
+        return None
+    buoni = []
+    for url in elenco:
+        if not isinstance(url, str):
+            continue
+        stabile = archivio_s3.stabilizza(url, archivio_s3.PREFISSO_COMMUNITY)
+        if stabile:
+            buoni.append(stabile)
+        else:
+            logger.warning(
+                "Immagine community scartata: non è nella cartella community-images"
+            )
+    return json.dumps(buoni) if buoni else None
 
 
 def _notify_consultants_by_email(recipients, question_title, question_excerpt, author_name):
@@ -355,7 +389,7 @@ async def community_page(
                     'id': user_obj.id,
                     'nome': user_obj.nome,
                     'cognome': user_obj.cognome,
-                    'profile_picture': user_obj.profile_picture,
+                    'profile_picture': archivio_s3.servi(user_obj.profile_picture) or None,
                     'review_avg': round(float(row[1]), 1),
                     'review_count': int(row[2]),
                 })
@@ -553,7 +587,7 @@ async def api_ask_question(
                 description=description,  # ✅ Usa description invece di content
                 primary_category_id=primary_category_id,  # ✅ Salva categoria principale
                 category_id=resolved_category_id,  # ✅ Salva subcategoria (None se "altro")
-                images=images if images else None,  # ✅ Salva URL immagini S3
+                images=_immagini_community_da_salvare(images),
                 tags=tags.strip() if tags and tags.strip() else None,  # ✅ Salva tag
                 status=QuestionStatus.OPEN,
                 validation=True  # ✅ Approvata dall'AI, visibile subito
@@ -686,56 +720,36 @@ async def upload_community_image(
                 status_code=400
             )
         
-        # ========== UPLOAD SU S3 ==========
-        import boto3
-        
-        aws_access_key = os.getenv("AWS_ACCESS_KEY_ID")
-        aws_secret_key = os.getenv("AWS_SECRET_ACCESS_KEY")
-        s3_bucket = os.getenv("S3_BUCKET_NAME", "ispiramy-images")
-        s3_region = os.getenv("AWS_REGION", "eu-west-1")
-        
-        if not aws_access_key or not aws_secret_key:
-            logger.error("❌ AWS credentials non configurate per upload community")
+        # Stesso bucket delle registrazioni, cartella community-images/
+        # (non booking_<id>/, che è quella dei video).
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
+        s3_key = f"{archivio_s3.PREFISSO_COMMUNITY}{current_user.id}_{timestamp}.{file_extension}"
+        try:
+            stabile = await asyncio.to_thread(
+                archivio_s3.carica,
+                s3_key,
+                contents,
+                file_mime,
+                CacheControl="max-age=31536000",
+            )
+        except RuntimeError:
             return JSONResponse(
                 {"error": "Servizio di upload non disponibile"},
-                status_code=500
+                status_code=500,
             )
-        
-        try:
-            s3_client = boto3.client(
-                "s3",
-                aws_access_key_id=aws_access_key,
-                aws_secret_access_key=aws_secret_key,
-                region_name=s3_region
-            )
-            
-            # Genera nome unico
-            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
-            s3_key = f"community-images/{current_user.id}_{timestamp}.{file_extension}"
-            
-            await asyncio.to_thread(
-                s3_client.put_object,
-                Bucket=s3_bucket,
-                Key=s3_key,
-                Body=contents,
-                ContentType=file_mime,
-                CacheControl="max-age=31536000"
-            )
-            
-            s3_url = f"https://{s3_bucket}.s3.{s3_region}.amazonaws.com/{s3_key}"
-            logger.info(f"✅ Immagine community caricata su S3: {s3_url}")
-            
-            return JSONResponse({
-                "success": True,
-                "url": s3_url
-            })
-            
         except Exception as e:
-            logger.error(f"❌ Errore upload S3: {e}")
+            logger.error(f"❌ Errore upload S3: {type(e).__name__}")
             return JSONResponse(
                 {"error": "Errore durante il caricamento dell'immagine"},
-                status_code=500
+                status_code=500,
             )
+
+        # Al browser diamo l'URL firmato, così l'anteprima funziona anche se
+        # il bucket è privato. Nel database, più sotto, si salva quello stabile.
+        return JSONResponse({
+            "success": True,
+            "url": archivio_s3.firma(s3_key) or stabile,
+        })
     
     except Exception as e:
         logger.error(f"❌ Errore upload immagine community: {e}", exc_info=True)
@@ -1157,7 +1171,7 @@ async def get_question_followers(request: Request, question_id: int):
                     "cognome": "",
                     "profile_picture": (
                         default_pic if follower.is_anonymous
-                        else (follower.profile_picture or default_pic)
+                        else (archivio_s3.servi(follower.profile_picture) or default_pic)
                     ),
                     "professione": (
                         "Utente" if follower.is_anonymous
@@ -1236,15 +1250,22 @@ async def get_question_detail(question_id: int, request: Request):
             images = []
             if question.images:
                 try:
-                    images = json.loads(question.images)
+                    salvate = json.loads(question.images)
                 except (json.JSONDecodeError, TypeError):
-                    pass
+                    salvate = []
+                if isinstance(salvate, list):
+                    images = [
+                        archivio_s3.servi(url, segnaposto=archivio_s3.SEGNAPOSTO_IMMAGINE)
+                        or archivio_s3.SEGNAPOSTO_IMMAGINE
+                        for url in salvate
+                        if isinstance(url, str)
+                    ]
             
             def user_info(u):
                 return {
                     "id": u.id,
                     "name": f"{u.nome or ''} {u.cognome or ''}".strip() or "Utente",
-                    "picture": u.profile_picture,
+                    "picture": archivio_s3.servi(u.profile_picture) or None,
                     "profession": u.professione or ""
                 }
             
@@ -1391,7 +1412,7 @@ async def edit_question(question_id: int, request: Request):
             if new_category_id is not None:
                 question.category_id = resolved_category_id
             if new_images is not None:
-                question.images = json.dumps(new_images) if new_images else None
+                question.images = _immagini_community_da_salvare(new_images)
             if new_tags is not None:
                 question.tags = new_tags.strip() if new_tags and new_tags.strip() else None
             question.updated_at = datetime.utcnow()

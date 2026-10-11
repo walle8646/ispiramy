@@ -34,7 +34,7 @@ def _url(booking_id, nome="7_20260911_101500_123456_foto.jpg", bucket=BUCKET):
 @pytest.fixture
 def cliente_in_call(csrf_client, monkeypatch):
     """Cliente loggato con una consulenza in corso adesso."""
-    monkeypatch.setenv("S3_BUCKET_NAME", BUCKET)
+    monkeypatch.setenv("AWS_S3_BUCKET_NAME", BUCKET)
     reset_rate_limit()
     password = secrets.token_urlsafe(12)
     adesso = now_italy_naive()
@@ -143,7 +143,7 @@ class TestRientroDopoRecensione:
 class TestChiaveAllegato:
     @pytest.fixture(autouse=True)
     def _bucket(self, monkeypatch):
-        monkeypatch.setenv("S3_BUCKET_NAME", BUCKET)
+        monkeypatch.setenv("AWS_S3_BUCKET_NAME", BUCKET)
 
     def test_allegato_della_chat_valido(self):
         assert _chiave_allegato_chat(12, _url(12)) == "call-attachments/12/7_20260911_101500_123456_foto.jpg"

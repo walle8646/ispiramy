@@ -9,6 +9,7 @@ from app.database import get_session
 from app.models import User, Category, CategoryHierarchy, Review
 from app.routes.auth import verify_token
 from app.utils.verifica_categorie import id_categorie_verificate
+from app.utils.archivio_s3 import servi as foto_pubblica
 from loguru import logger
 
 router = APIRouter()
@@ -467,7 +468,7 @@ async def consultants_page(
                     'cognome': user.cognome,
                     'professione': user.professione,
                     'descrizione': user.descrizione,
-                    'profile_picture': user.profile_picture,
+                    'profile_picture': foto_pubblica(user.profile_picture) or None,
                     'prezzo_consulenza': user.prezzo_consulenza,
                     'review_avg': stats['avg'],
                     'review_count': stats['count'],

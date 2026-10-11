@@ -6,6 +6,7 @@ from sqlmodel import Session, select, func
 from app.database import engine
 from app.models import Booking, Dispute, Notification, User
 from app.routes.auth import get_current_user
+from app.utils.archivio_s3 import servi as _foto_utente
 from datetime import datetime
 from typing import List
 
@@ -96,7 +97,7 @@ async def get_notifications(request: Request, limit: int = 50, offset: int = 0):
                         "id": related_user.id,
                         "nome": related_user.nome,
                         "cognome": related_user.cognome,
-                        "profile_picture": related_user.profile_picture
+                        "profile_picture": _foto_utente(related_user.profile_picture)
                     }
             
             result.append(notif_data)

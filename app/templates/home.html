@@ -1370,7 +1370,7 @@
     <div class="consultant-grid">
         {% for item in consultants %}
         <a href="/user/{{ item.user.id }}" class="consultant-card">
-            <img src="{{ item.user.profile_picture or ('https://ui-avatars.com/api/?name=' ~ ((item.user.nome or 'U') ~ ' ' ~ (item.user.cognome or ''))|trim|urlencode ~ '&background=2e7d32&color=fff&size=200&bold=true&length=2') }}"
+            <img src="{{ item.user.profile_picture | foto or ('https://ui-avatars.com/api/?name=' ~ ((item.user.nome or 'U') ~ ' ' ~ (item.user.cognome or ''))|trim|urlencode ~ '&background=2e7d32&color=fff&size=200&bold=true&length=2') }}"
                  alt="{{ item.user.nome }}"
                  class="consultant-avatar"
                  onerror="this.onerror=null; this.src='{{ item.user|default_avatar }}'">

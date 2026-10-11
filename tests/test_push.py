@@ -44,6 +44,44 @@ def pulisci():
         session.commit()
 
 
+def _log(livello="ERROR"):
+    from loguru import logger
+    raccolti = []
+    sink = logger.add(lambda messaggio: raccolti.append(str(messaggio)), level=livello)
+    return raccolti, sink, logger
+
+
+def test_senza_chiavi_il_log_dice_quali_variabili_mancano(monkeypatch):
+    monkeypatch.delenv("VAPID_PUBLIC_KEY", raising=False)
+    monkeypatch.delenv("VAPID_PRIVATE_KEY", raising=False)
+    raccolti, sink, logger = _log()
+    try:
+        assert notifiche_push.invia(4, "Ciao", "Testo") == 0
+    finally:
+        logger.remove(sink)
+    testo = "\n".join(raccolti)
+    assert "PUSH NON INVIATA" in testo
+    assert "VAPID_PUBLIC_KEY" in testo
+    assert "VAPID_PRIVATE_KEY" in testo
+    assert "utente=4" in testo
+
+
+def test_senza_dispositivi_il_log_lo_dice(chiavi):
+    raccolti, sink, logger = _log("WARNING")
+    try:
+        assert notifiche_push.invia(4, "Ciao", "Testo") == 0
+    finally:
+        logger.remove(sink)
+    assert any("PUSH NON INVIATA" in riga and "utente=4" in riga for riga in raccolti)
+
+
+def test_un_indirizzo_email_nel_subject_diventa_mailto(monkeypatch):
+    monkeypatch.setenv("VAPID_SUBJECT", "admin@ispiramy.com")
+    assert notifiche_push._mittente() == "mailto:admin@ispiramy.com"
+    monkeypatch.setenv("VAPID_SUBJECT", "mailto:admin@ispiramy.com")
+    assert notifiche_push._mittente() == "mailto:admin@ispiramy.com"
+
+
 def test_senza_chiavi_le_push_non_partono(monkeypatch):
     """Il sito deve funzionare uguale anche dove le chiavi non sono state messe."""
     monkeypatch.delenv("VAPID_PUBLIC_KEY", raising=False)
@@ -135,7 +173,10 @@ def test_le_chiavi_non_sono_nel_repo():
     variabili d'ambiente, mai nel codice (il repository e' pubblico)."""
     for modello in (("app", "utils", "notifiche_push.py"), ("app", "routes", "push.py")):
         testo = _file(*modello)
-        assert "VAPID_PRIVATE_KEY" not in testo.replace('os.getenv("VAPID_PRIVATE_KEY", "")', "")
+        # Il nome della variabile può comparire nel log. Il valore della chiave no.
+        senza_nomi = testo.replace("VAPID_PRIVATE_KEY", "").replace("VAPID_PUBLIC_KEY", "")
+        assert "BEGIN PRIVATE" not in senza_nomi
+        assert "privata-vera" not in senza_nomi
 
 
 def test_chi_non_ha_fatto_l_accesso_non_si_iscrive(client):

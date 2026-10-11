@@ -968,7 +968,7 @@
                 <!-- User Profile Picture Dropdown -->
                 <div class="user-profile-dropdown" onclick="toggleUserMenu(event)">
                     <img 
-                        src="{{ current_user.profile_picture or current_user|default_avatar }}" 
+                        src="{{ current_user.profile_picture | foto or current_user|default_avatar }}" 
                         alt="{{ current_user.nome or 'Profile' }}" 
                         class="navbar-profile-pic"
                         onerror="this.src='{{ current_user|default_avatar }}'"
@@ -1141,7 +1141,7 @@
         <div class="foglio-maniglia"></div>
         {% if current_user %}
         <a href="/profile" class="foglio-persona">
-            <img src="{{ current_user.profile_picture or current_user|default_avatar }}"
+            <img src="{{ current_user.profile_picture | foto or current_user|default_avatar }}"
                  alt="" onerror="this.src='{{ current_user|default_avatar }}'">
             <div>
                 <strong>{{ current_user.nome or 'Il tuo profilo' }} {{ current_user.cognome or '' }}</strong>
@@ -2366,6 +2366,15 @@
             return reg.pushManager.getSubscription();
         }
 
+        async function salvaIscrizione(iscrizione) {
+            const risposta = await fetch('/api/push/iscrizione', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ iscrizione: iscrizione.toJSON() }),
+            });
+            return !!(risposta && risposta.ok);
+        }
+
         async function attiva() {
             blocca(true);
             try {
@@ -2381,11 +2390,11 @@
                     userVisibleOnly: true,
                     applicationServerKey: inByte(chiave),
                 });
-                await fetch('/api/push/iscrizione', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ iscrizione: iscrizione.toJSON() }),
-                });
+                const salvata = await salvaIscrizione(iscrizione);
+                if (!salvata) {
+                    mostra('🔔 Attiva notifiche', 'Non ha funzionato: riprova fra poco.');
+                    return;
+                }
                 nascondiAvviso();
                 mostra('🔕 Disattiva notifiche', 'Le riceverai su questo dispositivo.');
             } catch (errore) {
@@ -2452,8 +2461,11 @@
             try { iscrizione = await iscrizioneCorrente(); } catch (e) { iscrizione = null; }
             collega();
             if (iscrizione && Notification.permission === 'granted') {
-                mostra('🔕 Disattiva notifiche', 'Le ricevi su questo dispositivo.');
-                return;
+                const salvata = await salvaIscrizione(iscrizione);
+                if (salvata) {
+                    mostra('🔕 Disattiva notifiche', 'Le ricevi su questo dispositivo.');
+                    return;
+                }
             }
             mostra('🔔 Attiva notifiche', 'Ti avvisiamo di messaggi e prenotazioni anche col sito chiuso.');
             apriAvviso();

@@ -15,6 +15,7 @@ from app.utils.notification_service import send_notification
 from app.utils.orari import now_italy_naive
 from app.utils.rate_limit import enforce_rate_limit
 from app.utils.ai_service import modera_testo_chat
+from app.utils.archivio_s3 import servi as foto_pubblica
 
 router = APIRouter()
 
@@ -343,7 +344,7 @@ async def get_conversations(request: Request):
                         "id": other_user.id,
                         "nome": other_user.nome or "Utente",
                         "cognome": other_user.cognome or "",
-                        "profile_picture": other_user.profile_picture or None,
+                        "profile_picture": foto_pubblica(other_user.profile_picture) or None,
                         "genere": other_user.genere or None,
                         "professione": other_user.professione or ""
                     },
@@ -508,22 +509,20 @@ async def send_message(
             
             conversation = get_or_create_conversation(session, user_id, other_user_id)
             
-            # ⏰ CONTROLLO PER NOTIFICA: primo messaggio O >30 minuti dall'ultimo
-            should_notify = False
-            
-            # Trova l'ultimo messaggio nella conversazione
-            last_message = session.exec(
+            # Notifica se questa persona non scriveva da 30 minuti (o non
+            # aveva mai scritto). Una risposta arriva anche se l'altro ha
+            # scritto un attimo prima: prima si guardava l'ultimo messaggio
+            # di chiunque, e una risposta entro 30 minuti non avvisava nessuno.
+            ultimo_mio = session.exec(
                 select(Message)
                 .where(Message.conversation_id == conversation.id)
+                .where(Message.sender_id == user_id)
                 .order_by(Message.created_at.desc())
             ).first()
-            
-            if last_message:
-                # Calcola tempo trascorso dall'ultimo messaggio
-                time_since_last = datetime.utcnow() - last_message.created_at
-                should_notify = time_since_last > timedelta(minutes=30)
+
+            if ultimo_mio:
+                should_notify = datetime.utcnow() - ultimo_mio.created_at > timedelta(minutes=30)
             else:
-                # Primo messaggio assoluto nella conversazione
                 should_notify = True
             
             # ✅ VERIFICA LIMITE MESSAGGI

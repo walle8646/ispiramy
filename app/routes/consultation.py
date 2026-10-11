@@ -12,6 +12,7 @@ from ..models import User, ConsultationOffer, Message, Category, CommunityQuesti
 from .auth import get_current_user
 from app.utils_user import has_payment_method
 from app.logger_config import logger
+from app.utils.archivio_s3 import servi as foto_pubblica
 from app.routes.booking import blocca_agenda, slot_gia_prenotato
 from app.utils.stripe_config import create_checkout_session
 from app.utils.prezzi import PREZZO_ORARIO_MINIMO, centesimi, spese_servizio, totale_cliente
@@ -358,7 +359,7 @@ async def get_consultation_offer(
                 "id": consultant.id,
                 "nome": consultant.nome,
                 "cognome": consultant.cognome,
-                "profile_picture": consultant.profile_picture
+                "profile_picture": foto_pubblica(consultant.profile_picture) or None
             },
             "client": {
                 "id": client.id,

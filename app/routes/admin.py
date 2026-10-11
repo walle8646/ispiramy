@@ -18,6 +18,7 @@ from app.models import (
     TransactionProblem, CommunityReport,
 )
 from app.utils.verifica_categorie import id_categorie_verificate, scrivi_categorie_verificate
+from app.utils.archivio_s3 import servi as foto_pubblica
 from app.routes.auth import verify_token
 from app.logger_config import logger
 from app.utils.orari import now_italy_naive
@@ -311,13 +312,13 @@ async def admin_dispute_detail(dispute_id: int, request: Request):
                 "id": client.id if client else None,
                 "name": f"{client.nome or ''} {client.cognome or ''}".strip() if client else "?",
                 "email": client.email if client else "?",
-                "profile_picture": client.profile_picture if client else None,
+                "profile_picture": foto_pubblica(client.profile_picture) or None if client else None,
             },
             "consultant": {
                 "id": consultant.id if consultant else None,
                 "name": f"{consultant.nome or ''} {consultant.cognome or ''}".strip() if consultant else "?",
                 "email": consultant.email if consultant else "?",
-                "profile_picture": consultant.profile_picture if consultant else None,
+                "profile_picture": foto_pubblica(consultant.profile_picture) or None if consultant else None,
                 "professione": consultant.professione if consultant else None,
                 "platform_fee_percent": consultant.platform_fee_percent if consultant else 20,
             },
@@ -713,7 +714,7 @@ async def admin_users(request: Request):
                 "nome": u.nome or "",
                 "cognome": u.cognome or "",
                 "professione": u.professione or "",
-                "profile_picture": u.profile_picture,
+                "profile_picture": foto_pubblica(u.profile_picture) or None,
                 "is_verified": u.is_verified,
                 "category_id": u.category_id,
                 "categorie_verificate": sorted(id_categorie_verificate(u)),

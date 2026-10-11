@@ -304,8 +304,9 @@
         {% for u in users %}
         <div class="user-card" id="user-card-{{ u.id }}">
             <!-- Avatar -->
-            {% if u.profile_picture %}
-            <img src="{{ u.profile_picture }}" alt="{{ u.nome }}" class="user-avatar" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+            {% set foto_utente = u.profile_picture | foto %}
+            {% if foto_utente %}
+            <img src="{{ foto_utente }}" alt="{{ u.nome }}" class="user-avatar" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
             <div class="user-avatar-placeholder" style="display:none;">{{ (u.nome[0] if u.nome else '?')|upper }}</div>
             {% else %}
             <div class="user-avatar-placeholder">{{ (u.nome[0] if u.nome else '?')|upper }}</div>

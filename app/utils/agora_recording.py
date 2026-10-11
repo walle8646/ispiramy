@@ -482,32 +482,11 @@ def _find_recording_on_s3(sid: str, channel_name: str) -> Optional[Dict[str, Any
 
 
 def get_recording_url(file_name: str) -> str:
+    """URL firmato per il video su S3, valido 7 giorni.
+
+    Usa lo stesso client delle immagini degli utenti (stesse credenziali e
+    stesso bucket). Il video resta nella sua cartella booking_<id>/.
     """
-    Genera URL firmato per accedere al file registrato su S3
-    
-    Args:
-        file_name: Nome del file su S3
-    
-    Returns:
-        URL firmato valido per 7 giorni
-    """
-    try:
-        s3_client = boto3.client(
-            's3',
-            region_name=AWS_S3_REGION,
-            aws_access_key_id=AWS_ACCESS_KEY_ID,
-            aws_secret_access_key=AWS_SECRET_ACCESS_KEY
-        )
-        
-        # Genera URL firmato valido per 7 giorni
-        url = s3_client.generate_presigned_url(
-            'get_object',
-            Params={'Bucket': AWS_S3_BUCKET_NAME, 'Key': file_name},
-            ExpiresIn=604800  # 7 giorni in secondi
-        )
-        
-        return url
-        
-    except Exception as e:
-        logger.error(f"❌ Errore generazione URL: {str(e)}")
-        return ""
+    from app.utils.archivio_s3 import firma
+
+    return firma(file_name) or ""

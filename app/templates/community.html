@@ -2024,7 +2024,7 @@
                         {% else %}
                         <a href="/user/{{ item.author.id }}" class="author-link">
                             <img 
-                                data-src="{{ item.author.profile_picture or item.author|default_avatar }}"
+                                data-src="{{ item.author.profile_picture | foto or item.author|default_avatar }}"
                                 alt="{{ item.author|display_name }}"
                                 class="author-avatar"
                                 onerror="this.onerror=null; this.src='{{ item.author|default_avatar }}'"
@@ -2052,7 +2052,7 @@
                     <h4 class="question-title">{{ item.question.title }}</h4>
                     
                     <!-- Descrizione + Immagini -->
-                    {% set imgs = item.question.images | parse_json if item.question.images else [] %}
+                    {% set imgs = item.question.images | immagini %}
                     {% if imgs %}
                     <div class="question-content-row">
                         <div style="flex:1;">
@@ -2061,14 +2061,14 @@
                             </p>
                             <span class="desc-toggle" id="toggle-{{ item.question.id }}" onclick="toggleDesc({{ item.question.id }})">{{ t('community.leggi_tutto') }}</span>
                         </div>
-                        <div class="question-images-wrap" data-images="{{ item.question.images }}">
+                        <div class="question-images-wrap" data-images='{{ imgs | tojson }}'>
                             <div class="question-images-main">
-                                <img src="{{ imgs[0] }}" alt="Immagine allegata" loading="lazy" data-gallery-index="0" class="gallery-trigger">
+                                <img src="{{ imgs[0] }}" alt="Immagine allegata" loading="lazy" data-gallery-index="0" class="gallery-trigger" onerror="this.onerror=null;this.src='/static/immagine-mancante.svg'">
                             </div>
                             {% if imgs | length > 1 %}
                             <div class="question-images-thumbs">
                                 {% for img_url in imgs[1:] %}
-                                <img src="{{ img_url }}" alt="Immagine allegata" loading="lazy" data-gallery-index="{{ loop.index }}" class="gallery-trigger">
+                                <img src="{{ img_url }}" alt="Immagine allegata" loading="lazy" data-gallery-index="{{ loop.index }}" class="gallery-trigger" onerror="this.onerror=null;this.src='/static/immagine-mancante.svg'">
                                 {% endfor %}
                             </div>
                             {% endif %}
@@ -2136,7 +2136,7 @@
                                data-question-id="{{ item.question.id }}"
                                data-author-id="{{ item.author.id }}"
                                data-author-name="{{ item.author|display_name }}"
-                               data-author-pic="{{ item.author.profile_picture or item.author|default_avatar }}"
+                               data-author-pic="{{ item.author.profile_picture | foto or item.author|default_avatar }}"
                                style="display: inline-flex; 
                                       align-items: center; 
                                       gap: 8px; 
@@ -2211,9 +2211,10 @@
                         <div class="consultants-grid-mini">
                         {% for consultant in item.suggested_consultants[:2] %}
                             <a href="/consultant/{{ consultant.id }}" class="consultant-card-mini">
-                                {% if consultant.profile_picture %}
+                                {% set foto_consulente = consultant.profile_picture | foto %}
+                                {% if foto_consulente %}
                                 <img 
-                                    data-src="{{ consultant.profile_picture }}" 
+                                    data-src="{{ foto_consulente }}" 
                                     alt="{{ consultant.nome }}"
                                     class="consultant-avatar-mini"
                                 >
@@ -2272,9 +2273,10 @@
                 {% if top_consultants %}
                     {% for consultant in top_consultants %}
                     <a href="/user/{{ consultant.id }}" class="top-ispiramyer-card">
-                        {% if consultant.profile_picture %}
+                        {% set foto_top = consultant.profile_picture | foto %}
+                        {% if foto_top %}
                         <img 
-                            data-src="{{ consultant.profile_picture }}" 
+                            data-src="{{ foto_top }}" 
                             alt="{{ consultant.nome }}"
                             class="top-ispiramyer-avatar"
                         >
