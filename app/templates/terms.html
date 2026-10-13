@@ -25,6 +25,8 @@
             overflow-wrap: break-word;
         }
     }
+    .static-page .definizioni { margin: 12px 0 0; }
+    .static-page .definizioni li { margin: 8px 0; }
 </style>
 <h1>{{ t('termini.titolo') }}</h1>
 <p class="updated">{{ t('termini.quando') }}</p>
@@ -39,82 +41,92 @@
 
 <p>{{ t('termini.accetti') }}</p>
 
-<h2>{{ t('termini.cose') }}</h2>
+<h2>{{ t('termini.art1') }}</h2>
 <p>{{ t('termini.cose_testo') }}</p>
 <p>{{ t('termini.cose_parte') }}</p>
 
-<h2>{{ t('termini.eta') }}</h2>
-<p>{{ t('termini.eta_testo') }}</p>
+<h2>{{ t('termini.art2') }}</h2>
+<p>{{ t('termini.def_intro') }}</p>
+<ul class="definizioni">
+    <li>{{ t('termini.def_cliente') }}</li>
+    <li>{{ t('termini.def_consulente') }}</li>
+    <li>{{ t('termini.def_consulenza') }}</li>
+    <li>{{ t('termini.def_auto') }}</li>
+    <li>{{ t('termini.def_manuale') }}</li>
+    <li>{{ t('termini.def_preaut') }}</li>
+    <li>{{ t('termini.def_servizio') }}</li>
+    <li>{{ t('termini.def_commissione') }}</li>
+</ul>
 
-<h2>{{ t('termini.account') }}</h2>
+<h2>{{ t('termini.art3') }}</h2>
+<p>{{ t('termini.eta_testo') }}</p>
 <p>{{ t('termini.account_testo') }}</p>
 <p>{{ t('termini.account_dati') }}</p>
 <p>{{ t('termini.account_avvisi') }}</p>
+<p>{{ t('termini.cessione_testo') }}</p>
 
-<h2>{{ t('termini.pubblichi') }}</h2>
+<h2>{{ t('termini.art4') }}</h2>
+<p>{{ t('termini.prezzo_intro') }}</p>
+<p>{{ t('termini.prezzo_min').split('{n}')[0] }}{{ prezzo_orario_minimo }}{{ t('termini.prezzo_min').split('{n}')[1] }}</p>
+<p>{{ t('termini.prezzo_spese').split('{n}')[0] }}{{ spese_servizio_euro }}{{ t('termini.prezzo_spese').split('{n}')[1] }}</p>
+<p>{{ t('termini.offerte') }}</p>
+<p>{{ t('termini.anticipo').split('{n}')[0] }}{{ ore_preavviso }}{{ t('termini.anticipo').split('{n}')[1] }}</p>
+<p>{{ t('termini.paga_metodo') }}</p>
+<p>{{ t('termini.paga_interrompi') }}</p>
+
+<h2>{{ t('termini.art5') }}</h2>
+<p>{{ t('termini.paga_auto') }}</p>
+<p>{{ t('termini.paga_mano').split('{n}')[0] }}{{ ore_per_rispondere }}{{ t('termini.paga_mano').split('{n}')[1] }}</p>
+
+<h2>{{ t('termini.art6') }}</h2>
+<p>{{ t('termini.annulla_fino').split('{n}')[0] }}{{ ore_limite_annullamento }}{{ t('termini.annulla_fino').split('{n}')[1] }}</p>
+<p>{{ t('termini.rimborso') }}</p>
+<p>{{ t('termini.ritira') }}</p>
+<p>{{ t('termini.dopo').split('{n}')[0] }}{{ ore_limite_annullamento }}{{ t('termini.dopo').split('{n}')[1] }}</p>
+<p>{{ t('termini.assente') }}</p>
+<p>{{ t('termini.consumatore') }}</p>
+
+<h2>{{ t('termini.art7') }}</h2>
+<p>{{ t('termini.contestazione').split('{n}')[0] }}{{ ore_contestazione }}{{ t('termini.contestazione').split('{n}')[1] }}</p>
+<p>{{ t('termini.decisione').split('{n}')[0] }}{{ spese_servizio_euro }}{{ t('termini.decisione').split('{n}')[1] }}</p>
+
+<h2>{{ t('termini.art8') }}</h2>
+<p>{{ t('termini.compenso').split('{n}')[0] }}{{ ore_rilascio }}{{ t('termini.compenso').split('{n}')[1] }}</p>
+
+<h2>{{ t('termini.art9') }}</h2>
+<p>{{ t('termini.commissione').split('{n}')[0] }}{{ commissione_percentuale }}{{ t('termini.commissione').split('{n}')[1] }}</p>
+
+<h2>{{ t('termini.art10') }}</h2>
+<p>{{ t('termini.recensioni_testo') }}</p>
+
+<h2>{{ t('termini.art11') }}</h2>
 <p>{{ t('termini.pubblichi_testo') }}</p>
 <p>{{ t('termini.pubblichi_filtro') }}</p>
-
-<h2>{{ t('termini.segnala') }}</h2>
+<p>{{ t('termini.condotta_testo') }}</p>
 <p>{{ t('termini.segnala_community') }}</p>
 <p>
     {{ t('termini.segnala_mail') }}
     <a href="mailto:admin@ispiramy.com">admin@ispiramy.com</a>.
 </p>
 
-<h2>{{ t('termini.condotta') }}</h2>
-<p>{{ t('termini.condotta_testo') }}</p>
-
-<h2>{{ t('termini.prezzo') }}</h2>
-<p>{{ t('termini.prezzo_intro') }}</p>
-<p>{{ t('termini.prezzo_min').split('{n}')[0] }}{{ prezzo_orario_minimo }}{{ t('termini.prezzo_min').split('{n}')[1] }}</p>
-<p>{{ t('termini.prezzo_spese').split('{n}')[0] }}{{ spese_servizio_euro }}{{ t('termini.prezzo_spese').split('{n}')[1] }}</p>
-<p>{{ t('termini.offerte') }}</p>
-<p>{{ t('termini.anticipo').split('{n}')[0] }}{{ ore_preavviso }}{{ t('termini.anticipo').split('{n}')[1] }}</p>
-
-<h2>{{ t('termini.paga') }}</h2>
-<p>{{ t('termini.paga_metodo') }}</p>
-<p>{{ t('termini.paga_auto') }}</p>
-<p>{{ t('termini.paga_mano').split('{n}')[0] }}{{ ore_per_rispondere }}{{ t('termini.paga_mano').split('{n}')[1] }}</p>
-<p>{{ t('termini.paga_interrompi') }}</p>
-<p>{{ t('termini.commissione').split('{n}')[0] }}{{ commissione_percentuale }}{{ t('termini.commissione').split('{n}')[1] }}</p>
-<p>{{ t('termini.compenso').split('{n}')[0] }}{{ ore_rilascio }}{{ t('termini.compenso').split('{n}')[1] }}</p>
-
-<h2>{{ t('termini.annulla') }}</h2>
-<p>{{ t('termini.annulla_fino').split('{n}')[0] }}{{ ore_limite_annullamento }}{{ t('termini.annulla_fino').split('{n}')[1] }}</p>
-<p>{{ t('termini.rimborso') }}</p>
-<p>{{ t('termini.ritira') }}</p>
-<p>{{ t('termini.dopo').split('{n}')[0] }}{{ ore_limite_annullamento }}{{ t('termini.dopo').split('{n}')[1] }}</p>
-<p>{{ t('termini.assente') }}</p>
-<p>{{ t('termini.contestazione').split('{n}')[0] }}{{ ore_contestazione }}{{ t('termini.contestazione').split('{n}')[1] }}</p>
-<p>{{ t('termini.decisione').split('{n}')[0] }}{{ spese_servizio_euro }}{{ t('termini.decisione').split('{n}')[1] }}</p>
-<p>{{ t('termini.consumatore') }}</p>
-
-<h2>{{ t('termini.non_noi') }}</h2>
+<h2>{{ t('termini.art12') }}</h2>
 <p>{{ t('termini.non_noi_testo') }}</p>
-
-<h2>{{ t('termini.responsabilita') }}</h2>
 <p>{{ t('termini.responsabilita_testo') }}</p>
 
-<h2>{{ t('termini.privacy') }}</h2>
+<h2>{{ t('termini.art13') }}</h2>
 <p>{{ t('termini.privacy_prima') }}<a href="/privacy">{{ t('termini.privacy_link') }}</a>.</p>
 
-<h2>{{ t('termini.cambiamo') }}</h2>
+<h2>{{ t('termini.art14') }}</h2>
 <p>{{ t('termini.cambiamo_testo') }}</p>
-
-<h2>{{ t('termini.cessione') }}</h2>
-<p>{{ t('termini.cessione_testo') }}</p>
-
-<h2>{{ t('termini.frase') }}</h2>
 <p>{{ t('termini.frase_testo') }}</p>
 
-<h2>{{ t('termini.legge') }}</h2>
+<h2>{{ t('termini.art15') }}</h2>
 <p>{{ t('termini.legge_testo') }}</p>
 
-<h2>{{ t('termini.prima') }}</h2>
+<h2>{{ t('termini.art16') }}</h2>
 <p>
     {{ t('termini.prima_testo') }}
-    <a href="mailto:admin@ispiramy.com">admin@ispiramy.com</a>
+    <a href="mailto:admin@ispiramy.com">admin@ispiramy.com</a>.
     {{ t('termini.prima_dopo') }}
 </p>
 {% endblock %}
