@@ -77,9 +77,9 @@ def test_le_cifre_sono_quelle_del_codice(client):
     assert "solo il cliente" in testo
     assert "Senza registrazione la contestazione non si apre" in testo
     assert "Chi verifica i profili o amministra il sito" in testo
-    assert "spese di servizio comprese" in testo
-    assert "senza le spese di servizio" in testo
-    assert "che restano a Ispiramy" in testo
+    assert "commissione di servizio compresa" in testo
+    assert "senza la commissione di servizio" in testo
+    assert "che resta a Ispiramy" in testo
     assert "pulsante Segnala" in testo
     assert "non c'è un pulsante" not in testo.lower()
 

@@ -267,7 +267,7 @@ def test_come_funziona_e_faq_spiegano_registrazione_e_analisi(client):
         assert "analisi automatica" in testo
         assert "verifica i profili" in testo
         assert "Senza registrazione" in testo
-        assert "senza le spese di servizio" in testo
+        assert "senza la commissione di servizio" in testo
         assert "1,99" in testo
     assert "48 ore" in client.get("/faq").text
 
