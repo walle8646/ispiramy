@@ -147,8 +147,8 @@ def email_html_en(template_name: str, data: Dict[str, str]) -> Optional[str]:
     if template_name == "booking_request.html":
         body = (
             "<p>Hello <strong>{consultant_name}</strong>,</p>"
-            "<p><strong>{client_name}</strong> asked you for a consultation. You chose to confirm bookings yourself: "
-            "the consultation happens only if you accept.</p>"
+            "<p><strong>{client_name}</strong> asked you for a consultation. You chose manual confirmation for bookings: "
+            "the consultation takes place only if you accept.</p>"
             + _details_box(
                 row("Date:", "{date}") + row("Time:", "{time}") + row("Length:", "{duration} minutes")
                 + row("Topic:", "{topic}"),
