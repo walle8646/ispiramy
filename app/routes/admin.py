@@ -541,7 +541,7 @@ def avvisa_decisione_contestazione(session, dispute, booking, status: str, refun
             )
             consulente_it = (
                 f"La contestazione sulla consulenza del {data} è stata accolta. "
-                "Il cliente viene rimborsato del prezzo della consulenza e il compenso non parte."
+                "Il cliente viene rimborsato del prezzo della consulenza e il compenso non viene inviato."
             )
             consulente_en = (
                 f"The dispute about the consultation on {data} was upheld. "

@@ -417,7 +417,7 @@ class TestProfilo:
         _login(csrf_client, persone.email_cliente, persone.password)
         r = csrf_client.get(f"/book/{persone.consulente}")
         assert r.status_code == 200
-        assert "conferma le prenotazioni a mano" in r.text
+        assert "conferma le prenotazioni manualmente" in r.text
         assert "Invia richiesta" in r.text
 
 

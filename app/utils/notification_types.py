@@ -25,7 +25,7 @@ NOTIFICATION_TYPES = [
      "Quando una prenotazione viene rifiutata", True, True,
      "❌ Prenotazione rifiutata", "booking_refused.html"),
     ("booking_request", "Richiesta di consulenza da accettare",
-     "Al consulente che conferma a mano: una nuova richiesta da accettare o rifiutare", True, True,
+     "Al consulente con conferma manuale: una nuova richiesta da accettare o rifiutare", True, True,
      "📩 Nuova richiesta di consulenza da confermare", "booking_request.html"),
     ("booking_accepted", "Richiesta di consulenza accettata",
      "Al cliente quando il consulente accetta la richiesta", True, True,

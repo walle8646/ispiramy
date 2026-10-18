@@ -347,8 +347,8 @@ def generate_email_html(template_name: str, data: Dict[str, str], lingua: str = 
         if template_name == 'booking_request.html':
             body = (
                 "<p>Ciao <strong>{consultant_name}</strong>,</p>"
-                "<p><strong>{client_name}</strong> ti ha chiesto una consulenza. Hai scelto di confermare a mano le prenotazioni: "
-                "la consulenza si fa solo se la accetti.</p>"
+                "<p><strong>{client_name}</strong> ti ha chiesto una consulenza. Hai scelto la conferma manuale delle prenotazioni: "
+                "la consulenza si svolge solo se la accetti.</p>"
                 + _details_box(row("📅 Data:", "{date}") + row("🕐 Orario:", "{time}") + row("⏱️ Durata:", "{duration} minuti")
                                + row("📝 Argomento:", "{topic}"), AMBER)
                 + '<div style="background:#fff8e1;border-left:4px solid #f39c12;border-radius:6px;padding:14px 18px;margin:20px 0;">'
