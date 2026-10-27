@@ -79,8 +79,13 @@ def create_checkout_session(
         import time as _time
         expires_at = int(_time.time()) + 30 * 60
 
+        # Niente payment_method_types: Stripe non lo accetta piu' alla
+        # creazione della sessione. I metodi di pagamento si scelgono dal
+        # Dashboard (Impostazioni > Metodi di pagamento) e Stripe mostra al
+        # cliente solo quelli compatibili con questa sessione - quindi col
+        # blocco dell'importo (capture manuale) e col trasferimento al
+        # consulente restano fuori da soli quelli che non li reggono.
         params = dict(
-            payment_method_types=['card'],
             line_items=[{
                 'price_data': {
                     'currency': currency,
