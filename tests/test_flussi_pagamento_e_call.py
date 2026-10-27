@@ -528,7 +528,6 @@ class TestRilascioERimborso:
         assert _stato(booking_id)[1] == "held"
 
     def test_la_scadenza_di_riserva_e_il_numero_unico(self, persone):
-        from datetime import datetime
         from zoneinfo import ZoneInfo
 
         from app.scheduler import schedule_payment_release, scheduler
@@ -536,7 +535,11 @@ class TestRilascioERimborso:
 
         assert ORE_RILASCIO_SENZA_RECENSIONE == 48
         booking_id = _crea(persone, 24 * 60)
-        fine = datetime(2026, 10, 20, 18, 0)
+        # La data si conta da adesso: una data scritta a mano invecchia, e
+        # quando passa il job nasce gia' scaduto. Con lo scheduler acceso -
+        # cioe' a suite intera, dove qualche test avvia l'app - APScheduler lo
+        # scartava come perso e get_job non trovava piu' niente.
+        fine = (now_italy_naive() + timedelta(days=2)).replace(second=0, microsecond=0)
         schedule_payment_release(booking_id, fine)
         job = scheduler.get_job(f"payment_release_{booking_id}")
         atteso = fine.replace(tzinfo=ZoneInfo("Europe/Rome")) + timedelta(hours=48)
