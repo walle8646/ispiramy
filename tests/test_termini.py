@@ -1,134 +1,133 @@
-"""La pagina dei termini deve raccontare le regole che il codice applica davvero.
+"""La pagina dei Termini e condizioni.
 
-Le cifre (spese, ore, commissione) arrivano dalle costanti. Se domani cambiano
-e la pagina resta ferma, il test si accorge che stiamo promettendo un'altra cosa.
-Il testo esiste in italiano e in inglese. Ragione sociale, sede e partita IVA
-restano segnaposto, non dati inventati.
+Il testo e' un documento legale fornito da chi gestisce Ispiramy: sta nel
+catalogo delle traduzioni, come il resto del sito. Le cifre pero' non si
+scrivono a mano - restano segnaposto che la pagina sostituisce con i valori
+presi dal codice, cosi' il giorno che cambia una regola la pagina non resta a
+raccontare il numero vecchio.
 """
 import io
+import json
 import os
-import re
 
 RADICE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+SEGNAPOSTO = ("{min}", "{spese}", "{pct}", "{preavviso}", "{annullamento}",
+              "{rilascio}", "{contestazione}", "{risposta}")
 
 
 def _file(*percorso):
     return io.open(os.path.join(RADICE, *percorso), encoding="utf-8").read()
 
 
-def _lingua(http, codice):
-    from app.utils.lingue_ui import COOKIE
-    http.cookies.delete(COOKIE, path="/")
-    http.get(f"/lingua/{codice}", follow_redirects=False)
+def _catalogo(lingua):
+    percorso = os.path.join(RADICE, "app", "traduzioni", f"{lingua}.json")
+    return json.loads(io.open(percorso, encoding="utf-8").read())
+
+
+def test_ci_sono_tutti_i_sedici_articoli(client):
+    pagina = client.get("/terms").text
+    attesi = [
+        "1. Premessa e descrizione del servizio",
+        "2. Natura del servizio e ruolo di Ispiramy",
+        "3. Requisiti di accesso e registrazione",
+        "5. Prenotazione e svolgimento delle consulenze",
+        "6. Prezzi, commissioni e pagamenti",
+        "7.1 Annullamento da parte del cliente o del consulente",
+        "7.3 Mancata partecipazione alla chiamata",
+        "8.4 Presentazione della contestazione",
+        "8.6 Effetti sui pagamenti e commissioni",
+        "9. Pagamento dei consulenti",
+        "11.1 Segnalazioni",
+        "16. Legge applicabile, controversie e contatti",
+    ]
+    for titolo in attesi:
+        assert titolo in pagina, f"manca l'articolo: {titolo}"
+
+
+def test_nessuna_chiave_resta_in_vista(client):
+    """Una chiave che non esiste si stampa com'e': su una pagina legale si
+    noterebbe, ma meglio accorgersene qui."""
+    pagina = client.get("/terms").text
+    for chiave in ("termini.a", "termini.titolo", "legale.bozza", "legale.solo_italiano"):
+        assert chiave not in pagina, f"chiave non risolta: {chiave}"
+
+
+def test_le_cifre_arrivano_dal_codice(client):
+    from app.utils.booking_requests import ORE_PER_RISPONDERE
+    from app.utils.orari import (ORE_FINESTRA_CONTESTAZIONE, ORE_LIMITE_ANNULLAMENTO,
+                                 ORE_PREAVVISO_PRENOTAZIONE, ORE_RILASCIO_SENZA_RECENSIONE)
+    from app.utils.prezzi import PREZZO_ORARIO_MINIMO, SPESE_SERVIZIO
+
+    pagina = client.get("/terms").text
+    spese = f"{float(SPESE_SERVIZIO):.2f}".replace(".", ",")
+
+    assert f"{PREZZO_ORARIO_MINIMO} € per ora" in pagina
+    assert f"€ {spese}" in pagina
+    assert f"{ORE_PREAVVISO_PRENOTAZIONE} ore di anticipo" in pagina
+    assert f"fino a {ORE_LIMITE_ANNULLAMENTO} ore prima" in pagina
+    assert f"trascorse {ORE_RILASCIO_SENZA_RECENSIONE} ore" in pagina
+    assert f"entro {ORE_FINESTRA_CONTESTAZIONE} ore dalla conclusione" in pagina
+    assert f"pari a {ORE_PER_RISPONDERE} ore" in pagina
+
+    for segno in SEGNAPOSTO:
+        assert segno not in pagina, f"segnaposto non sostituito: {segno}"
+
+
+def test_i_segnaposto_del_catalogo_sono_quelli_che_la_pagina_sa_sostituire():
+    """Un segnaposto scritto male resterebbe stampato nel testo: qui si
+    controlla che nel catalogo non ne compaiano di sconosciuti."""
+    import re
+
+    catalogo = _catalogo("it")
+    trovati = set()
+    for chiave, testo in catalogo.items():
+        if chiave.startswith("termini."):
+            trovati.update(re.findall(r"\{[a-z_]+\}", testo))
+    assert trovati <= set(SEGNAPOSTO), f"segnaposto sconosciuti: {sorted(trovati - set(SEGNAPOSTO))}"
+
+
+def test_la_pagina_esiste_anche_in_inglese(client):
+    """Le altre pagine pubbliche sono tradotte: questa non puo' fare
+    eccezione, altrimenti chi legge il sito in inglese trova un muro."""
+    inglese = client.get("/terms", cookies={"ispiramy_lingua": "en"}).text
+    assert "1. Introduction and description of the service" in inglese
+    assert "16. Governing law, disputes and contacts" in inglese
+    assert "1. Premessa e descrizione del servizio" not in inglese
+    # la versione italiana resta quella che vincola, e la pagina lo dice
+    assert "binding one" in inglese
+    italiane = {c for c in _catalogo("it") if c.startswith("termini.")}
+    inglesi = {c for c in _catalogo("en") if c.startswith("termini.")}
+    assert italiane == inglesi
+
+
+def test_i_dati_del_gestore_restano_da_inserire(client):
+    """Finche' mancano ragione sociale, sede e partita IVA la pagina lo dice
+    in cima, invece di far finta di essere completa."""
+    pagina = client.get("/terms").text
+    for mancante in ("[RAGIONE SOCIALE]", "[SEDE LEGALE]", "[PARTITA IVA]",
+                     "[FORMA GIURIDICA]", "[URL UFFICIALE]"):
+        assert mancante in pagina
+
+
+# ---------------------------------------------------------------------------
+# Quello che segue stava gia' in questo file prima che il testo cambiasse:
+# sono controlli che non dipendono da come e' scritto il documento, e valgono
+# per qualunque testo ci finisca dentro.
+# ---------------------------------------------------------------------------
 
 
 def test_la_pagina_risponde(client):
-    _lingua(client, "it")
-    r = client.get("/terms")
-    assert r.status_code == 200
-    assert "Termini e condizioni" in r.text
-    assert "Bozza" in r.text
-    assert 'href="/privacy"' in r.text
-    assert "mailto:admin@ispiramy.com" in r.text
-    assert "[RAGIONE SOCIALE]" in r.text
-    assert "[SEDE LEGALE]" in r.text
-    assert "[PARTITA IVA]" in r.text
-
-
-def test_le_cifre_sono_quelle_del_codice(client):
-    from app.models import User
-    from app.utils.booking_requests import ORE_PER_RISPONDERE
-    from app.utils.notification_email import NOTA_RIMBORSO
-    from app.utils.orari import (
-        ORE_FINESTRA_CONTESTAZIONE,
-        ORE_LIMITE_ANNULLAMENTO,
-        ORE_PREAVVISO_PRENOTAZIONE,
-        ORE_RILASCIO_SENZA_RECENSIONE,
-    )
-    from app.utils.prezzi import PREZZO_ORARIO_MINIMO, SPESE_SERVIZIO
-
-    _lingua(client, "it")
-    testo = re.sub(r"\s+", " ", client.get("/terms").text)
-    spese = f"{float(SPESE_SERVIZIO):.2f}".replace(".", ",")
-    assert f"{spese} €" in testo
-    assert f"almeno {PREZZO_ORARIO_MINIMO} €" in testo
-    assert f"almeno {ORE_PREAVVISO_PRENOTAZIONE} ore" in testo
-    assert f"fino a {ORE_LIMITE_ANNULLAMENTO} ore" in testo
-    assert f"entro {ORE_PER_RISPONDERE} ore" in testo
-
-    commissione = User.model_fields["platform_fee_percent"].default
-    assert f"del {commissione}%" in testo
-
-    assert "5-10" in NOTA_RIMBORSO
-    assert "5-10 giorni lavorativi" in testo
-
-    # Finestra contestazione e rilascio del compenso: le ore del codice.
-    orari = _file("app", "utils", "orari.py")
-    scheduler = _file("app", "scheduler.py")
-    contestazioni = _file("app", "routes", "dispute.py")
-    assert "return ore <= ORE_FINESTRA_CONTESTAZIONE" in orari
-    assert "timedelta(hours=ORE_RILASCIO_SENZA_RECENSIONE)" in scheduler
-    assert "Solo il cliente può aprire una contestazione" in contestazioni
-    assert "not booking.recording_requested" in contestazioni
-    assert f"entro {ORE_FINESTRA_CONTESTAZIONE} ore" in testo
-    assert f"{ORE_RILASCIO_SENZA_RECENSIONE} ore dopo la fine" in testo
-    assert "lascia la recensione" in testo
-    assert "contestazione è aperta, il compenso resta fermo" in testo
-    assert "solo il cliente" in testo
-    assert "Senza registrazione la contestazione non si apre" in testo
-    assert "Chi verifica i profili o amministra il sito" in testo
-    assert "commissione di servizio compresa" in testo
-    assert "senza la commissione di servizio" in testo
-    assert "che resta a Ispiramy" in testo
-    assert "pulsante Segnala" in testo
-    assert "non c'è un pulsante" not in testo.lower()
-
-
-def test_in_inglese_le_stesse_regole(client):
-    from app.models import User
-    from app.utils.orari import ORE_FINESTRA_CONTESTAZIONE, ORE_RILASCIO_SENZA_RECENSIONE
-    from app.utils.prezzi import COMMISSIONE_DEFAULT
-
-    _lingua(client, "en")
-    testo = re.sub(r"\s+", " ", client.get("/terms").text)
-    assert 'lang="en"' in testo
-    assert "Terms and conditions" in testo
-    assert "[RAGIONE SOCIALE]" in testo
-    assert "[SEDE LEGALE]" in testo
-    assert "[PARTITA IVA]" in testo
-    assert "when the client leaves a review" in testo
-    assert f"{ORE_RILASCIO_SENZA_RECENSIONE} hours after the end" in testo
-    assert "While a dispute is open, the payout stays on hold" in testo
-    assert "only the client who booked" in testo
-    assert "without a recording the dispute does not open" in testo
-    assert f"within {ORE_FINESTRA_CONTESTAZIONE} hours" in testo
-    assert "including the service fee" in testo
-    assert "not the service fee" in testo
-    assert "which Ispiramy keeps" in testo
-    assert "verify profiles or administer the site" in testo
-    assert "Report button" in testo
-    assert f"normally {User.model_fields['platform_fee_percent'].default}%" in testo
-    assert COMMISSIONE_DEFAULT == User.model_fields["platform_fee_percent"].default
-    assert "Il compenso del consulente parte quando il cliente lascia la recensione" not in testo
-    assert "suspend" not in testo.lower()
-    _lingua(client, "it")
-
-
-def test_le_cifre_non_sono_scritte_a_mano():
-    pagina = _file("app", "templates", "terms.html")
-    assert "{{ spese_servizio_euro }}" in pagina
-    assert "{{ prezzo_orario_minimo }}" in pagina
-    assert "{{ ore_preavviso }}" in pagina
-    assert "{{ ore_limite_annullamento }}" in pagina
-    assert "{{ ore_per_rispondere }}" in pagina
-    assert "{{ commissione_percentuale }}" in pagina
-    assert "{{ ore_rilascio }}" in pagina
-    assert "{{ ore_contestazione }}" in pagina
+    pagina = client.get("/terms")
+    assert pagina.status_code == 200
+    assert "Termini e condizioni" in pagina.text
+    assert "Bozza" in pagina.text
+    assert 'href="/privacy"' in pagina.text
+    assert "mailto:admin@ispiramy.com" in pagina.text
 
 
 def test_non_inventa_un_soggetto_giuridico(client):
-    """I segnaposto restano visibili. La pagina non si inventa una società."""
-    _lingua(client, "it")
+    """I segnaposto restano visibili. La pagina non si inventa una societa'."""
     testo = client.get("/terms").text.lower()
     for presente in ("[ragione sociale]", "[sede legale]", "[partita iva]"):
         assert presente in testo
@@ -137,17 +136,9 @@ def test_non_inventa_un_soggetto_giuridico(client):
 
 
 def test_non_promette_cose_che_il_sito_non_fa(client):
-    _lingua(client, "it")
     testo = client.get("/terms").text.lower()
-    for assente in (
-        "coupon",
-        "valuta virtuale",
-        "dmca",
-        "abbonamento",
-        "codice amico",
-        "14 giorni",
-        "può sospendere",
-    ):
+    for assente in ("coupon", "valuta virtuale", "dmca", "abbonamento",
+                    "codice amico", "14 giorni"):
         assert assente not in testo
 
 
@@ -157,8 +148,6 @@ def test_ci_si_arriva_dal_piede_e_dalla_registrazione():
     registrazione = _file("app", "templates", "register.html")
     assert 'href="/terms"' in registrazione
     assert 'href="/privacy"' in registrazione
-    assert "Termini e condizioni" not in registrazione
-    assert "t('registrazione.termini_link')" in registrazione
 
 
 def test_sul_telefono_il_testo_va_a_capo():

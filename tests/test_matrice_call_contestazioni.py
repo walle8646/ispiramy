@@ -198,8 +198,13 @@ class TestSenzaRegistrazioneNonSiContesta:
     def test_termini_e_faq_dicono_la_stessa_cosa(self, client):
         for path in ("/terms", "/faq"):
             testo = client.get(path).text
-            assert "Senza registrazione" in testo
             assert "48 ore" in testo
+        # Senza registrazione non si contesta: le due pagine lo dicono con
+        # parole diverse - i Termini con le loro, la faq con le sue - ma
+        # devono dirlo tutte e due.
+        termini = client.get("/terms").text
+        assert "non è possibile avviare la specifica procedura di contestazione" in termini
+        assert "Senza registrazione" in client.get("/faq").text
 
 
 class TestFinestraERegistrazioneAccesa:

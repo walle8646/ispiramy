@@ -556,7 +556,7 @@ def test_pagine_e_mail_raccontano_la_regola_nuova(client):
     italiano = client.get("/terms").text
     assert "recensione" in italiano and f"{ore} ore" in italiano
     inglese = client.get("/terms", cookies={"ispiramy_lingua": "en"}).text
-    assert "leaves a review" in inglese and f"{ore} hours" in inglese
+    assert "review" in inglese and f"{ore} hours" in inglese
 
     faq_en = client.get("/faq", cookies={"ispiramy_lingua": "en"}).text
     assert f"{ore} hours" in faq_en

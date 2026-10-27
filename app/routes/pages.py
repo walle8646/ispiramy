@@ -141,14 +141,10 @@ async def privacy(request: Request):
 @router.get("/terms", response_class=HTMLResponse)
 async def terms(request: Request):
     # Le cifre arrivano dal codice, come in "Come funziona": se cambiano la
-    # regola, la pagina non resta a raccontare il numero vecchio.
-    return request.app.state.templates.TemplateResponse("terms.html", {
-        "request": request,
-        "ore_per_rispondere": ORE_PER_RISPONDERE,
-        "commissione_percentuale": User.model_fields["platform_fee_percent"].default,
-        "ore_rilascio": ORE_RILASCIO_SENZA_RECENSIONE,
-        "ore_contestazione": ORE_FINESTRA_CONTESTAZIONE,
-    })
+    # regola, la pagina non resta a raccontare il numero vecchio. Stanno fra i
+    # globali dei template (app/main.py) perche' servono anche dentro le macro,
+    # che non vedono il contesto della singola pagina.
+    return request.app.state.templates.TemplateResponse("terms.html", {"request": request})
 
 
 @router.get("/lingua/{codice}", include_in_schema=False)

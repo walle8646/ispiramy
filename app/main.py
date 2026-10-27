@@ -334,6 +334,16 @@ templates.env.globals['spese_servizio_euro'] = f"{float(SPESE_SERVIZIO):.2f}".re
 templates.env.globals['prezzo_orario_minimo'] = PREZZO_ORARIO_MINIMO
 templates.env.globals['min_password'] = MIN_PASSWORD_LENGTH
 
+# Le stesse cifre servono dentro le macro dei Termini, e una macro non vede il
+# contesto della pagina: stanno qui, dove le vedono tutte le pagine.
+from app.models import User as _User
+from app.utils.booking_requests import ORE_PER_RISPONDERE
+from app.utils.orari import ORE_FINESTRA_CONTESTAZIONE, ORE_RILASCIO_SENZA_RECENSIONE
+templates.env.globals['ore_per_rispondere'] = ORE_PER_RISPONDERE
+templates.env.globals['ore_rilascio'] = ORE_RILASCIO_SENZA_RECENSIONE
+templates.env.globals['ore_contestazione'] = ORE_FINESTRA_CONTESTAZIONE
+templates.env.globals['commissione_percentuale'] = _User.model_fields['platform_fee_percent'].default
+
 # Filtro per parsing JSON (usato per le immagini community)
 import json as _json
 def _parse_json(value):
