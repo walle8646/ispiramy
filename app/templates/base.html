@@ -226,6 +226,12 @@
             box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
         }
 
+        /* Sul telefono, accanto ai messaggi. Sul computer resta il menu
+           dell'avatar qui sopra: questo collegamento non si vede. */
+        .avatar-telefono {
+            display: none;
+        }
+
         .user-menu-dropdown {
             position: absolute;
             top: 100%;
@@ -884,7 +890,7 @@
         </div>
         
         <!-- Search Bar al Centro -->
-        <div class="search-wrapper">
+        <div class="search-wrapper" id="ricercaBarra">
             <div class="search-container">
                 <i class="fas fa-search search-icon"></i>
                 <input 
@@ -920,10 +926,12 @@
 
         <!-- Right: Link semplici in fila -->
         <div class="navbar-links">
-            {# Sul telefono il campo di ricerca in barra resta largo 56px e non
-               ci si scrive niente: qui diventa un'icona che porta alla ricerca
-               vera, quella della pagina Esperti. #}
-            <a href="/consultants" class="icona-cerca-telefono" aria-label="{{ t('nav.cerca') }}">
+            {# Sui portatili stretti la lente porta alla pagina Esperti.
+               Sul telefono lo stesso controllo apre il campo di ricerca
+               della barra, quello del computer. #}
+            <a href="/consultants" class="icona-cerca-telefono" id="apriCercaTelefono"
+               aria-label="{{ t('nav.cerca') }}" aria-expanded="false" aria-controls="ricercaBarra"
+               onclick="return apriRicercaTelefono(event)">
                 <i class="fas fa-magnifying-glass"></i>
             </a>
 
@@ -961,6 +969,23 @@
                     <i class="fas fa-comments"></i>
                     <span class="header-chat-badge" id="headerChatBadge" style="display: none;">0</span>
                 </button>
+
+                {# Sul telefono la faccia sta in alto a destra, accanto ai
+                   messaggi, e porta al proprio profilo. Senza foto si vedono
+                   le iniziali. Sul computer questo link resta nascosto. #}
+                <a href="/profile" class="avatar-telefono" aria-label="{{ t('menu.profilo') }}">
+                    {% set pezzo_nome = (current_user.nome or '')|trim %}
+                    {% set pezzo_cognome = (current_user.cognome or '')|trim %}
+                    {% set iniziali_telefono = namespace(testo='U') %}
+                    {% if not current_user.is_anonymous %}
+                        {% set iniziali_telefono.testo = ((pezzo_nome[:1] ~ pezzo_cognome[:1]) or (current_user.email or '?')[:1])|upper %}
+                    {% endif %}
+                    <span class="avatar-iniziali"{% if current_user.profile_picture %} hidden{% endif %}>{{ iniziali_telefono.testo }}</span>
+                    {% if current_user.profile_picture %}
+                    <img src="{{ current_user.profile_picture | foto }}" alt=""
+                         onerror="var s=this.parentNode.querySelector('.avatar-iniziali'); if(s) s.hidden=false; this.remove();">
+                    {% endif %}
+                </a>
                 
                 <!-- Divisore -->
                 <div style="width: 1px; height: 20px; background: #e0e0e0; margin: 0 4px;"></div>
@@ -1733,8 +1758,50 @@
             }
         });
 
+        function chiudiRicercaTelefono() {
+            const wrap = document.getElementById('ricercaBarra');
+            const btn = document.getElementById('apriCercaTelefono');
+            if (wrap) wrap.classList.remove('aperto');
+            if (!btn) return;
+            btn.setAttribute('aria-expanded', 'false');
+            const icona = btn.querySelector('i');
+            if (icona) {
+                icona.classList.add('fa-magnifying-glass');
+                icona.classList.remove('fa-xmark');
+            }
+        }
+
+        // Sul telefono la lente apre lo stesso campo della barra del computer.
+        // Sui portatili stretti il link continua a portare alla pagina Esperti.
+        function apriRicercaTelefono(evento) {
+            if (!window.matchMedia('(max-width: 768px)').matches) return true;
+            evento.preventDefault();
+            evento.stopPropagation();
+            const wrap = document.getElementById('ricercaBarra');
+            const aperto = wrap.classList.toggle('aperto');
+            evento.currentTarget.setAttribute('aria-expanded', aperto ? 'true' : 'false');
+            const icona = evento.currentTarget.querySelector('i');
+            if (icona) {
+                icona.classList.toggle('fa-magnifying-glass', !aperto);
+                icona.classList.toggle('fa-xmark', aperto);
+            }
+            if (aperto) {
+                globalSearch.focus();
+            } else {
+                searchDropdown.classList.remove('show');
+            }
+            return false;
+        }
+
         // Keyboard navigation
         globalSearch.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                searchDropdown.classList.remove('show');
+                activeIndex = -1;
+                updateActiveOption();
+                chiudiRicercaTelefono();
+                return;
+            }
             if (!searchDropdown.classList.contains('show')) return;
             
             if (e.key === 'ArrowDown') {
@@ -1752,17 +1819,14 @@
                 } else {
                     searchConsultants();
                 }
-            } else if (e.key === 'Escape') {
-                searchDropdown.classList.remove('show');
-                activeIndex = -1;
-                updateActiveOption();
             }
         });
 
         // Nascondi dropdown quando clicchi fuori
         document.addEventListener('click', function(e) {
-            if (!e.target.closest('.search-container')) {
+            if (!e.target.closest('.search-container') && !e.target.closest('#apriCercaTelefono')) {
                 searchDropdown.classList.remove('show');
+                if (window.matchMedia('(max-width: 768px)').matches) chiudiRicercaTelefono();
             }
         });
 
