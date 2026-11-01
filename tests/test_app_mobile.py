@@ -171,6 +171,36 @@ def test_nell_app_la_home_non_si_scorre_a_lungo():
         assert pezzo in nascosti, f"{pezzo} resta nella home dell'app"
 
 
+def test_sul_telefono_le_sezioni_della_home_si_distinguono():
+    """Titoli e riquadri stanno nelle regole sotto i 768px. Sul computer
+    il titolo delle categorie non occupa spazio e la vetrina resta quella
+    di prima."""
+    home = _file("app", "templates", "home.html")
+    assert "home.sezione_tue" in home
+    assert "home.sezione_fare" in home
+    assert "home.sezione_categorie" in home
+    assert 'class="mia-blocco"' in home
+    assert 'class="categorie-titolo"' in home
+    # la vetrina promozionale, da loggati, resta nascosta
+    assert "body.ha-mia-home .hero-main" in home
+    assert "body.ha-mia-home .categories-nav" in home
+
+    prima = home[:home.index("@media (max-width: 768px)")]
+    spento = prima[prima.index(".categorie-titolo"):prima.index(".categorie-titolo") + 60]
+    assert "display: none" in spento
+
+    def dentro_telefono(selettore):
+        indice = home.index(selettore)
+        media = home.rfind("@media", 0, indice)
+        assert "max-width: 768px" in home[media:indice], selettore
+
+    dentro_telefono(".mia-blocco")
+    secondo = home.index(".categorie-titolo {", home.index(".categorie-titolo {") + 1)
+    assert "display: block" in home[secondo:secondo + 80]
+    media = home.rfind("@media", 0, secondo)
+    assert "max-width: 768px" in home[media:secondo]
+
+
 def test_i_consulenti_in_evidenza_diventano_righe():
     """La scheda grande occupava uno schermo intero a testa: per vedere il
     secondo nome bisognava scorrere."""

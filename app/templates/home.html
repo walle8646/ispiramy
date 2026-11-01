@@ -193,11 +193,17 @@
         display: none;
     }
 
+    /* Il titolo delle categorie esiste solo sul telefono: sul computer
+       la striscia sotto la barra resta senza un'intestazione in più. */
+    .categorie-titolo {
+        display: none;
+    }
+
     @media (max-width: 768px) {
         .mia-home {
             display: block;
-            padding: 14px 16px 4px;
-            background: #f7faf7;
+            padding: 12px 12px 4px;
+            background: #e8eee9;
         }
 
         /* Con le tue cose in cima, la vetrina sparisce: chi e' gia' cliente
@@ -215,12 +221,18 @@
            uno schermo intero a testa, e per vedere il secondo nome bisognava
            scorrere. */
         body.ha-mia-home .featured {
-            padding: 4px 16px 8px;
+            margin: 0 12px 16px;
+            padding: 14px 12px 12px;
+            background: #f4f8f5;
+            border: 1px solid #d7e6d9;
+            border-radius: 16px;
         }
 
         body.ha-mia-home .featured-title {
-            margin: 18px 0 10px;
-            font-size: 1.05rem;
+            margin: 0 0 10px;
+            font-size: 0.98rem;
+            font-weight: 700;
+            color: #1b5e20;
             text-align: left;
         }
 
@@ -296,15 +308,25 @@
         }
 
         .mia-saluto {
-            margin: 0 0 14px;
-            font-size: 1.45rem;
+            margin: 2px 4px 12px;
+            font-size: 1.35rem;
+            font-weight: 700;
             color: #1b5e20;
         }
 
+        .mia-blocco {
+            background: #f4f8f5;
+            border: 1px solid #d7e6d9;
+            border-radius: 16px;
+            padding: 12px;
+            margin: 0 0 12px;
+        }
+
         .mia-sezione {
-            margin: 18px 0 8px;
-            font-size: 1.05rem;
-            color: #33404a;
+            margin: 0 0 10px;
+            font-size: 0.98rem;
+            font-weight: 700;
+            color: #1b5e20;
         }
 
         .mia-attesa {
@@ -378,7 +400,7 @@
             display: grid;
             grid-template-columns: repeat(3, minmax(0, 1fr));
             gap: 8px;
-            margin-top: 14px;
+            margin-top: 0;
         }
 
         .mie-scorciatoie a {
@@ -984,12 +1006,24 @@
             display: none !important;
         }
 
+        .categorie-titolo {
+            display: block;
+            margin: 0 16px 8px;
+            font-size: 0.98rem;
+            font-weight: 700;
+            color: #1b5e20;
+        }
+
         .categories-nav {
-            padding: 6px 0 !important;
+            padding: 12px 0 10px !important;
+            margin: 10px 12px 0;
             overflow-x: auto;
-            width: 100%;
-            max-width: 100%;
+            width: auto;
+            max-width: none;
             min-width: 0;
+            background: #f4f8f5;
+            border: 1px solid #d7e6d9;
+            border-radius: 16px;
         }
 
         .categories-nav-content {
@@ -1103,17 +1137,30 @@
         }
 
         .featured {
-            padding: 4px 16px 8px !important;
-            width: 100%;
-            max-width: 100%;
+            margin: 12px !important;
+            padding: 14px 12px 12px !important;
+            width: auto;
+            max-width: none;
             min-width: 0;
             box-sizing: border-box;
+            background: #f4f8f5 !important;
+            border: 1px solid #d7e6d9 !important;
+            border-radius: 16px !important;
         }
 
         .featured-title {
-            font-size: 16px !important;
-            margin: 0 0 8px !important;
+            font-size: 0.98rem !important;
+            font-weight: 700 !important;
+            margin: 0 0 10px !important;
             text-align: left !important;
+            color: #1b5e20 !important;
+        }
+
+        .featured .consultant-card {
+            margin-left: 0 !important;
+            margin-right: 0 !important;
+            width: auto !important;
+            max-width: none !important;
         }
 
         .featured > div {
@@ -1206,6 +1253,7 @@
 
 <!-- ========== CATEGORIES NAVIGATION ========== -->
 <section class="categories-nav">
+    <p class="categorie-titolo">{{ t('home.sezione_categorie') }}</p>
     <div class="categories-nav-content">
         {% for category in categories %}
         <a href="/consultants?category={{ category.id }}" class="category-btn">
@@ -1230,27 +1278,35 @@
     </div>
     <h1 class="mia-saluto">{{ t('home.saluto') }} {{ current_user.nome or '' }}</h1>
 
-    <div id="mieCose" class="mie-cose">
-        <div class="mia-attesa">{{ t('home.attesa') }}</div>
-    </div>
+    <section class="mia-blocco">
+        <h2 class="mia-sezione">{{ t('home.sezione_tue') }}</h2>
+        <div id="mieCose" class="mie-cose">
+            <div class="mia-attesa">{{ t('home.attesa') }}</div>
+        </div>
+    </section>
 
-    <div class="mie-scorciatoie">
-        <a href="/consultants"><i class="fas fa-magnifying-glass"></i><span>{{ t('home.trova_esperto') }}</span></a>
-        <a href="/community"><i class="fas fa-circle-question"></i><span>{{ t('home.fai_domanda') }}</span></a>
-        <a href="/profile"><i class="fas fa-calendar-check"></i><span>{{ t('home.tue_prenotazioni') }}</span></a>
-    </div>
+    <section class="mia-blocco">
+        <h2 class="mia-sezione">{{ t('home.sezione_fare') }}</h2>
+        <div class="mie-scorciatoie">
+            <a href="/consultants"><i class="fas fa-magnifying-glass"></i><span>{{ t('home.trova_esperto') }}</span></a>
+            <a href="/community"><i class="fas fa-circle-question"></i><span>{{ t('home.fai_domanda') }}</span></a>
+            <a href="/profile"><i class="fas fa-calendar-check"></i><span>{{ t('home.tue_prenotazioni') }}</span></a>
+        </div>
+    </section>
 
     {% if domande_recenti %}
-    <h2 class="mia-sezione">{{ t('home.dalla_community') }}</h2>
-    <div class="mie-domande">
-        {% for domanda in domande_recenti %}
-        <a href="/community?question={{ domanda.id }}" class="mia-domanda">
-            <strong>{{ domanda.titolo }}</strong>
-            <span>{% if domanda.categoria %}{{ nc(domanda.categoria) }} · {% endif %}{{ domanda.risposte }} {{ t('home.interessati') }}</span>
-        </a>
-        {% endfor %}
-    </div>
-    <a href="/community" class="mia-tutte">{{ t('home.vedi_tutte') }}</a>
+    <section class="mia-blocco">
+        <h2 class="mia-sezione">{{ t('home.dalla_community') }}</h2>
+        <div class="mie-domande">
+            {% for domanda in domande_recenti %}
+            <a href="/community?question={{ domanda.id }}" class="mia-domanda">
+                <strong>{{ domanda.titolo }}</strong>
+                <span>{% if domanda.categoria %}{{ nc(domanda.categoria) }} · {% endif %}{{ domanda.risposte }} {{ t('home.interessati') }}</span>
+            </a>
+            {% endfor %}
+        </div>
+        <a href="/community" class="mia-tutte">{{ t('home.vedi_tutte') }}</a>
+    </section>
     {% endif %}
 </section>
 {% endif %}

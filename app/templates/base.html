@@ -1204,6 +1204,9 @@
             <a href="/admin"><i class="fas fa-shield-halved"></i> {{ t('menu.admin') }}</a>
             {% endif %}
             {% if current_user %}
+            {# Compare solo quando le notifiche sono già attive: una riga
+               piccola, non il pulsante grande della home. #}
+            <button type="button" class="foglio-disattiva voce-push-nascosta" id="disattivaNotificheMenu">{{ t('menu.disattiva_notifiche') }}</button>
             <a href="/logout" class="foglio-uscita"><i class="fas fa-arrow-right-from-bracket"></i> {{ t('menu.esci') }}</a>
             {% endif %}
         </div>
@@ -2370,16 +2373,21 @@
         if (!bottoni.length && !avviso) { return; }
 
         function mostra(testo, nota) {
+            /* «Disattiva» non resta un pulsante grande in home o in profilo:
+               la fascia si spegne e resta la riga piccola nel menu. */
+            const spegni = testo.indexOf('Disattiva') >= 0;
             bottoni.forEach(function (bottone) {
                 bottone.textContent = testo;
                 bottone.classList.remove('voce-push-nascosta');
                 const fascia = bottone.closest('.push-in-alto');
-                if (fascia) { fascia.classList.remove('voce-push-nascosta'); }
+                if (fascia) { fascia.classList.toggle('voce-push-nascosta', spegni); }
             });
             spiegazioni.forEach(function (spiegazione) {
                 spiegazione.textContent = nota || '';
                 spiegazione.classList.toggle('voce-push-nascosta', !nota);
             });
+            const voceMenu = document.getElementById('disattivaNotificheMenu');
+            if (voceMenu) { voceMenu.classList.toggle('voce-push-nascosta', !spegni); }
         }
 
         /* La chiave del server arriva in base64 per gli indirizzi web, il
@@ -2500,6 +2508,14 @@
                 });
             });
             if (avvisoAttiva) { avvisoAttiva.addEventListener('click', attiva); }
+            const voceMenu = document.getElementById('disattivaNotificheMenu');
+            if (voceMenu && !voceMenu.dataset.collegato) {
+                voceMenu.dataset.collegato = '1';
+                voceMenu.addEventListener('click', function () {
+                    if (typeof chiudiMenuTelefono === 'function') { chiudiMenuTelefono(); }
+                    disattiva();
+                });
+            }
         }
 
         (async function () {

@@ -210,6 +210,36 @@ def test_sul_telefono_il_controllo_sta_sopra_agli_appuntamenti():
     assert "interruttore-push" in account[:account.index("voceInstallaProfilo")]
 
 
+def test_disattiva_notifiche_e_una_voce_piccola_del_menu():
+    """Il pulsante grande «Disattiva notifiche» non resta in home né in cima
+    al profilo: quando le notifiche sono attive la fascia si spegne e nel
+    menu compare una riga di testo. Il banner per attivarle resta."""
+    base = _file("app", "templates", "base.html")
+    assert 'id="disattivaNotificheMenu"' in base
+    assert "menu.disattiva_notifiche" in base
+    assert "foglio-disattiva" in base
+    voce = base[base.index('id="disattivaNotificheMenu"') - 80:base.index('id="disattivaNotificheMenu"')]
+    assert "voce-push-nascosta" in voce
+    assert 'id="avvisoPush"' in base
+
+    script = _blocco_push()
+    assert "disattivaNotificheMenu" in script
+    assert "const spegni = testo.indexOf('Disattiva') >= 0;" in script
+    assert "fascia.classList.toggle('voce-push-nascosta', spegni)" in script
+    assert "voceMenu.classList.toggle('voce-push-nascosta', !spegni)" in script
+    assert "chiudiMenuTelefono" in script
+    # il testo che lo script scrive sui pulsanti grandi resta quello di prima
+    assert "🔕 Disattiva notifiche" in script
+    assert "🔔 Attiva notifiche" in script
+
+    css = _file("app", "static", "mobile.css")
+    telefono = css[css.index("ASPETTO DA APP"):css.index("Sul computer la barra e il foglio non esistono")]
+    regola = telefono[telefono.index("button.foglio-disattiva"):]
+    regola = regola[:regola.index("}")]
+    assert "font-size: 0.78rem;" in regola
+    assert "min-height: 0;" in regola
+
+
 def test_la_home_del_telefono_ha_lo_stesso_controllo():
     """Le prossime cose restano la parte importante: il controllo sta sopra,
     non al posto loro. La home promozionale del computer non lo contiene."""

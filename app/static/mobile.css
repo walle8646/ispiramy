@@ -766,6 +766,19 @@
         color: #dc3545 !important;
     }
 
+    /* Disattiva le notifiche: una riga di testo, non un pulsante da 52px. */
+    .foglio-voci button.foglio-disattiva {
+        min-height: 0;
+        gap: 0;
+        margin-top: 2px;
+        padding: 2px 6px 10px;
+        font-size: 0.78rem;
+        font-weight: 500;
+        color: #78909c;
+        text-decoration: underline;
+        text-underline-offset: 2px;
+    }
+
     .foglio-pallino {
         display: none;
         width: 9px;
